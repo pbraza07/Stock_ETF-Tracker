@@ -1,0 +1,1207 @@
+:root {
+  --panel: rgba(17, 24, 39, 0.72);
+  --border: rgba(148, 163, 184, 0.18);
+}
+
+.stApp {
+  background:
+    radial-gradient(circle at 10% 10%, rgba(34, 197, 94, .09), transparent 30%),
+    radial-gradient(circle at 90% 0%, rgba(59, 130, 246, .10), transparent 28%);
+}
+
+.block-container {
+  max-width: 1540px;
+  padding-top: 1.4rem;
+  padding-bottom: 3rem;
+}
+
+.hero {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 22px 24px;
+  margin-bottom: 18px;
+  background: linear-gradient(135deg, rgba(15,23,42,.86), rgba(17,24,39,.68));
+  box-shadow: 0 18px 55px rgba(0,0,0,.18);
+}
+.hero h1 { margin: 0 0 4px 0; font-size: 2.0rem; letter-spacing: -0.03em; }
+.hero p { margin: 0; opacity: .78; }
+
+.source-pill {
+  display: inline-block;
+  margin-top: 12px;
+  border: 1px solid rgba(34,197,94,.30);
+  background: rgba(34,197,94,.10);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: .78rem;
+}
+
+.small-note { opacity: .72; font-size: .82rem; }
+
+[data-testid="stMetric"] {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(15,23,42,.46);
+}
+
+[data-testid="stSidebar"] {
+  border-right: 1px solid var(--border);
+}
+
+/* v5.3 readability + one-time update status above the table */
+.update-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  margin: 14px 0 10px 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.58);
+  font-size: 0.98rem;
+}
+
+/* Streamlit's dataframe uses a grid renderer, so row height + Styler font rules
+   are the primary controls. These selectors improve surrounding grid labels too. */
+[data-testid="stDataFrame"] {
+  font-size: 1.18rem !important;
+}
+[data-testid="stDataFrame"] [role="columnheader"] {
+  font-size: 1.10rem !important;
+  font-weight: 800 !important;
+}
+[data-testid="stDataFrame"] [role="gridcell"] {
+  font-size: 1.15rem !important;
+  line-height: 1.35 !important;
+}
+
+/* Mobile: keep the table legible without shrinking the data text. Horizontal
+   scrolling is preferable to tiny finance data. */
+@media (max-width: 768px) {
+  .block-container {
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+  }
+  [data-testid="stDataFrame"] {
+    font-size: 1.08rem !important;
+  }
+  [data-testid="stDataFrame"] [role="columnheader"] {
+    font-size: 1.02rem !important;
+    font-weight: 800 !important;
+  }
+  [data-testid="stDataFrame"] [role="gridcell"] {
+    font-size: 1.08rem !important;
+  }
+  .update-strip {
+    font-size: 0.92rem;
+  }
+}
+
+/* v5.5 futuristic card navigation */
+.stApp {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(0, 255, 170, .10), transparent 32%),
+    radial-gradient(circle at 85% 10%, rgba(0, 160, 255, .13), transparent 30%),
+    linear-gradient(180deg, #071018 0%, #08111d 45%, #050b12 100%);
+  color: #e8f3ff;
+}
+[data-testid="stHeader"] { background: rgba(5, 11, 18, .70); }
+[data-testid="stSidebar"] { background: linear-gradient(180deg, rgba(8,17,29,.98), rgba(5,11,18,.98)); }
+.hero {
+  background: linear-gradient(135deg, rgba(7,20,31,.96), rgba(9,31,44,.82));
+  border: 1px solid rgba(74, 222, 255, .24);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 18px 60px rgba(0,0,0,.28);
+}
+.navigator-title {
+  display:flex; align-items:flex-end; justify-content:space-between; gap:14px;
+  margin: 18px 0 10px; padding: 12px 2px;
+}
+.navigator-title span { font-size:1.25rem; font-weight:900; letter-spacing:.14em; color:#a7f3d0; }
+.navigator-title small { color:#8fa8bc; font-size:.88rem; }
+.page-chip { text-align:center; padding:10px 12px; border:1px solid rgba(74,222,255,.20); border-radius:12px; background:rgba(8,22,34,.82); font-weight:800; }
+.instrument-card {
+  min-height: 245px;
+  padding: 18px;
+  margin: 7px 0 8px;
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(12,27,41,.96), rgba(7,17,27,.98));
+  border: 1px solid rgba(91, 213, 255, .18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 28px rgba(0,0,0,.25);
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.instrument-card:hover { transform: translateY(-2px); border-color: rgba(91,213,255,.38); box-shadow: 0 16px 34px rgba(0,0,0,.30); }
+.card-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.ticker { font-size:1.65rem; font-weight:950; letter-spacing:.02em; color:#f8fbff; }
+.asset-type { font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.12em; color:#7dd3fc; padding:5px 8px; border-radius:999px; background:rgba(14,116,144,.15); border:1px solid rgba(125,211,252,.16); }
+.company-name { margin-top:4px; min-height:38px; font-size:.90rem; line-height:1.25; color:#93a9bb; overflow:hidden; }
+.stock-sector { margin-top:-4px; margin-bottom:8px; min-height:20px; font-size:.78rem; line-height:1.25; color:#67d8ff; font-weight:700; letter-spacing:.02em; }
+.price-line { margin:14px 0 12px; font-size:1.55rem; font-weight:900; color:#eaf7ff; }
+.mini-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+.mini-grid div { padding:9px 8px; border-radius:12px; background:rgba(255,255,255,.025); border:1px solid rgba(148,163,184,.10); }
+.mini-grid span { display:block; font-size:.68rem; color:#7f97aa; text-transform:uppercase; letter-spacing:.08em; }
+.mini-grid b { font-size:.92rem; }
+.pos { color:#4ade80 !important; } .neg { color:#fb7185 !important; } .flat { color:#cbd5e1 !important; }
+.card-bottom { display:flex; flex-wrap:wrap; gap:8px; margin-top:13px; min-height:27px; }
+.rating-pill,.signal-pill { font-size:.70rem; font-weight:900; letter-spacing:.04em; border-radius:999px; padding:5px 8px; }
+.rating-buy { color:#86efac; background:rgba(34,197,94,.11); border:1px solid rgba(34,197,94,.24); }
+.rating-hold { color:#fde68a; background:rgba(234,179,8,.11); border:1px solid rgba(234,179,8,.24); }
+.rating-sell { color:#fda4af; background:rgba(244,63,94,.11); border:1px solid rgba(244,63,94,.24); }
+.rating-na { color:#a8b7c7; background:rgba(148,163,184,.08); border:1px solid rgba(148,163,184,.16); }
+.signal-pill { color:#67e8f9; background:rgba(6,182,212,.10); border:1px solid rgba(6,182,212,.18); }
+.detail-header { margin-top:24px; padding:22px; border-radius:22px; display:flex; justify-content:space-between; align-items:center; gap:18px; background:linear-gradient(120deg,rgba(9,28,40,.96),rgba(10,18,31,.96)); border:1px solid rgba(74,222,255,.22); }
+.detail-kicker { font-size:.72rem; font-weight:900; letter-spacing:.16em; color:#67e8f9; }
+.detail-header h2 { font-size:2rem; margin:2px 0 0; }
+.detail-header p { margin:0; color:#90a5b8; }
+.detail-price { font-size:2rem; font-weight:950; white-space:nowrap; }
+[data-testid="stButton"] button { border-radius:12px; font-weight:800; min-height:44px; }
+[data-baseweb="segmented-control"], [data-baseweb="button-group"] { border-radius:14px; }
+@media (max-width: 900px) {
+  .instrument-card { min-height:220px; padding:15px; }
+  .ticker { font-size:1.45rem; }
+  .price-line { font-size:1.35rem; }
+  .detail-header { align-items:flex-start; flex-direction:column; }
+  .detail-price { font-size:1.7rem; }
+}
+
+/* Reduce obvious default Streamlit chrome while preserving accessibility and app controls. */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+[data-testid="stDecoration"] { display: none; }
+
+
+/* v5.6: full 15-horizon performance ladder inside every card */
+.sort-kicker {
+  margin: 2px 0 8px;
+  color: #7dd3fc;
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
+.full-metrics-card {
+  min-height: 560px;
+  padding: 18px;
+}
+.card-quote-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin: 12px 0 10px;
+}
+.card-quote-row .price-line { margin: 0; }
+.cap-line {
+  color: #7f97aa;
+  font-size: .76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.performance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.perf-cell {
+  min-width: 0;
+  min-height: 58px;
+  padding: 9px 8px;
+  border-radius: 12px;
+  background: rgba(255,255,255,.027);
+  border: 1px solid rgba(148,163,184,.11);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.perf-cell span {
+  display: block;
+  color: #839bad;
+  font-size: .69rem;
+  font-weight: 850;
+  letter-spacing: .045em;
+  line-height: 1.15;
+}
+.perf-cell b {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.00rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .full-metrics-card { min-height: 525px; padding: 15px; }
+  .performance-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .perf-cell { min-height: 54px; padding: 8px 6px; }
+  .perf-cell span { font-size: .66rem; }
+  .perf-cell b { font-size: .93rem; }
+  .cap-line { font-size: .72rem; }
+}
+@media (max-width: 480px) {
+  .performance-grid { gap: 6px; }
+  .perf-cell { min-height: 52px; padding: 7px 5px; }
+  .perf-cell span { font-size: .63rem; }
+  .perf-cell b { font-size: .89rem; }
+}
+
+/* v5.7: actual calendar-year returns + investment simulator */
+.investment-title {
+  margin: 18px 0 6px;
+  color: #a7f3d0;
+  font-size: .78rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
+.investment-card {
+  margin-top: 12px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(6, 78, 59, .18), rgba(8, 47, 73, .18));
+  border: 1px solid rgba(52, 211, 153, .20);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.investment-card span {
+  color: #8fb5aa;
+  font-size: .70rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+.investment-card b {
+  color: #f0fdf4;
+  font-size: 1.18rem;
+  line-height: 1.15;
+}
+.investment-card small {
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.full-metrics-card { min-height: 665px; }
+@media (max-width: 900px) {
+  .full-metrics-card { min-height: 630px; }
+  .investment-card b { font-size: 1.08rem; }
+}
+@media (max-width: 480px) {
+  .investment-card { padding: 10px; }
+  .investment-card span { font-size: .67rem; }
+  .investment-card b { font-size: 1.04rem; }
+  .investment-card small { font-size: .69rem; }
+}
+
+/* v5.8: on-demand directional news + investment-year selector + yearly charts */
+.news-panel {
+  margin: 8px 0 16px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(7, 17, 27, .96);
+  border: 1px solid rgba(125, 211, 252, .18);
+}
+.news-panel-title {
+  color: #7dd3fc;
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .14em;
+  margin-bottom: 9px;
+}
+.news-item {
+  border-radius: 13px;
+  padding: 10px 11px;
+  margin-top: 8px;
+  border: 1px solid rgba(148,163,184,.13);
+  background: rgba(255,255,255,.025);
+}
+.news-up { border-left: 4px solid #22c55e; }
+.news-down { border-left: 4px solid #ef4444; }
+.news-direction {
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  margin-bottom: 5px;
+}
+.news-up .news-direction { color: #4ade80; }
+.news-down .news-direction { color: #fb7185; }
+.news-headline,
+.news-headline a {
+  color: #edf7ff;
+  font-size: .94rem;
+  font-weight: 850;
+  line-height: 1.28;
+  text-decoration: none;
+}
+.news-headline a:hover { text-decoration: underline; }
+.news-subline {
+  color: #93a9bb;
+  font-size: .73rem;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+.news-empty {
+  color: #9db0c0;
+  font-size: .80rem;
+  line-height: 1.4;
+}
+
+/* Keep dense selectors usable on desktop and mobile. */
+[data-testid="stSegmentedControl"] button {
+  min-height: 42px;
+  font-weight: 850;
+}
+
+@media (max-width: 768px) {
+  .news-panel { padding: 10px; }
+  .news-headline, .news-headline a { font-size: .90rem; }
+  .news-subline { font-size: .71rem; }
+  [data-testid="stSegmentedControl"] { overflow-x: auto; }
+  [data-testid="stSegmentedControl"] button { min-width: 52px; }
+}
+
+/* v5.8.1: collapsible sort controls, ETF sector labels, chart-first navigation */
+.sort-summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #9fb5c7;
+  font-size: .84rem;
+}
+.sort-summary strong { color: #e8f7ff; }
+.chart-scroll-anchor {
+  position: relative;
+  top: -72px;
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+}
+.detail-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  margin: 8px 0 18px;
+}
+.detail-performance-grid .perf-cell {
+  min-height: 64px;
+}
+.detail-performance-grid .perf-cell span {
+  font-size: .72rem;
+}
+.detail-performance-grid .perf-cell b {
+  font-size: 1.06rem;
+}
+
+/* Preserve selector order as controls wrap. This keeps 2026 → 2025 → ... → 2016
+   readable from left to right and top to bottom on phones. */
+[data-testid="stSegmentedControl"] [role="radiogroup"] {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+@media (max-width: 900px) {
+  .detail-performance-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+}
+
+@media (max-width: 600px) {
+  .sort-summary {
+    min-height: 34px;
+    padding: 0 2px 7px;
+    font-size: .78rem;
+  }
+  .detail-performance-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .detail-performance-grid .perf-cell {
+    min-height: 58px;
+  }
+  .detail-performance-grid .perf-cell span {
+    font-size: .69rem;
+  }
+  .detail-performance-grid .perf-cell b {
+    font-size: 1rem;
+  }
+  [data-testid="stSegmentedControl"] [role="radiogroup"] > * {
+    flex: 1 1 calc(33.333% - 6px) !important;
+    min-width: 88px !important;
+  }
+  [data-testid="stSegmentedControl"] button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* v5.9: analyst price-target strip + live chart emphasis */
+.price-target-strip {
+  display: grid;
+  grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  align-items: center;
+  margin: 10px 0 8px;
+  padding: 9px 10px;
+  border: 1px solid rgba(96, 165, 250, .20);
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(15, 32, 50, .92), rgba(8, 22, 36, .92));
+}
+.price-target-strip .target-title {
+  color: #94a3b8;
+  font-size: .64rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+.price-target-strip > span:not(.target-title) {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.price-target-strip small {
+  color: #8da4b7;
+  font-size: .58rem;
+  font-weight: 850;
+  letter-spacing: .05em;
+}
+.price-target-strip b {
+  color: #f8fafc;
+  font-size: .80rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.price-target-strip > small {
+  grid-column: 1 / -1;
+  font-size: .66rem;
+  font-weight: 850;
+}
+
+@media (max-width: 600px) {
+  .price-target-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 9px;
+  }
+  .price-target-strip .target-title {
+    grid-column: 1 / -1;
+  }
+  .price-target-strip b { font-size: .78rem; }
+  .price-target-strip small { font-size: .56rem; }
+}
+
+
+/* v5.9.2: on-demand ETF holdings + bottom card pagination */
+.holdings-panel {
+  margin: 8px 0 16px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(8, 25, 38, .97), rgba(6, 16, 27, .98));
+  border: 1px solid rgba(52, 211, 153, .18);
+}
+.holdings-panel-title {
+  color: #6ee7b7;
+  font-size: .73rem;
+  font-weight: 950;
+  letter-spacing: .13em;
+  margin-bottom: 3px;
+}
+.holdings-subtitle,
+.holdings-empty {
+  color: #91a8b9;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+.holding-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 2px;
+  border-top: 1px solid rgba(148, 163, 184, .10);
+}
+.holding-row:first-of-type { margin-top: 8px; }
+.holding-rank {
+  color: #64748b;
+  font-size: .72rem;
+  font-weight: 850;
+  text-align: center;
+}
+.holding-id { min-width: 0; }
+.holding-id b {
+  display: block;
+  color: #ecfeff;
+  font-size: .82rem;
+  line-height: 1.2;
+}
+.holding-id small {
+  display: block;
+  color: #94a3b8;
+  font-size: .69rem;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.holding-weight {
+  color: #a7f3d0;
+  font-size: .80rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.bottom-pagination-label {
+  margin: 18px 0 7px;
+  color: #7dd3fc;
+  font-size: .70rem;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+@media (max-width: 600px) {
+  .holdings-panel { padding: 10px; }
+  .holding-row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px; }
+  .holding-id b { font-size: .78rem; }
+  .holding-id small { font-size: .66rem; }
+  .holding-weight { font-size: .75rem; }
+  .bottom-pagination-label { margin-top: 14px; }
+}
+
+/* v5.9.3: clickable return tiles + exact-period dollar profit */
+a.perf-cell-button {
+  text-decoration: none !important;
+  color: inherit !important;
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+a.perf-cell-button:visited { color: inherit !important; }
+@media (hover: hover) and (pointer: fine) {
+  a.perf-cell-button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(103, 232, 249, .42);
+    background: rgba(34, 211, 238, .075);
+    box-shadow: 0 5px 14px rgba(0,0,0,.16);
+  }
+}
+a.perf-cell-button:focus-visible {
+  outline: 2px solid rgba(103, 232, 249, .88);
+  outline-offset: 2px;
+}
+a.perf-cell-active {
+  border-color: rgba(52, 211, 153, .62) !important;
+  background: linear-gradient(135deg, rgba(6,95,70,.22), rgba(8,47,73,.22)) !important;
+  box-shadow: inset 0 0 0 1px rgba(52,211,153,.10);
+}
+.period-profit-hint {
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px dashed rgba(103,232,249,.20);
+  color: #8ba8ba;
+  background: rgba(8,22,34,.42);
+  font-size: .70rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+.period-profit-card {
+  margin-top: 10px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(52,211,153,.28);
+  background: linear-gradient(135deg, rgba(6,78,59,.22), rgba(8,47,73,.20));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.period-profit-card span {
+  color: #9bd8c3;
+  font-size: .69rem;
+  font-weight: 900;
+  letter-spacing: .045em;
+}
+.period-profit-card b {
+  color: #f0fdf4;
+  font-size: 1.16rem;
+  line-height: 1.15;
+}
+.period-profit-card small {
+  font-size: .72rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+.full-metrics-card { min-height: 735px; }
+@media (max-width: 900px) {
+  .full-metrics-card { min-height: 700px; }
+}
+@media (max-width: 480px) {
+  .period-profit-hint, .period-profit-card { margin-top: 8px; }
+  .period-profit-card { padding: 10px; }
+  .period-profit-card b { font-size: 1.05rem; }
+  .period-profit-card span, .period-profit-card small { font-size: .68rem; }
+}
+
+/* v5.9.3: multi-instrument portfolio split simulator */
+.portfolio-result-card {
+  margin: 8px 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(103,232,249,.22);
+  background: linear-gradient(135deg, rgba(8,47,73,.28), rgba(6,78,59,.18));
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.portfolio-result-card > span { color: #9bd8e8; font-size: .72rem; font-weight: 900; letter-spacing: .04em; }
+.portfolio-result-card > b { color: #f8fafc; font-size: 1.12rem; }
+.portfolio-result-card > small { color: #9fb3c8; font-size: .74rem; font-weight: 750; line-height: 1.3; }
+@media (max-width: 480px) {
+  .portfolio-result-card { padding: 11px 12px; }
+  .portfolio-result-card > b { font-size: 1.04rem; }
+}
+
+
+/* v5.9.4: Card/Table display-mode tabs + dense sortable table */
+.view-switch-title {
+  margin-top: 1.35rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  font-weight: 900;
+  opacity: 0.82;
+}
+.view-switch-subtitle {
+  margin: 0.18rem 0 0.65rem 0;
+  font-size: 0.95rem;
+  opacity: 0.72;
+}
+.table-view-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin: 0.65rem 0 0.75rem 0;
+}
+.table-view-header > span {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+.table-view-header > small {
+  opacity: 0.72;
+  font-weight: 650;
+}
+/* Make the native Streamlit tabs feel like a deliberate app-level mode switch. */
+div[data-baseweb="tab-list"] {
+  gap: 0.35rem;
+  padding: 0.28rem;
+  border: 1px solid rgba(95, 220, 255, 0.18);
+  border-radius: 14px;
+  background: rgba(3, 18, 29, 0.52);
+}
+button[data-baseweb="tab"] {
+  min-height: 46px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 850;
+  letter-spacing: 0.025em;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+  background: rgba(41, 177, 214, 0.14);
+}
+/* Keep table text readable on desktop without shrinking numeric columns. */
+div[data-testid="stDataFrame"] {
+  font-size: 16px;
+}
+@media (max-width: 700px) {
+  .view-switch-title { font-size: 0.78rem; }
+  .view-switch-subtitle { font-size: 0.9rem; }
+  button[data-baseweb="tab"] { min-height: 48px; font-size: 0.98rem; }
+  div[data-testid="stDataFrame"] { font-size: 15px; }
+}
+
+/* v5.9.5: durable saved portfolio simulation PDF library */
+.simulation-save-title {
+  margin: 22px 0 8px;
+  color: #a7f3d0;
+  font-size: .80rem;
+  font-weight: 950;
+  letter-spacing: .16em;
+}
+.simulation-library-header {
+  margin: 18px 0 10px;
+  padding: 13px 15px;
+  border: 1px solid rgba(86,229,139,.24);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(6,78,59,.16), rgba(8,47,73,.14));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  align-items: baseline;
+}
+.simulation-library-header span {
+  color: #56e58b;
+  font-size: .85rem;
+  font-weight: 950;
+  letter-spacing: .15em;
+}
+.simulation-library-header small { color: #8fa8bc; font-size: .80rem; }
+.simulation-library-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.7fr) repeat(4, minmax(115px, .75fr));
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 5px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  border: 1px solid rgba(104,215,255,.16);
+  background: linear-gradient(145deg, rgba(10,25,38,.96), rgba(7,17,27,.98));
+}
+.simulation-library-name {
+  display: block;
+  color: #f2f7fb;
+  font-size: 1rem;
+  font-weight: 900;
+}
+.simulation-library-card > div:first-child small {
+  display: block;
+  margin-top: 5px;
+  color: #849bad;
+  font-size: .72rem;
+}
+.simulation-library-metric {
+  min-width: 0;
+  padding-left: 10px;
+  border-left: 1px solid rgba(148,163,184,.11);
+}
+.simulation-library-metric small {
+  display: block;
+  color: #7991a4;
+  font-size: .62rem;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+.simulation-library-metric b {
+  display: block;
+  margin-top: 4px;
+  color: #eff8ff;
+  font-size: .92rem;
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .simulation-library-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .simulation-library-card > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .simulation-library-metric { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 480px) {
+  .simulation-library-card {
+    grid-template-columns: 1fr;
+  }
+  .simulation-library-card > div:first-child { grid-column: auto; }
+}
+
+/* v5.9.8 — unlimited stock comparison workspace */
+.comparison-workspace-header {
+  margin: 26px 0 12px;
+  padding: 15px 17px;
+  border: 1px solid rgba(86,229,139,.26);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(6,78,59,.18), rgba(8,47,73,.16));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 18px;
+}
+.comparison-workspace-header span {
+  color: #56e58b;
+  font-size: .92rem;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+.comparison-workspace-header small {
+  color: #91aabd;
+  font-size: .80rem;
+}
+.comparison-instrument-card {
+  min-height: 540px;
+  padding: 17px;
+  border-radius: 18px;
+  border: 1px solid rgba(86,229,139,.22);
+  background: linear-gradient(155deg, rgba(8,25,35,.98), rgba(5,16,27,.99));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+  margin-bottom: 7px;
+}
+.comparison-instrument-card .performance-grid {
+  margin-top: 12px;
+}
+@media (max-width: 900px) {
+  .comparison-instrument-card { min-height: 515px; }
+  .comparison-workspace-header { padding: 13px 14px; }
+}
+@media (max-width: 480px) {
+  .comparison-instrument-card { min-height: 500px; padding: 14px; }
+  .comparison-workspace-header span { font-size: .82rem; }
+  .comparison-workspace-header small { font-size: .74rem; }
+}
+
+/* v5.9.9: card-local profit period controls use Streamlit fragments.
+   The native pills rerun only their card fragment, preventing full-page flicker. */
+.period-profit-control-title {
+  margin: 7px 2px 5px;
+  color: #7dd3fc;
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .11em;
+  line-height: 1.2;
+}
+@media (max-width: 480px) {
+  .period-profit-control-title { font-size: .62rem; margin-top: 6px; }
+}
+
+
+/* v5.9.10: keep clickable profit selectors visually inside the card area */
+.embedded-profit-kicker {
+  margin: -6px 0 8px;
+  color: #7dd3fc;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .10em;
+}
+.full-metrics-card {
+  min-height: 460px;
+}
+@media (max-width: 900px) {
+  .full-metrics-card {
+    min-height: 430px;
+  }
+}
+
+/* v5.9.15 — restore v5.9.7 card appearance while keeping reliable native clicks.
+   A keyed Streamlit container is the card shell; return buttons live inside it. */
+div[class*="st-key-market_card_"] {
+  min-height: 735px;
+  margin: 7px 0 8px;
+  padding: 18px !important;
+  border: 1px solid rgba(91, 213, 255, .18) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(155deg, rgba(12,27,41,.96), rgba(7,17,27,.98)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 12px 28px rgba(0,0,0,.25) !important;
+  overflow: hidden;
+}
+div[class*="st-key-market_card_"] [data-testid="stVerticalBlockBorderWrapper"] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.instrument-card-head {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+div[class*="st-key-market_card_"] .period-profit-control-title {
+  margin: 12px 1px 7px;
+  color: #7dd3fc;
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .11em;
+  line-height: 1.2;
+}
+/* Return periods preserve the compact 3-column tile ladder from v5.9.7. */
+div[class*="st-key-market_card_"] [data-testid="stButton"] button {
+  min-height: 58px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(148,163,184,.22) !important;
+  background: rgba(255,255,255,.027) !important;
+  color: #eaf7ff !important;
+  font-size: .88rem !important;
+  font-weight: 850 !important;
+  line-height: 1.15 !important;
+  box-shadow: none !important;
+  transition: transform .14s ease, border-color .14s ease, background .14s ease !important;
+}
+div[class*="st-key-market_card_"] [data-testid="stButton"] button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(103,232,249,.45) !important;
+  background: rgba(34,211,238,.07) !important;
+}
+/* The selected period uses the v5.9.7 green-accent treatment instead of a bright solid fill. */
+div[class*="st-key-market_card_"] [data-testid="stButton"] button[kind="primary"] {
+  border-color: rgba(52,211,153,.68) !important;
+  background: linear-gradient(135deg, rgba(6,95,70,.24), rgba(8,47,73,.24)) !important;
+  color: #d1fae5 !important;
+  box-shadow: inset 0 0 0 1px rgba(52,211,153,.10) !important;
+}
+div[class*="st-key-market_card_"] .period-profit-card,
+div[class*="st-key-market_card_"] .investment-card {
+  margin-top: 10px;
+}
+div[class*="st-key-market_card_"] .card-bottom {
+  margin-top: 12px;
+  padding-bottom: 1px;
+}
+@media (max-width: 900px) {
+  div[class*="st-key-market_card_"] {
+    min-height: 700px;
+    padding: 15px !important;
+  }
+  div[class*="st-key-market_card_"] [data-testid="stButton"] button {
+    min-height: 54px !important;
+    font-size: .82rem !important;
+  }
+}
+@media (max-width: 480px) {
+  div[class*="st-key-market_card_"] {
+    min-height: 680px;
+    padding: 14px !important;
+  }
+  div[class*="st-key-market_card_"] [data-testid="stButton"] button {
+    min-height: 52px !important;
+    font-size: .78rem !important;
+  }
+}
+
+
+/* v5.9.16: performance-colored clickable profit tiles; no hover tooltip.
+   A zero-height marker is rendered immediately before each native Streamlit
+   button. :has() lets us style the following button without replacing the
+   reliable Streamlit callback with custom JavaScript. */
+.profit-tone-marker { display: none !important; }
+[data-testid="stElementContainer"]:has(.profit-tone-marker) {
+  min-height: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Positive return = green text/border. */
+[data-testid="stElementContainer"]:has(.profit-tone-positive) + [data-testid="stElementContainer"] button {
+  color: #4ade80 !important;
+  border-color: rgba(74, 222, 128, .42) !important;
+  background: rgba(34, 197, 94, .055) !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-positive) + [data-testid="stElementContainer"] button p {
+  color: #4ade80 !important;
+}
+
+/* Negative return = red text/border. */
+[data-testid="stElementContainer"]:has(.profit-tone-negative) + [data-testid="stElementContainer"] button {
+  color: #fb7185 !important;
+  border-color: rgba(251, 113, 133, .42) !important;
+  background: rgba(244, 63, 94, .055) !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-negative) + [data-testid="stElementContainer"] button p {
+  color: #fb7185 !important;
+}
+
+/* Flat / unavailable return = neutral. */
+[data-testid="stElementContainer"]:has(.profit-tone-flat) + [data-testid="stElementContainer"] button,
+[data-testid="stElementContainer"]:has(.profit-tone-flat) + [data-testid="stElementContainer"] button p {
+  color: #cbd5e1 !important;
+}
+
+/* Selected tile stays obvious while keeping the sign color requested. */
+[data-testid="stElementContainer"]:has(.profit-tone-positive-active) + [data-testid="stElementContainer"] button {
+  color: #86efac !important;
+  border-color: rgba(74, 222, 128, .78) !important;
+  background: linear-gradient(135deg, rgba(22, 163, 74, .34), rgba(6, 78, 59, .42)) !important;
+  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, .16), 0 5px 16px rgba(0,0,0,.14) !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-positive-active) + [data-testid="stElementContainer"] button p {
+  color: #86efac !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-negative-active) + [data-testid="stElementContainer"] button {
+  color: #fda4af !important;
+  border-color: rgba(251, 113, 133, .78) !important;
+  background: linear-gradient(135deg, rgba(190, 24, 93, .28), rgba(127, 29, 29, .34)) !important;
+  box-shadow: inset 0 0 0 1px rgba(251, 113, 133, .14), 0 5px 16px rgba(0,0,0,.14) !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-negative-active) + [data-testid="stElementContainer"] button p {
+  color: #fda4af !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-flat-active) + [data-testid="stElementContainer"] button {
+  color: #e2e8f0 !important;
+  border-color: rgba(148, 163, 184, .62) !important;
+  background: rgba(71, 85, 105, .30) !important;
+}
+[data-testid="stElementContainer"]:has(.profit-tone-flat-active) + [data-testid="stElementContainer"] button p {
+  color: #e2e8f0 !important;
+}
+
+/* Keep hover subtle and never introduce a tooltip/floating message. */
+@media (hover: hover) and (pointer: fine) {
+  [data-testid="stElementContainer"]:has(.profit-tone-positive) + [data-testid="stElementContainer"] button:hover {
+    border-color: rgba(74, 222, 128, .72) !important;
+    background: rgba(34, 197, 94, .11) !important;
+  }
+  [data-testid="stElementContainer"]:has(.profit-tone-negative) + [data-testid="stElementContainer"] button:hover {
+    border-color: rgba(251, 113, 133, .72) !important;
+    background: rgba(244, 63, 94, .11) !important;
+  }
+}
+
+/* v5.9.18: Nasdaq screening audit strip */
+.universe-status-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.universe-status-strip > div {
+  padding: 11px 13px;
+  border: 1px solid rgba(103, 232, 249, .18);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(8, 28, 42, .88), rgba(7, 19, 31, .92));
+}
+.universe-status-strip span {
+  display: block;
+  color: #7dd3fc;
+  font-size: .68rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.universe-status-strip b {
+  display: block;
+  margin-top: 4px;
+  color: #eef8ff;
+  font-size: .92rem;
+}
+.universe-status-strip small {
+  display: block;
+  margin-top: 4px;
+  color: #8fa8bc;
+  font-size: .69rem;
+  line-height: 1.25;
+}
+@media (max-width: 700px) {
+  .universe-status-strip { grid-template-columns: 1fr; }
+}
+
+/* v5.9.18: v5.9.7-style card header with 2Y daily mini-chart */
+.card-header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(120px, .85fr);
+  gap: 12px;
+  align-items: start;
+}
+.card-header-identity { min-width: 0; }
+.card-header-chart { min-width: 0; }
+.asset-type-row {
+  display: flex;
+  justify-content: flex-end;
+  min-height: 27px;
+  margin-bottom: 4px;
+}
+.card-mini-chart {
+  width: 100%;
+  min-height: 102px;
+  padding: 7px 7px 4px;
+  border-radius: 12px;
+  border: 1px solid rgba(96, 165, 250, .18);
+  background: linear-gradient(145deg, rgba(6, 18, 30, .72), rgba(8, 27, 39, .58));
+  overflow: hidden;
+}
+.card-mini-chart-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 0 3px 2px;
+}
+.card-mini-chart-label span {
+  color: #7f97aa;
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+.card-mini-chart-label b {
+  font-size: .67rem;
+  font-weight: 900;
+}
+.card-mini-chart-up .card-mini-chart-label b { color: #4ade80; }
+.card-mini-chart-down .card-mini-chart-label b { color: #fb7185; }
+.card-mini-chart svg {
+  display: block;
+  width: 100%;
+  height: 78px;
+}
+.card-mini-chart .mini-grid-line {
+  stroke: rgba(148, 163, 184, .10);
+  stroke-width: 1;
+}
+.card-mini-chart .mini-price-line {
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.card-mini-chart-up .mini-price-line { stroke: #4ade80; }
+.card-mini-chart-down .mini-price-line { stroke: #fb7185; }
+.card-mini-chart-empty {
+  display: flex;
+  min-height: 102px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #64748b;
+  gap: 5px;
+}
+.card-mini-chart-empty span { font-size: .60rem; font-weight: 900; }
+.card-mini-chart-empty b { font-size: .70rem; }
+
+/* Keep the clickable return ladder in the exact compact 3-column layout on phones.
+   Streamlit normally stacks st.columns vertically on narrow screens; the card-only
+   override preserves the v5.9.7 look while retaining native callback buttons. */
+div[class*="st-key-market_card_"] [data-testid="stHorizontalBlock"] {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  align-items: stretch !important;
+}
+div[class*="st-key-market_card_"] [data-testid="stHorizontalBlock"] > div {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: none !important;
+}
+
+@media (max-width: 480px) {
+  .card-header-grid {
+    grid-template-columns: minmax(0, 1.18fr) minmax(112px, .82fr);
+    gap: 9px;
+  }
+  .card-mini-chart { min-height: 94px; padding: 6px 5px 3px; }
+  .card-mini-chart svg { height: 70px; }
+  .company-name { min-height: 32px; font-size: .82rem; }
+  .stock-sector { font-size: .72rem; }
+  div[class*="st-key-market_card_"] [data-testid="stHorizontalBlock"] { gap: 6px !important; }
+  div[class*="st-key-market_card_"] [data-testid="stButton"] button {
+    min-height: 58px !important;
+    font-size: .76rem !important;
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+}
+
+/* v5.9.20: top workspace navigation stays compact and usable on phones. */
+div[data-baseweb="tab-list"] {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+button[data-baseweb="tab"] {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+@media (max-width: 700px) {
+  div[data-baseweb="tab-list"] { gap: 0.2rem; padding: 0.22rem; }
+  button[data-baseweb="tab"] { min-width: max-content; padding-left: 0.7rem; padding-right: 0.7rem; }
+}
+
+/* v5.9.22 — selected-instrument logos in Stock & ETF Comparison */
+.comparison-card-identity{display:flex;align-items:center;gap:.72rem;min-width:0;margin-bottom:.35rem}
+.comparison-card-id-text{min-width:0;flex:1}
+.comparison-logo{width:46px;height:46px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 46px;background:#f7fafc;border:1px solid rgba(148,163,184,.34);overflow:hidden;color:#08131f;font-size:.72rem;font-weight:800;letter-spacing:.02em}
+.comparison-logo img{display:block;width:100%;height:100%;object-fit:contain;padding:5px;box-sizing:border-box}
+.comparison-logo-fallback{background:linear-gradient(145deg,#e2e8f0,#f8fafc)}
+@media (max-width: 640px){.comparison-logo{width:40px;height:40px;flex-basis:40px}.comparison-card-identity{gap:.58rem}}
