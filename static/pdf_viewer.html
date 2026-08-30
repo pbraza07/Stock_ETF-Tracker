@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07111f" />
+  <title>MarketScope PDF</title>
+  <style>
+    :root { color-scheme: dark; --bg:#07111f; --card:#0f1b2d; --line:#20394a; --text:#f8fafc; --muted:#9fb3c8; --accent:#22c55e; --cyan:#22d3ee; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    body { display:flex; flex-direction:column; min-height:100dvh; }
+    .toolbar { position:sticky; top:0; z-index:10; display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:8px; align-items:center; padding:calc(10px + env(safe-area-inset-top)) 10px 10px; background:rgba(7,17,31,.97); border-bottom:1px solid var(--line); backdrop-filter:blur(12px); }
+    .brand { min-width:0; text-align:center; }
+    .brand b { display:block; color:var(--accent); font-size:.93rem; letter-spacing:.04em; }
+    .brand span { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:.72rem; }
+    button, a.action { appearance:none; border:1px solid var(--line); border-radius:11px; padding:10px 12px; min-height:42px; background:var(--card); color:var(--text); text-decoration:none; font-weight:800; font-size:.82rem; cursor:pointer; }
+    button.primary { border-color:rgba(34,197,94,.65); background:rgba(34,197,94,.13); color:#86efac; }
+    a.action { display:flex; align-items:center; justify-content:center; }
+    .status { padding:7px 12px; color:var(--muted); font-size:.72rem; text-align:center; border-bottom:1px solid rgba(32,57,74,.55); }
+    .viewer { flex:1; min-height:0; background:#0a1524; }
+    iframe { width:100%; height:100%; min-height:calc(100dvh - 112px); border:0; background:white; }
+    @media(max-width:640px){
+      .toolbar { grid-template-columns:auto minmax(0,1fr) auto; }
+      #downloadBtn { display:none; }
+      button, a.action { padding:9px 10px; font-size:.76rem; }
+      .brand b { font-size:.84rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="backBtn" aria-label="Back to MarketScope">← MarketScope</button>
+    <div class="brand"><b>MARKETSCOPE PDF</b><span id="fileLabel">Saved report</span></div>
+    <button id="shareBtn" class="primary">↗ Share PDF</button>
+    <a id="downloadBtn" class="action" download>↓ Download</a>
+  </div>
+  <div id="status" class="status">On iPhone/iPad, Share PDF opens the Apple share sheet for Mail, Messages, groups, AirDrop, Files and other apps.</div>
+  <div class="viewer"><iframe id="pdfFrame" title="MarketScope PDF viewer"></iframe></div>
+<script>
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  const requested = (params.get('file') || '').trim();
+  const safeFile = /^[A-Za-z0-9._-]+\.pdf$/i.test(requested) ? requested : '';
+  const requestedName = (params.get('name') || '').trim();
+  const shareName = /^[A-Za-z0-9._-]+\.pdf$/i.test(requestedName) ? requestedName : safeFile;
+  const status = document.getElementById('status');
+  const label = document.getElementById('fileLabel');
+  const frame = document.getElementById('pdfFrame');
+  const download = document.getElementById('downloadBtn');
+  const share = document.getElementById('shareBtn');
+
+  if (!safeFile) {
+    status.textContent = 'This PDF link is invalid. Return to MarketScope and open the saved report again.';
+    frame.remove();
+    share.disabled = true;
+    download.style.display = 'none';
+    return;
+  }
+
+  const pdfUrl = `./generated_pdfs/${encodeURIComponent(safeFile)}`;
+  label.textContent = shareName;
+  frame.src = pdfUrl;
+  download.href = pdfUrl;
+  download.download = shareName;
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (window.opener && !window.opener.closed) {
+      window.opener.focus();
+      window.close();
+      setTimeout(() => { window.location.href = '/'; }, 200);
+    } else if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
+  });
+
+  share.addEventListener('click', async () => {
+    share.disabled = true;
+    const original = share.textContent;
+    share.textContent = 'Preparing…';
+    try {
+      const response = await fetch(pdfUrl, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`PDF fetch failed (${response.status})`);
+      const blob = await response.blob();
+      const file = new File([blob], shareName, { type: 'application/pdf', lastModified: Date.now() });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files:[file] }))) {
+        await navigator.share({ title: 'MarketScope PDF', files: [file] });
+        status.textContent = 'Share sheet opened. Choose Mail, Messages, a group, AirDrop, Files, or another app.';
+      } else {
+        download.click();
+        status.textContent = 'Your browser does not support direct file sharing. The PDF was downloaded; open it and use your phone’s Share button.';
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        status.textContent = 'Share canceled. The PDF remains open.';
+      } else {
+        download.click();
+        status.textContent = 'Direct sharing was unavailable, so the PDF was downloaded. Open it and use your phone’s Share button.';
+      }
+    } finally {
+      share.disabled = false;
+      share.textContent = original;
+    }
+  });
+})();
+</script>
+</body>
+</html>
