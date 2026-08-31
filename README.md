@@ -233,3 +233,7 @@ Comparison cards now mirror Market Navigator Card View functionality while prese
 - Comparison mini charts now load from the comparison selection itself.
 - Market Navigator stock/ETF cards display instrument logos when Yahoo/company metadata provides one.
 - New Stock Sector Performance top tab aggregates stocks-only performance across every MarketScope timeframe with equal-weight or market-cap-weighted calculations.
+
+
+### v5.9.45 monthly portfolio income simulation
+Portfolio Simulator supports separate Yearly withdrawal and Monthly withdrawal modes. The monthly mode can load Top 100 four-stock, four-sector presets for a $300,000 start and $5,000 monthly cash flow over the 2016-2025 completed-year window, with HWM excluded. Monthly returns are equivalent rates derived from annual spreadsheet returns, and saved PDFs include all monthly rows for both rebalanced and non-rebalanced paths.

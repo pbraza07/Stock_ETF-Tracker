@@ -793,6 +793,226 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             page_no += 1
 
     # ------------------------------------------------------------------
+    # Monthly-withdrawal PDF results. v5.9.45 shows the full month-by-month
+    # path for both strategies. The monthly rate is derived from each saved
+    # calendar-year return because the source spreadsheet does not contain
+    # actual monthly price history.
+    # ------------------------------------------------------------------
+    mrb_result = dict(record.get("monthly_withdrawal_rebalanced") or {})
+    mnr_result = dict(record.get("monthly_withdrawal_not_rebalanced") or {})
+    mrb_schedule = [dict(x) for x in (record.get("monthly_withdrawal_rebalanced_schedule") or mrb_result.get("schedule") or []) if isinstance(x, dict)]
+    mnr_schedule = [dict(x) for x in (record.get("monthly_withdrawal_not_rebalanced_schedule") or mnr_result.get("schedule") or []) if isinstance(x, dict)]
+
+    def _draw_monthly_withdrawal_detail_pages(title: str, subtitle: str, result: dict, schedule: list[dict], start_page_number: int) -> int:
+        rows_per_page = 20
+        page_number = start_page_number
+        total_rows = len(schedule)
+        total_pages = max(1, (total_rows + rows_per_page - 1) // rows_per_page)
+        for page_index, start in enumerate(range(0, max(1, total_rows), rows_per_page), start=1):
+            rows = schedule[start:start + rows_per_page]
+            c.setPageSize((lwidth, lheight))
+            draw_page_background(lwidth, lheight, wash_height=92)
+            c.setFillColor(accent)
+            c.setFont("Helvetica-Bold", 16)
+            c.drawCentredString(lwidth / 2, lheight - 34, title)
+            c.setFillColor(muted)
+            c.setFont("Helvetica", 7.2)
+            c.drawCentredString(lwidth / 2, lheight - 50, f"{subtitle[:145]}  |  Monthly page {page_index}/{total_pages}")
+
+            metric_values = [
+                ("MONTHLY WITHDRAWAL", _money(record.get("monthly_withdrawal_amount") or 0), text),
+                ("TOTAL WITHDRAWN", _money(_withdrawal_metric(result, "total_withdrawn", record.get("monthly_withdrawal_total") or 0)), text),
+                ("PORTFOLIO REMAINING", _money(_withdrawal_metric(result, "ending_balance", record.get("monthly_withdrawal_ending_balance") or 0)), cyan),
+                ("MONTHS MODELED", str(len(schedule)), cyan),
+            ]
+            mx, my, mgap = 24, lheight - 116, 8
+            mw = (lwidth - 48 - 3 * mgap) / 4
+            for i, (label, value, value_color) in enumerate(metric_values):
+                x = mx + i * (mw + mgap)
+                c.setFillColor(card)
+                c.setStrokeColor(border)
+                c.roundRect(x, my, mw, 40, 5, fill=1, stroke=1)
+                c.setFillColor(muted)
+                c.setFont("Helvetica-Bold", 6.4)
+                c.drawCentredString(x + mw / 2, my + 25, label)
+                c.setFillColor(value_color)
+                c.setFont("Helvetica-Bold", 9.6)
+                c.drawCentredString(x + mw / 2, my + 9, str(value))
+
+            headers = ["MONTH", "START", "MONTH RETURN", "GAIN / LOSS", "BEFORE WITHDRAWAL", "WITHDRAWAL", "REMAINING"]
+            widths = [72, 105, 90, 102, 122, 100, 120]
+            tx0 = (lwidth - sum(widths)) / 2
+            y = my - 18
+            c.setFillColor(HexColor("#0A1A20"))
+            c.setStrokeColor(accent)
+            c.roundRect(tx0, y - 20, sum(widths), 20, 4, fill=1, stroke=1)
+            x = tx0
+            c.setFillColor(accent)
+            c.setFont("Helvetica-Bold", 5.9)
+            for label, w in zip(headers, widths):
+                c.drawCentredString(x + w / 2, y - 13, label)
+                x += w
+            y -= 22
+            for ridx, row in enumerate(rows):
+                h = 18
+                c.setFillColor(card if ridx % 2 == 0 else card2)
+                c.setStrokeColor(line)
+                c.rect(tx0, y - h, sum(widths), h, fill=1, stroke=1)
+                values = [
+                    str(row.get("period") or f"{row.get('year','-')}-{int(row.get('month') or 0):02d}"),
+                    _money(row.get("starting_balance") or 0),
+                    _maybe_pct(row.get("portfolio_return_pct")),
+                    _money(row.get("gain_loss") or 0, signed=True),
+                    _money(row.get("balance_before_withdrawal") or 0),
+                    _money(row.get("withdrawal") or 0),
+                    _money(row.get("ending_balance") or 0),
+                ]
+                x = tx0
+                for cidx, (value, w) in enumerate(zip(values, widths)):
+                    if cidx in (2, 3):
+                        source = row.get("portfolio_return_pct") if cidx == 2 else row.get("gain_loss")
+                        c.setFillColor(color_for_number(source))
+                    elif cidx == 6:
+                        c.setFillColor(cyan)
+                    else:
+                        c.setFillColor(text)
+                    c.setFont("Helvetica-Bold" if cidx in (0, 2, 6) else "Helvetica", 5.8)
+                    c.drawCentredString(x + w / 2, y - 11.8, str(value)[:23])
+                    x += w
+                y -= h
+
+            depleted = str(_withdrawal_metric(result, "depleted_period", record.get("monthly_withdrawal_depleted_period") or "") or "").strip()
+            c.setFillColor(negative if depleted else muted)
+            c.setFont("Helvetica", 6.2)
+            if depleted:
+                note = f"Portfolio depleted during {depleted}; later monthly withdrawals cannot be funded."
+            else:
+                note = "Monthly rates are equivalent rates derived from each saved annual return; they are not actual historical monthly price returns."
+            c.drawString(24, 33, note[:170])
+            draw_footer(lwidth, page_number, "Monthly cash-flow schedule applies return first, then withdrawal; taxes, fees and future returns are not modeled.")
+            c.showPage()
+            page_number += 1
+        return page_number
+
+    if bool(record.get("monthly_withdrawals_enabled")) and (mrb_schedule or mnr_schedule):
+        c.setPageSize((lwidth, lheight))
+        draw_page_background(lwidth, lheight, wash_height=92)
+        c.setFillColor(accent)
+        c.setFont("Helvetica-Bold", 17)
+        c.drawCentredString(lwidth / 2, lheight - 36, "MONTHLY WITHDRAWALS - STRATEGY COMPARISON")
+        c.setFillColor(muted)
+        c.setFont("Helvetica", 7.4)
+        c.drawCentredString(
+            lwidth / 2, lheight - 53,
+            "Same starting portfolio and monthly cash withdrawal. Annual spreadsheet returns are converted to equivalent monthly rates; Rebalanced resets weights monthly.",
+        )
+
+        mrb_end = _as_float_or_none(_withdrawal_metric(mrb_result, "ending_balance", 0)) or 0.0
+        mnr_end = _as_float_or_none(_withdrawal_metric(mnr_result, "ending_balance", record.get("monthly_withdrawal_ending_balance") or 0)) or 0.0
+        mrb_total = _as_float_or_none(_withdrawal_metric(mrb_result, "total_withdrawn", 0)) or 0.0
+        mnr_total = _as_float_or_none(_withdrawal_metric(mnr_result, "total_withdrawn", record.get("monthly_withdrawal_total") or 0)) or 0.0
+        difference = mrb_end - mnr_end
+        summary_metrics = [
+            ("MONTHLY WITHDRAWAL", _money(record.get("monthly_withdrawal_amount") or 0), text),
+            ("REBALANCED REMAINING", _money(mrb_end), cyan),
+            ("NOT REBALANCED REMAINING", _money(mnr_end), cyan),
+            ("REBALANCE DIFFERENCE", _money(difference, signed=True), color_for_number(difference)),
+        ]
+        mx, my, mgap = 24, lheight - 122, 8
+        mw = (lwidth - 48 - 3 * mgap) / 4
+        for i, (label, value, value_color) in enumerate(summary_metrics):
+            x = mx + i * (mw + mgap)
+            c.setFillColor(card)
+            c.setStrokeColor(border)
+            c.roundRect(x, my, mw, 43, 5, fill=1, stroke=1)
+            c.setFillColor(muted)
+            c.setFont("Helvetica-Bold", 6.6)
+            c.drawCentredString(x + mw / 2, my + 27, label)
+            c.setFillColor(value_color)
+            c.setFont("Helvetica-Bold", 10.0)
+            c.drawCentredString(x + mw / 2, my + 10, value)
+
+        # Compact year-end comparison provides a 10-year overview before the full 120-row schedules.
+        def _year_end_rows(schedule):
+            out = {}
+            for row in schedule:
+                year = str(row.get("year") or "")
+                month = int(row.get("month") or 0)
+                if year and month == 12:
+                    out[year] = row
+            return out
+        mrb_years = _year_end_rows(mrb_schedule)
+        mnr_years = _year_end_rows(mnr_schedule)
+        ordered_years = sorted(set(mrb_years) | set(mnr_years))
+        headers = ["YEAR", "REBAL. DEC RETURN", "REBAL. YEAR-END", "NOT REBAL. DEC RETURN", "NOT REBAL. YEAR-END", "DIFFERENCE"]
+        widths = [65, 108, 130, 118, 140, 118]
+        tx0 = (lwidth - sum(widths)) / 2
+        y = my - 22
+        c.setFillColor(HexColor("#0A1A20"))
+        c.setStrokeColor(accent)
+        c.roundRect(tx0, y - 21, sum(widths), 21, 4, fill=1, stroke=1)
+        x = tx0
+        c.setFillColor(accent)
+        c.setFont("Helvetica-Bold", 5.9)
+        for label, w in zip(headers, widths):
+            c.drawCentredString(x + w / 2, y - 13.5, label)
+            x += w
+        y -= 23
+        for ridx, year in enumerate(ordered_years[:20]):
+            rb = mrb_years.get(year, {})
+            nr = mnr_years.get(year, {})
+            rb_bal = _as_float_or_none(rb.get("ending_balance"))
+            nr_bal = _as_float_or_none(nr.get("ending_balance"))
+            diff = rb_bal - nr_bal if rb_bal is not None and nr_bal is not None else None
+            h = 19
+            c.setFillColor(card if ridx % 2 == 0 else card2)
+            c.setStrokeColor(line)
+            c.rect(tx0, y - h, sum(widths), h, fill=1, stroke=1)
+            values = [
+                year,
+                _maybe_pct(rb.get("portfolio_return_pct")) if rb else "-",
+                _money(rb_bal) if rb_bal is not None else "-",
+                _maybe_pct(nr.get("portfolio_return_pct")) if nr else "-",
+                _money(nr_bal) if nr_bal is not None else "-",
+                _money(diff, signed=True) if diff is not None else "-",
+            ]
+            x = tx0
+            for idx, (value, w) in enumerate(zip(values, widths)):
+                if idx in (1, 3):
+                    src = rb.get("portfolio_return_pct") if idx == 1 else nr.get("portfolio_return_pct")
+                    c.setFillColor(color_for_number(src))
+                elif idx == 5:
+                    c.setFillColor(color_for_number(diff))
+                elif idx in (2, 4):
+                    c.setFillColor(cyan)
+                else:
+                    c.setFillColor(text)
+                c.setFont("Helvetica-Bold" if idx in (0, 2, 4, 5) else "Helvetica", 6.0)
+                c.drawCentredString(x + w / 2, y - 12.5, str(value)[:23])
+                x += w
+            y -= h
+
+        c.setFillColor(muted)
+        c.setFont("Helvetica", 6.4)
+        c.drawString(24, 35, f"Total withdrawn - Rebalanced: {_money(mrb_total)} | Not rebalanced: {_money(mnr_total)} | Full monthly schedules follow.")
+        draw_footer(lwidth, page_no, "Monthly returns shown here are equivalent monthly rates derived from the saved completed calendar-year returns.")
+        c.showPage()
+        page_no += 1
+
+        if mrb_schedule:
+            page_no = _draw_monthly_withdrawal_detail_pages(
+                "MONTHLY WITHDRAWAL SCHEDULE - REBALANCED",
+                "Return applied each month, then withdrawal, then target weights restored.",
+                mrb_result, mrb_schedule, page_no,
+            )
+        if mnr_schedule:
+            page_no = _draw_monthly_withdrawal_detail_pages(
+                "MONTHLY WITHDRAWAL SCHEDULE - NOT REBALANCED",
+                "Return applied each month, then proportional withdrawal; holdings retain drifted weights.",
+                mnr_result, mnr_schedule, page_no,
+            )
+
+    # ------------------------------------------------------------------
     # Remaining pages: individual allocation/result rows, preserving the prior layout.
     # ------------------------------------------------------------------
     width, height = A4

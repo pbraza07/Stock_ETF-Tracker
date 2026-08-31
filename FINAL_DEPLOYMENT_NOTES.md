@@ -22,3 +22,10 @@ Older saved simulations are rebuilt into the v8 PDF layout when opened. Records 
 - Full automated suite: 178 passed.
 - Sample PDF generated and rendered successfully.
 - Pages 3-5 visually inspected for clipping, overlap, and readability.
+
+
+## v5.9.45
+- Added Top 100 Rebalanced Monthly and Not Rebalanced Monthly 10Y presets ($300K start / $5K monthly / HWM excluded / four different sectors).
+- Renamed annual withdrawal UI to Yearly withdrawal and added mutually exclusive Monthly withdrawal controls.
+- Portfolio PDFs now include full month-by-month strategy results when monthly withdrawal mode is saved.
+- PDF layout contract upgraded to v9; saved-PDF persistence protections remain unchanged.

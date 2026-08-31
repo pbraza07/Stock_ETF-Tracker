@@ -35,3 +35,8 @@ These targets and all buy/news signals are informational screening data, not gua
 
 ## Stock comparison (v5.9.8)
 The comparison workspace does not calculate a new return methodology. It displays the same persisted MarketScope stock fields side by side. Return columns therefore use the existing adjusted-history rules: 1D/1M/3M/6M/YTD are point-to-point adjusted returns and the labeled years are actual completed calendar-year returns. Investment comparison fields use the currently selected MarketScope simulation period and amount.
+
+
+## v5.9.45 Monthly withdrawal methodology
+
+When **Monthly withdrawal** is enabled, MarketScope uses the saved completed calendar-year returns and derives an equivalent constant monthly rate for each stock/year with `(1 + annual return)^(1/12) - 1`. Return is applied first and the selected cash withdrawal is then taken at month-end. Rebalanced Monthly restores the target weights after each withdrawal; Not Rebalanced Monthly carries the drifted holdings forward. Because the source table is annual, these modeled monthly rates are not actual historical month-by-month price returns.

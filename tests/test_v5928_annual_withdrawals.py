@@ -18,17 +18,17 @@ def _load_schedule_function():
 
 
 def test_release_version_is_5928():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.44"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.45"
 
 
 def test_withdrawal_ui_and_persistence_contract_present():
-    assert '"Annual withdrawals"' in APP
-    assert '"Withdrawal amount / year ($)"' in APP
+    assert '"Yearly withdrawal"' in APP
+    assert '"Withdrawal / year ($)"' in APP
     assert 'ANNUAL WITHDRAWAL — REBALANCED VS NOT REBALANCED' in APP
     assert '"Remaining After Withdrawal"' in APP
     assert '"annual_withdrawals_enabled"' in APP
     assert '"withdrawal_schedule"' in APP
-    assert 'MarketScope Portfolio Split Simulator v8 - PDF rebalanced vs not-rebalanced withdrawal results' in APP
+    assert 'MarketScope Portfolio Split Simulator v9 - monthly + yearly rebalanced/not-rebalanced withdrawal results' in APP
     assert 'ANNUAL WITHDRAWALS - STRATEGY COMPARISON' in PDF
 
 
