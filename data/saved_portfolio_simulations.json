@@ -1,5 +1,1233 @@
 [
   {
+    "id": "SIM-20260831-073635-988",
+    "name": "Investment Conservative (ADP NVS CB PG)",
+    "created_at_et": "2026-08-31T07:36:35.988242-04:00",
+    "created_at_display_et": "Aug 31, 2026 07:36:35 AM EDT",
+    "created_date": "2026-08-31",
+    "period": "20Y",
+    "include_current_ytd": true,
+    "allocation_mode": "Equal split",
+    "total_invested": 200000.0,
+    "ending_value": 1691841.8067302555,
+    "profit_loss": 1491841.8067302555,
+    "total_return": 745.9209033651277,
+    "instrument_count": 4,
+    "instruments": [
+      {
+        "symbol": "ADP",
+        "type": "Stock",
+        "sector": "Technology",
+        "industry": "EDP Services",
+        "name": "Automatic Data Processing Inc. Common Stock",
+        "analyst_rating": "Buy",
+        "current_price": 287.4800109863281,
+        "price_target_low": 225.0,
+        "price_target_average": 287.26666,
+        "price_target_high": 322.0,
+        "weight": 25.0,
+        "allocated": 50000.0,
+        "ending_value": 648899.8062802136,
+        "profit": 598899.8062802136,
+        "return_pct": 1197.7996125604272,
+        "unavailable": false,
+        "cagr_10y_pct": 14.177226497825913,
+        "positive_years": 16,
+        "available_years": 20,
+        "worst_year": "2025",
+        "worst_year_pct": -10.179558779621267,
+        "best_year": "2013",
+        "best_year_pct": 45.58313959323375,
+        "regular_yield_pct": 2.3097258939752328,
+        "est_annual_dividend": 1154.8629469876164,
+        "yield_source": "Yahoo trailing annual dividend/distribution rate",
+        "performance": {
+          "1D": 0.9835669462503472,
+          "1M": 7.888621258472761,
+          "3M": 30.57208126337494,
+          "6M": 36.24482500004882,
+          "YTD": 13.53823817400539,
+          "2025": -10.179558779621267,
+          "2024": 28.410021355336852,
+          "2023": -0.2491027503084719,
+          "2022": -1.286948189720072,
+          "2021": 42.60153173428194,
+          "2020": 5.856732682442911,
+          "2019": 32.70771058296975,
+          "2018": 14.254818215419853,
+          "2017": 16.541145495021325,
+          "2016": 24.29016427218409,
+          "2015": 4.100710681193598,
+          "2014": 20.349266645937902,
+          "2013": 45.58313959323375,
+          "2012": 8.537422406772466,
+          "2011": 20.142447663166195,
+          "2010": 11.650991465570426,
+          "2009": 12.691644105239552,
+          "2008": -9.05768980048489,
+          "2007": 2.2292195470777543,
+          "2006": 9.116660848816082
+        }
+      },
+      {
+        "symbol": "NVS",
+        "type": "Stock",
+        "sector": "Health Care",
+        "industry": "Biotechnology: Pharmaceutical Preparations",
+        "name": "Novartis AG Common Stock",
+        "analyst_rating": "Buy",
+        "current_price": 153.80999755859375,
+        "price_target_low": 123.0,
+        "price_target_average": 157.15,
+        "price_target_high": 180.0,
+        "weight": 25.0,
+        "allocated": 50000.0,
+        "ending_value": 340721.6642073301,
+        "profit": 290721.6642073301,
+        "return_pct": 581.4433284146602,
+        "unavailable": false,
+        "cagr_10y_pct": 10.023404641013322,
+        "positive_years": 15,
+        "available_years": 20,
+        "worst_year": "2016",
+        "worst_year_pct": -12.043159350287214,
+        "best_year": "2025",
+        "best_year_pct": 46.95223092749365,
+        "regular_yield_pct": 3.0336128990312723,
+        "est_annual_dividend": 1516.8064495156361,
+        "yield_source": "Yahoo trailing annual dividend/distribution rate",
+        "performance": {
+          "1D": -0.5431596320998766,
+          "1M": -1.4985567911336983,
+          "3M": 2.4239191809493965,
+          "6M": -6.0067129989664565,
+          "YTD": 14.957197651929445,
+          "2025": 46.95223092749365,
+          "2024": 0.0196789267441932,
+          "2023": 16.135508793083943,
+          "2022": 8.057782200390573,
+          "2021": -3.6535574461315057,
+          "2020": 3.344301087633017,
+          "2019": 27.1339882175168,
+          "2018": 5.945268231733225,
+          "2017": 19.462887978060817,
+          "2016": -12.043159350287214,
+          "2015": -4.517716466484267,
+          "2014": 19.161862904625227,
+          "2013": 31.808603155568417,
+          "2012": 15.670209461829042,
+          "2011": 1.1365390837387856,
+          "2010": 12.324198999062364,
+          "2009": 14.251639509678382,
+          "2008": -5.62024525095941,
+          "2007": -3.5404755707633684,
+          "2006": 11.262700258766944
+        }
+      },
+      {
+        "symbol": "CB",
+        "type": "Stock",
+        "sector": "Finance",
+        "industry": "Property-Casualty Insurers",
+        "name": "Chubb Limited  Common Stock",
+        "analyst_rating": "Buy",
+        "current_price": 339.9200134277344,
+        "price_target_low": 306.0,
+        "price_target_average": 366.13043,
+        "price_target_high": 425.0,
+        "weight": 25.0,
+        "allocated": 50000.0,
+        "ending_value": 479811.40095486306,
+        "profit": 429811.40095486306,
+        "return_pct": 859.622801909726,
+        "unavailable": false,
+        "cagr_10y_pct": 12.324806806053523,
+        "positive_years": 17,
+        "available_years": 20,
+        "worst_year": "2008",
+        "worst_year_pct": -12.986525852811504,
+        "best_year": "2013",
+        "best_year_pct": 31.867486833112203,
+        "regular_yield_pct": 1.156154389268063,
+        "est_annual_dividend": 578.0771946340315,
+        "yield_source": "Yahoo trailing annual dividend/distribution rate",
+        "performance": {
+          "1D": 0.4758995834469148,
+          "1M": -3.0683185447636707,
+          "3M": 9.383308273585866,
+          "6M": 0.3306945386985394,
+          "YTD": 9.569133619267966,
+          "2025": 13.70280915892559,
+          "2024": 23.886356597847925,
+          "2023": 4.196070592378165,
+          "2022": 15.970783934345237,
+          "2021": 27.848643888233248,
+          "2020": 1.4103626021789717,
+          "2019": 22.93780236951615,
+          "2018": -9.633895324779672,
+          "2017": 12.817304857674072,
+          "2016": 15.58913244688831,
+          "2015": 4.246233095711172,
+          "2014": 14.45427003589652,
+          "2013": 31.867486833112203,
+          "2012": 17.565918743683117,
+          "2011": 14.501339696823855,
+          "2010": 26.416347104403812,
+          "2009": -1.8589425078379571,
+          "2008": -12.986525852811504,
+          "2007": 3.810828033025815,
+          "2006": 15.41181841257302
+        }
+      },
+      {
+        "symbol": "PG",
+        "type": "Stock",
+        "sector": "Consumer Discretionary",
+        "industry": "Package Goods/Cosmetics",
+        "name": "Procter & Gamble Company (The) Common Stock",
+        "analyst_rating": "Buy",
+        "current_price": 143.77999877929688,
+        "price_target_low": 143.0,
+        "price_target_average": 160.6087,
+        "price_target_high": 186.0,
+        "weight": 25.0,
+        "allocated": 50000.0,
+        "ending_value": 222408.9352878488,
+        "profit": 172408.9352878488,
+        "return_pct": 344.8178705756976,
+        "unavailable": false,
+        "cagr_10y_pct": 9.039426686938846,
+        "positive_years": 15,
+        "available_years": 20,
+        "worst_year": "2008",
+        "worst_year_pct": -13.809835708632011,
+        "best_year": "2019",
+        "best_year_pct": 39.70044980545708,
+        "regular_yield_pct": 2.9621644178606203,
+        "est_annual_dividend": 1481.0822089303101,
+        "yield_source": "Yahoo trailing annual dividend/distribution rate",
+        "performance": {
+          "1D": 0.4471142883732071,
+          "1M": -0.4913881146615173,
+          "3M": 0.900891832692885,
+          "6M": -12.712871294466089,
+          "YTD": 2.5610755868755053,
+          "2025": -12.259913637669372,
+          "2024": 17.253811084343607,
+          "2023": -0.8576595923488584,
+          "2022": -5.047988031875084,
+          "2021": 20.522055086899083,
+          "2020": 14.15253108423804,
+          "2019": 39.70044980545708,
+          "2018": 3.569526582520721,
+          "2017": 12.69526987034466,
+          "2016": 9.360294977133998,
+          "2015": -9.969587277528758,
+          "2014": 15.423941194242683,
+          "2013": 23.646349451340896,
+          "2012": 5.203581156038317,
+          "2011": 7.0635452030739065,
+          "2010": 9.363952462716952,
+          "2009": 1.1782389353804712,
+          "2008": -13.809835708632011,
+          "2007": 16.642714596204723,
+          "2006": 13.38323476963712
+        }
+      }
+    ],
+    "annual_withdrawals_enabled": true,
+    "annual_withdrawal_amount": 20000.0,
+    "withdrawal_total": 400000.0,
+    "withdrawal_ending_balance": 136552.11232825337,
+    "withdrawal_net_value": 536552.1123282533,
+    "withdrawal_net_profit": 336552.11232825334,
+    "withdrawal_depleted_year": null,
+    "withdrawal_schedule": [
+      {
+        "year": "2006",
+        "starting_balance": 200000.0,
+        "portfolio_return_pct": 12.293603572448292,
+        "gain_loss": 24587.207144896587,
+        "balance_before_withdrawal": 224587.2071448966,
+        "withdrawal": 20000.0,
+        "ending_balance": 204587.2071448966
+      },
+      {
+        "year": "2007",
+        "starting_balance": 204587.2071448966,
+        "portfolio_return_pct": 4.844758430259536,
+        "gain_loss": 9911.755965384917,
+        "balance_before_withdrawal": 214498.9631102815,
+        "withdrawal": 20000.0,
+        "ending_balance": 194498.9631102815
+      },
+      {
+        "year": "2008",
+        "starting_balance": 194498.9631102815,
+        "portfolio_return_pct": -10.608393901768371,
+        "gain_loss": -20633.216141593817,
+        "balance_before_withdrawal": 173865.7469686877,
+        "withdrawal": 20000.0,
+        "ending_balance": 153865.7469686877
+      },
+      {
+        "year": "2009",
+        "starting_balance": 153865.7469686877,
+        "portfolio_return_pct": 6.3461653733900585,
+        "gain_loss": 9764.574755634821,
+        "balance_before_withdrawal": 163630.3217243225,
+        "withdrawal": 20000.0,
+        "ending_balance": 143630.3217243225
+      },
+      {
+        "year": "2010",
+        "starting_balance": 143630.3217243225,
+        "portfolio_return_pct": 14.610216758347446,
+        "gain_loss": 20984.70133463532,
+        "balance_before_withdrawal": 164615.02305895783,
+        "withdrawal": 20000.0,
+        "ending_balance": 144615.02305895783
+      },
+      {
+        "year": "2011",
+        "starting_balance": 144615.02305895783,
+        "portfolio_return_pct": 10.690397165593666,
+        "gain_loss": 15459.920326117455,
+        "balance_before_withdrawal": 160074.94338507528,
+        "withdrawal": 20000.0,
+        "ending_balance": 140074.94338507528
+      },
+      {
+        "year": "2012",
+        "starting_balance": 140074.94338507525,
+        "portfolio_return_pct": 11.750015695143537,
+        "gain_loss": 16458.827832709765,
+        "balance_before_withdrawal": 156533.77121778502,
+        "withdrawal": 20000.0,
+        "ending_balance": 136533.77121778502
+      },
+      {
+        "year": "2013",
+        "starting_balance": 136533.77121778502,
+        "portfolio_return_pct": 33.609975971091984,
+        "gain_loss": 45888.96769872325,
+        "balance_before_withdrawal": 182422.73891650827,
+        "withdrawal": 20000.0,
+        "ending_balance": 162422.73891650827
+      },
+      {
+        "year": "2014",
+        "starting_balance": 162422.73891650827,
+        "portfolio_return_pct": 17.45228884331628,
+        "gain_loss": 28346.485542934504,
+        "balance_before_withdrawal": 190769.22445944278,
+        "withdrawal": 20000.0,
+        "ending_balance": 170769.22445944278
+      },
+      {
+        "year": "2015",
+        "starting_balance": 170769.22445944278,
+        "portfolio_return_pct": -0.7919253903016956,
+        "gain_loss": -1352.3648473156209,
+        "balance_before_withdrawal": 169416.85961212715,
+        "withdrawal": 20000.0,
+        "ending_balance": 149416.85961212715
+      },
+      {
+        "year": "2016",
+        "starting_balance": 149416.85961212715,
+        "portfolio_return_pct": 10.73413018004606,
+        "gain_loss": 16038.600221702392,
+        "balance_before_withdrawal": 165455.45983382955,
+        "withdrawal": 20000.0,
+        "ending_balance": 145455.45983382955
+      },
+      {
+        "year": "2017",
+        "starting_balance": 145455.45983382955,
+        "portfolio_return_pct": 15.297471572378226,
+        "gain_loss": 22251.007618552103,
+        "balance_before_withdrawal": 167706.46745238165,
+        "withdrawal": 20000.0,
+        "ending_balance": 147706.46745238165
+      },
+      {
+        "year": "2018",
+        "starting_balance": 147706.46745238165,
+        "portfolio_return_pct": 4.006516691536434,
+        "gain_loss": 5917.884272958501,
+        "balance_before_withdrawal": 153624.35172534015,
+        "withdrawal": 20000.0,
+        "ending_balance": 133624.35172534015
+      },
+      {
+        "year": "2019",
+        "starting_balance": 133624.35172534015,
+        "portfolio_return_pct": 30.467353108931455,
+        "gain_loss": 40711.80307967993,
+        "balance_before_withdrawal": 174336.15480502008,
+        "withdrawal": 20000.0,
+        "ending_balance": 154336.15480502008
+      },
+      {
+        "year": "2020",
+        "starting_balance": 154336.15480502008,
+        "portfolio_return_pct": 5.929641102290213,
+        "gain_loss": 9151.580071012722,
+        "balance_before_withdrawal": 163487.7348760328,
+        "withdrawal": 20000.0,
+        "ending_balance": 143487.7348760328
+      },
+      {
+        "year": "2021",
+        "starting_balance": 143487.7348760328,
+        "portfolio_return_pct": 26.294741291675862,
+        "gain_loss": 37729.72867093858,
+        "balance_before_withdrawal": 181217.46354697138,
+        "withdrawal": 20000.0,
+        "ending_balance": 161217.46354697138
+      },
+      {
+        "year": "2022",
+        "starting_balance": 161217.46354697138,
+        "portfolio_return_pct": 3.166191955467232,
+        "gain_loss": 5104.4543616325245,
+        "balance_before_withdrawal": 166321.9179086039,
+        "withdrawal": 20000.0,
+        "ending_balance": 146321.9179086039
+      },
+      {
+        "year": "2023",
+        "starting_balance": 146321.9179086039,
+        "portfolio_return_pct": 3.1722092583771593,
+        "gain_loss": 4641.63742693176,
+        "balance_before_withdrawal": 150963.55533553567,
+        "withdrawal": 20000.0,
+        "ending_balance": 130963.55533553567
+      },
+      {
+        "year": "2024",
+        "starting_balance": 130963.55533553567,
+        "portfolio_return_pct": 20.62976808024016,
+        "gain_loss": 27017.477735358,
+        "balance_before_withdrawal": 157981.03307089367,
+        "withdrawal": 20000.0,
+        "ending_balance": 137981.03307089367
+      },
+      {
+        "year": "2025",
+        "starting_balance": 137981.03307089367,
+        "portfolio_return_pct": 3.5639005749634025,
+        "gain_loss": 4917.506830954022,
+        "balance_before_withdrawal": 142898.5399018477,
+        "withdrawal": 20000.0,
+        "ending_balance": 122898.53990184769
+      },
+      {
+        "year": "YTD (partial)",
+        "starting_balance": 122898.53990184769,
+        "portfolio_return_pct": 11.109629485679843,
+        "gain_loss": 13653.572426405677,
+        "balance_before_withdrawal": 136552.11232825337,
+        "withdrawal": 0.0,
+        "ending_balance": 136552.11232825337
+      }
+    ],
+    "withdrawal_not_rebalanced": {
+      "unavailable": false,
+      "annual_withdrawal_requested": 20000.0,
+      "total_withdrawn": 400000.0,
+      "ending_balance": 136552.11232825337,
+      "depleted_year": null,
+      "schedule": [
+        {
+          "year": "2006",
+          "starting_balance": 200000.0,
+          "portfolio_return_pct": 12.293603572448292,
+          "gain_loss": 24587.207144896587,
+          "balance_before_withdrawal": 224587.2071448966,
+          "withdrawal": 20000.0,
+          "ending_balance": 204587.2071448966
+        },
+        {
+          "year": "2007",
+          "starting_balance": 204587.2071448966,
+          "portfolio_return_pct": 4.844758430259536,
+          "gain_loss": 9911.755965384917,
+          "balance_before_withdrawal": 214498.9631102815,
+          "withdrawal": 20000.0,
+          "ending_balance": 194498.9631102815
+        },
+        {
+          "year": "2008",
+          "starting_balance": 194498.9631102815,
+          "portfolio_return_pct": -10.608393901768371,
+          "gain_loss": -20633.216141593817,
+          "balance_before_withdrawal": 173865.7469686877,
+          "withdrawal": 20000.0,
+          "ending_balance": 153865.7469686877
+        },
+        {
+          "year": "2009",
+          "starting_balance": 153865.7469686877,
+          "portfolio_return_pct": 6.3461653733900585,
+          "gain_loss": 9764.574755634821,
+          "balance_before_withdrawal": 163630.3217243225,
+          "withdrawal": 20000.0,
+          "ending_balance": 143630.3217243225
+        },
+        {
+          "year": "2010",
+          "starting_balance": 143630.3217243225,
+          "portfolio_return_pct": 14.610216758347446,
+          "gain_loss": 20984.70133463532,
+          "balance_before_withdrawal": 164615.02305895783,
+          "withdrawal": 20000.0,
+          "ending_balance": 144615.02305895783
+        },
+        {
+          "year": "2011",
+          "starting_balance": 144615.02305895783,
+          "portfolio_return_pct": 10.690397165593666,
+          "gain_loss": 15459.920326117455,
+          "balance_before_withdrawal": 160074.94338507528,
+          "withdrawal": 20000.0,
+          "ending_balance": 140074.94338507528
+        },
+        {
+          "year": "2012",
+          "starting_balance": 140074.94338507525,
+          "portfolio_return_pct": 11.750015695143537,
+          "gain_loss": 16458.827832709765,
+          "balance_before_withdrawal": 156533.77121778502,
+          "withdrawal": 20000.0,
+          "ending_balance": 136533.77121778502
+        },
+        {
+          "year": "2013",
+          "starting_balance": 136533.77121778502,
+          "portfolio_return_pct": 33.609975971091984,
+          "gain_loss": 45888.96769872325,
+          "balance_before_withdrawal": 182422.73891650827,
+          "withdrawal": 20000.0,
+          "ending_balance": 162422.73891650827
+        },
+        {
+          "year": "2014",
+          "starting_balance": 162422.73891650827,
+          "portfolio_return_pct": 17.45228884331628,
+          "gain_loss": 28346.485542934504,
+          "balance_before_withdrawal": 190769.22445944278,
+          "withdrawal": 20000.0,
+          "ending_balance": 170769.22445944278
+        },
+        {
+          "year": "2015",
+          "starting_balance": 170769.22445944278,
+          "portfolio_return_pct": -0.7919253903016956,
+          "gain_loss": -1352.3648473156209,
+          "balance_before_withdrawal": 169416.85961212715,
+          "withdrawal": 20000.0,
+          "ending_balance": 149416.85961212715
+        },
+        {
+          "year": "2016",
+          "starting_balance": 149416.85961212715,
+          "portfolio_return_pct": 10.73413018004606,
+          "gain_loss": 16038.600221702392,
+          "balance_before_withdrawal": 165455.45983382955,
+          "withdrawal": 20000.0,
+          "ending_balance": 145455.45983382955
+        },
+        {
+          "year": "2017",
+          "starting_balance": 145455.45983382955,
+          "portfolio_return_pct": 15.297471572378226,
+          "gain_loss": 22251.007618552103,
+          "balance_before_withdrawal": 167706.46745238165,
+          "withdrawal": 20000.0,
+          "ending_balance": 147706.46745238165
+        },
+        {
+          "year": "2018",
+          "starting_balance": 147706.46745238165,
+          "portfolio_return_pct": 4.006516691536434,
+          "gain_loss": 5917.884272958501,
+          "balance_before_withdrawal": 153624.35172534015,
+          "withdrawal": 20000.0,
+          "ending_balance": 133624.35172534015
+        },
+        {
+          "year": "2019",
+          "starting_balance": 133624.35172534015,
+          "portfolio_return_pct": 30.467353108931455,
+          "gain_loss": 40711.80307967993,
+          "balance_before_withdrawal": 174336.15480502008,
+          "withdrawal": 20000.0,
+          "ending_balance": 154336.15480502008
+        },
+        {
+          "year": "2020",
+          "starting_balance": 154336.15480502008,
+          "portfolio_return_pct": 5.929641102290213,
+          "gain_loss": 9151.580071012722,
+          "balance_before_withdrawal": 163487.7348760328,
+          "withdrawal": 20000.0,
+          "ending_balance": 143487.7348760328
+        },
+        {
+          "year": "2021",
+          "starting_balance": 143487.7348760328,
+          "portfolio_return_pct": 26.294741291675862,
+          "gain_loss": 37729.72867093858,
+          "balance_before_withdrawal": 181217.46354697138,
+          "withdrawal": 20000.0,
+          "ending_balance": 161217.46354697138
+        },
+        {
+          "year": "2022",
+          "starting_balance": 161217.46354697138,
+          "portfolio_return_pct": 3.166191955467232,
+          "gain_loss": 5104.4543616325245,
+          "balance_before_withdrawal": 166321.9179086039,
+          "withdrawal": 20000.0,
+          "ending_balance": 146321.9179086039
+        },
+        {
+          "year": "2023",
+          "starting_balance": 146321.9179086039,
+          "portfolio_return_pct": 3.1722092583771593,
+          "gain_loss": 4641.63742693176,
+          "balance_before_withdrawal": 150963.55533553567,
+          "withdrawal": 20000.0,
+          "ending_balance": 130963.55533553567
+        },
+        {
+          "year": "2024",
+          "starting_balance": 130963.55533553567,
+          "portfolio_return_pct": 20.62976808024016,
+          "gain_loss": 27017.477735358,
+          "balance_before_withdrawal": 157981.03307089367,
+          "withdrawal": 20000.0,
+          "ending_balance": 137981.03307089367
+        },
+        {
+          "year": "2025",
+          "starting_balance": 137981.03307089367,
+          "portfolio_return_pct": 3.5639005749634025,
+          "gain_loss": 4917.506830954022,
+          "balance_before_withdrawal": 142898.5399018477,
+          "withdrawal": 20000.0,
+          "ending_balance": 122898.53990184769
+        },
+        {
+          "year": "YTD (partial)",
+          "starting_balance": 122898.53990184769,
+          "portfolio_return_pct": 11.109629485679843,
+          "gain_loss": 13653.572426405677,
+          "balance_before_withdrawal": 136552.11232825337,
+          "withdrawal": 0.0,
+          "ending_balance": 136552.11232825337
+        }
+      ],
+      "net_value_including_withdrawals": 536552.1123282533,
+      "net_profit_including_withdrawals": 336552.11232825334,
+      "strategy": "Not rebalanced",
+      "rebalanced_annually": false
+    },
+    "withdrawal_rebalanced": {
+      "unavailable": false,
+      "annual_withdrawal_requested": 20000.0,
+      "total_withdrawn": 400000.0,
+      "ending_balance": 130392.21512107814,
+      "depleted_year": null,
+      "schedule": [
+        {
+          "year": "2006",
+          "starting_balance": 200000.0,
+          "portfolio_return_pct": 12.293603572448292,
+          "gain_loss": 24587.207144896587,
+          "balance_before_withdrawal": 224587.2071448966,
+          "withdrawal": 20000.0,
+          "ending_balance": 204587.2071448966
+        },
+        {
+          "year": "2007",
+          "starting_balance": 204587.2071448966,
+          "portfolio_return_pct": 4.78557165138623,
+          "gain_loss": 9790.667387488997,
+          "balance_before_withdrawal": 214377.87453238558,
+          "withdrawal": 20000.0,
+          "ending_balance": 194377.87453238558
+        },
+        {
+          "year": "2008",
+          "starting_balance": 194377.87453238558,
+          "portfolio_return_pct": -10.368574153221957,
+          "gain_loss": -20154.214058347134,
+          "balance_before_withdrawal": 174223.66047403845,
+          "withdrawal": 20000.0,
+          "ending_balance": 154223.66047403845
+        },
+        {
+          "year": "2009",
+          "starting_balance": 154223.66047403845,
+          "portfolio_return_pct": 6.5656450106151025,
+          "gain_loss": 10125.778069101681,
+          "balance_before_withdrawal": 164349.43854314013,
+          "withdrawal": 20000.0,
+          "ending_balance": 144349.43854314013
+        },
+        {
+          "year": "2010",
+          "starting_balance": 144349.43854314013,
+          "portfolio_return_pct": 14.9388725079384,
+          "gain_loss": 21564.1785898846,
+          "balance_before_withdrawal": 165913.61713302473,
+          "withdrawal": 20000.0,
+          "ending_balance": 145913.61713302473
+        },
+        {
+          "year": "2011",
+          "starting_balance": 145913.61713302473,
+          "portfolio_return_pct": 10.710967911700694,
+          "gain_loss": 15628.760709920083,
+          "balance_before_withdrawal": 161542.3778429448,
+          "withdrawal": 20000.0,
+          "ending_balance": 141542.3778429448
+        },
+        {
+          "year": "2012",
+          "starting_balance": 141542.3778429448,
+          "portfolio_return_pct": 11.74428294208074,
+          "gain_loss": 16623.13733682444,
+          "balance_before_withdrawal": 158165.51517976925,
+          "withdrawal": 20000.0,
+          "ending_balance": 138165.51517976925
+        },
+        {
+          "year": "2013",
+          "starting_balance": 138165.51517976925,
+          "portfolio_return_pct": 33.22639475831381,
+          "gain_loss": 45907.41949348812,
+          "balance_before_withdrawal": 184072.93467325738,
+          "withdrawal": 20000.0,
+          "ending_balance": 164072.93467325738
+        },
+        {
+          "year": "2014",
+          "starting_balance": 164072.93467325738,
+          "portfolio_return_pct": 17.347335195175575,
+          "gain_loss": 28462.281942331407,
+          "balance_before_withdrawal": 192535.21661558878,
+          "withdrawal": 20000.0,
+          "ending_balance": 172535.21661558878
+        },
+        {
+          "year": "2015",
+          "starting_balance": 172535.21661558878,
+          "portfolio_return_pct": -1.5350899917770584,
+          "gain_loss": -2648.570842556772,
+          "balance_before_withdrawal": 169886.645773032,
+          "withdrawal": 20000.0,
+          "ending_balance": 149886.645773032
+        },
+        {
+          "year": "2016",
+          "starting_balance": 149886.645773032,
+          "portfolio_return_pct": 9.299108086479803,
+          "gain_loss": 13938.121197633358,
+          "balance_before_withdrawal": 163824.76697066537,
+          "withdrawal": 20000.0,
+          "ending_balance": 143824.76697066537
+        },
+        {
+          "year": "2017",
+          "starting_balance": 143824.76697066537,
+          "portfolio_return_pct": 15.379152050275218,
+          "gain_loss": 22119.02959837264,
+          "balance_before_withdrawal": 165943.796569038,
+          "withdrawal": 20000.0,
+          "ending_balance": 145943.796569038
+        },
+        {
+          "year": "2018",
+          "starting_balance": 145943.796569038,
+          "portfolio_return_pct": 3.5339294262235303,
+          "gain_loss": 5157.550772701041,
+          "balance_before_withdrawal": 151101.34734173905,
+          "withdrawal": 20000.0,
+          "ending_balance": 131101.34734173905
+        },
+        {
+          "year": "2019",
+          "starting_balance": 131101.34734173905,
+          "portfolio_return_pct": 30.619987743864947,
+          "gain_loss": 40143.21648808231,
+          "balance_before_withdrawal": 171244.56382982136,
+          "withdrawal": 20000.0,
+          "ending_balance": 151244.56382982136
+        },
+        {
+          "year": "2020",
+          "starting_balance": 151244.56382982136,
+          "portfolio_return_pct": 6.1909818641232395,
+          "gain_loss": 9363.523517176538,
+          "balance_before_withdrawal": 160608.0873469979,
+          "withdrawal": 20000.0,
+          "ending_balance": 140608.0873469979
+        },
+        {
+          "year": "2021",
+          "starting_balance": 140608.0873469979,
+          "portfolio_return_pct": 21.82966831582069,
+          "gain_loss": 30694.279093069083,
+          "balance_before_withdrawal": 171302.36644006698,
+          "withdrawal": 20000.0,
+          "ending_balance": 151302.36644006698
+        },
+        {
+          "year": "2022",
+          "starting_balance": 151302.36644006698,
+          "portfolio_return_pct": 4.423407478285162,
+          "gain_loss": 6692.720191932342,
+          "balance_before_withdrawal": 157995.08663199932,
+          "withdrawal": 20000.0,
+          "ending_balance": 137995.08663199932
+        },
+        {
+          "year": "2023",
+          "starting_balance": 137995.08663199932,
+          "portfolio_return_pct": 4.8062042607011985,
+          "gain_loss": 6632.325733265461,
+          "balance_before_withdrawal": 144627.41236526478,
+          "withdrawal": 20000.0,
+          "ending_balance": 124627.41236526478
+        },
+        {
+          "year": "2024",
+          "starting_balance": 124627.41236526478,
+          "portfolio_return_pct": 17.392466991068147,
+          "gain_loss": 21675.78155745106,
+          "balance_before_withdrawal": 146303.19392271584,
+          "withdrawal": 20000.0,
+          "ending_balance": 126303.19392271584
+        },
+        {
+          "year": "2025",
+          "starting_balance": 126303.19392271584,
+          "portfolio_return_pct": 9.553891917282147,
+          "gain_loss": 12066.870635451545,
+          "balance_before_withdrawal": 138370.0645581674,
+          "withdrawal": 20000.0,
+          "ending_balance": 118370.06455816739
+        },
+        {
+          "year": "YTD (partial)",
+          "starting_balance": 118370.06455816739,
+          "portfolio_return_pct": 10.15641125801958,
+          "gain_loss": 12022.150562910756,
+          "balance_before_withdrawal": 130392.21512107814,
+          "withdrawal": 0.0,
+          "ending_balance": 130392.21512107814
+        }
+      ],
+      "net_value_including_withdrawals": 530392.2151210782,
+      "net_profit_including_withdrawals": 330392.2151210782,
+      "strategy": "Rebalanced annually",
+      "rebalanced_annually": true
+    },
+    "withdrawal_not_rebalanced_schedule": [
+      {
+        "year": "2006",
+        "starting_balance": 200000.0,
+        "portfolio_return_pct": 12.293603572448292,
+        "gain_loss": 24587.207144896587,
+        "balance_before_withdrawal": 224587.2071448966,
+        "withdrawal": 20000.0,
+        "ending_balance": 204587.2071448966
+      },
+      {
+        "year": "2007",
+        "starting_balance": 204587.2071448966,
+        "portfolio_return_pct": 4.844758430259536,
+        "gain_loss": 9911.755965384917,
+        "balance_before_withdrawal": 214498.9631102815,
+        "withdrawal": 20000.0,
+        "ending_balance": 194498.9631102815
+      },
+      {
+        "year": "2008",
+        "starting_balance": 194498.9631102815,
+        "portfolio_return_pct": -10.608393901768371,
+        "gain_loss": -20633.216141593817,
+        "balance_before_withdrawal": 173865.7469686877,
+        "withdrawal": 20000.0,
+        "ending_balance": 153865.7469686877
+      },
+      {
+        "year": "2009",
+        "starting_balance": 153865.7469686877,
+        "portfolio_return_pct": 6.3461653733900585,
+        "gain_loss": 9764.574755634821,
+        "balance_before_withdrawal": 163630.3217243225,
+        "withdrawal": 20000.0,
+        "ending_balance": 143630.3217243225
+      },
+      {
+        "year": "2010",
+        "starting_balance": 143630.3217243225,
+        "portfolio_return_pct": 14.610216758347446,
+        "gain_loss": 20984.70133463532,
+        "balance_before_withdrawal": 164615.02305895783,
+        "withdrawal": 20000.0,
+        "ending_balance": 144615.02305895783
+      },
+      {
+        "year": "2011",
+        "starting_balance": 144615.02305895783,
+        "portfolio_return_pct": 10.690397165593666,
+        "gain_loss": 15459.920326117455,
+        "balance_before_withdrawal": 160074.94338507528,
+        "withdrawal": 20000.0,
+        "ending_balance": 140074.94338507528
+      },
+      {
+        "year": "2012",
+        "starting_balance": 140074.94338507525,
+        "portfolio_return_pct": 11.750015695143537,
+        "gain_loss": 16458.827832709765,
+        "balance_before_withdrawal": 156533.77121778502,
+        "withdrawal": 20000.0,
+        "ending_balance": 136533.77121778502
+      },
+      {
+        "year": "2013",
+        "starting_balance": 136533.77121778502,
+        "portfolio_return_pct": 33.609975971091984,
+        "gain_loss": 45888.96769872325,
+        "balance_before_withdrawal": 182422.73891650827,
+        "withdrawal": 20000.0,
+        "ending_balance": 162422.73891650827
+      },
+      {
+        "year": "2014",
+        "starting_balance": 162422.73891650827,
+        "portfolio_return_pct": 17.45228884331628,
+        "gain_loss": 28346.485542934504,
+        "balance_before_withdrawal": 190769.22445944278,
+        "withdrawal": 20000.0,
+        "ending_balance": 170769.22445944278
+      },
+      {
+        "year": "2015",
+        "starting_balance": 170769.22445944278,
+        "portfolio_return_pct": -0.7919253903016956,
+        "gain_loss": -1352.3648473156209,
+        "balance_before_withdrawal": 169416.85961212715,
+        "withdrawal": 20000.0,
+        "ending_balance": 149416.85961212715
+      },
+      {
+        "year": "2016",
+        "starting_balance": 149416.85961212715,
+        "portfolio_return_pct": 10.73413018004606,
+        "gain_loss": 16038.600221702392,
+        "balance_before_withdrawal": 165455.45983382955,
+        "withdrawal": 20000.0,
+        "ending_balance": 145455.45983382955
+      },
+      {
+        "year": "2017",
+        "starting_balance": 145455.45983382955,
+        "portfolio_return_pct": 15.297471572378226,
+        "gain_loss": 22251.007618552103,
+        "balance_before_withdrawal": 167706.46745238165,
+        "withdrawal": 20000.0,
+        "ending_balance": 147706.46745238165
+      },
+      {
+        "year": "2018",
+        "starting_balance": 147706.46745238165,
+        "portfolio_return_pct": 4.006516691536434,
+        "gain_loss": 5917.884272958501,
+        "balance_before_withdrawal": 153624.35172534015,
+        "withdrawal": 20000.0,
+        "ending_balance": 133624.35172534015
+      },
+      {
+        "year": "2019",
+        "starting_balance": 133624.35172534015,
+        "portfolio_return_pct": 30.467353108931455,
+        "gain_loss": 40711.80307967993,
+        "balance_before_withdrawal": 174336.15480502008,
+        "withdrawal": 20000.0,
+        "ending_balance": 154336.15480502008
+      },
+      {
+        "year": "2020",
+        "starting_balance": 154336.15480502008,
+        "portfolio_return_pct": 5.929641102290213,
+        "gain_loss": 9151.580071012722,
+        "balance_before_withdrawal": 163487.7348760328,
+        "withdrawal": 20000.0,
+        "ending_balance": 143487.7348760328
+      },
+      {
+        "year": "2021",
+        "starting_balance": 143487.7348760328,
+        "portfolio_return_pct": 26.294741291675862,
+        "gain_loss": 37729.72867093858,
+        "balance_before_withdrawal": 181217.46354697138,
+        "withdrawal": 20000.0,
+        "ending_balance": 161217.46354697138
+      },
+      {
+        "year": "2022",
+        "starting_balance": 161217.46354697138,
+        "portfolio_return_pct": 3.166191955467232,
+        "gain_loss": 5104.4543616325245,
+        "balance_before_withdrawal": 166321.9179086039,
+        "withdrawal": 20000.0,
+        "ending_balance": 146321.9179086039
+      },
+      {
+        "year": "2023",
+        "starting_balance": 146321.9179086039,
+        "portfolio_return_pct": 3.1722092583771593,
+        "gain_loss": 4641.63742693176,
+        "balance_before_withdrawal": 150963.55533553567,
+        "withdrawal": 20000.0,
+        "ending_balance": 130963.55533553567
+      },
+      {
+        "year": "2024",
+        "starting_balance": 130963.55533553567,
+        "portfolio_return_pct": 20.62976808024016,
+        "gain_loss": 27017.477735358,
+        "balance_before_withdrawal": 157981.03307089367,
+        "withdrawal": 20000.0,
+        "ending_balance": 137981.03307089367
+      },
+      {
+        "year": "2025",
+        "starting_balance": 137981.03307089367,
+        "portfolio_return_pct": 3.5639005749634025,
+        "gain_loss": 4917.506830954022,
+        "balance_before_withdrawal": 142898.5399018477,
+        "withdrawal": 20000.0,
+        "ending_balance": 122898.53990184769
+      },
+      {
+        "year": "YTD (partial)",
+        "starting_balance": 122898.53990184769,
+        "portfolio_return_pct": 11.109629485679843,
+        "gain_loss": 13653.572426405677,
+        "balance_before_withdrawal": 136552.11232825337,
+        "withdrawal": 0.0,
+        "ending_balance": 136552.11232825337
+      }
+    ],
+    "withdrawal_rebalanced_schedule": [
+      {
+        "year": "2006",
+        "starting_balance": 200000.0,
+        "portfolio_return_pct": 12.293603572448292,
+        "gain_loss": 24587.207144896587,
+        "balance_before_withdrawal": 224587.2071448966,
+        "withdrawal": 20000.0,
+        "ending_balance": 204587.2071448966
+      },
+      {
+        "year": "2007",
+        "starting_balance": 204587.2071448966,
+        "portfolio_return_pct": 4.78557165138623,
+        "gain_loss": 9790.667387488997,
+        "balance_before_withdrawal": 214377.87453238558,
+        "withdrawal": 20000.0,
+        "ending_balance": 194377.87453238558
+      },
+      {
+        "year": "2008",
+        "starting_balance": 194377.87453238558,
+        "portfolio_return_pct": -10.368574153221957,
+        "gain_loss": -20154.214058347134,
+        "balance_before_withdrawal": 174223.66047403845,
+        "withdrawal": 20000.0,
+        "ending_balance": 154223.66047403845
+      },
+      {
+        "year": "2009",
+        "starting_balance": 154223.66047403845,
+        "portfolio_return_pct": 6.5656450106151025,
+        "gain_loss": 10125.778069101681,
+        "balance_before_withdrawal": 164349.43854314013,
+        "withdrawal": 20000.0,
+        "ending_balance": 144349.43854314013
+      },
+      {
+        "year": "2010",
+        "starting_balance": 144349.43854314013,
+        "portfolio_return_pct": 14.9388725079384,
+        "gain_loss": 21564.1785898846,
+        "balance_before_withdrawal": 165913.61713302473,
+        "withdrawal": 20000.0,
+        "ending_balance": 145913.61713302473
+      },
+      {
+        "year": "2011",
+        "starting_balance": 145913.61713302473,
+        "portfolio_return_pct": 10.710967911700694,
+        "gain_loss": 15628.760709920083,
+        "balance_before_withdrawal": 161542.3778429448,
+        "withdrawal": 20000.0,
+        "ending_balance": 141542.3778429448
+      },
+      {
+        "year": "2012",
+        "starting_balance": 141542.3778429448,
+        "portfolio_return_pct": 11.74428294208074,
+        "gain_loss": 16623.13733682444,
+        "balance_before_withdrawal": 158165.51517976925,
+        "withdrawal": 20000.0,
+        "ending_balance": 138165.51517976925
+      },
+      {
+        "year": "2013",
+        "starting_balance": 138165.51517976925,
+        "portfolio_return_pct": 33.22639475831381,
+        "gain_loss": 45907.41949348812,
+        "balance_before_withdrawal": 184072.93467325738,
+        "withdrawal": 20000.0,
+        "ending_balance": 164072.93467325738
+      },
+      {
+        "year": "2014",
+        "starting_balance": 164072.93467325738,
+        "portfolio_return_pct": 17.347335195175575,
+        "gain_loss": 28462.281942331407,
+        "balance_before_withdrawal": 192535.21661558878,
+        "withdrawal": 20000.0,
+        "ending_balance": 172535.21661558878
+      },
+      {
+        "year": "2015",
+        "starting_balance": 172535.21661558878,
+        "portfolio_return_pct": -1.5350899917770584,
+        "gain_loss": -2648.570842556772,
+        "balance_before_withdrawal": 169886.645773032,
+        "withdrawal": 20000.0,
+        "ending_balance": 149886.645773032
+      },
+      {
+        "year": "2016",
+        "starting_balance": 149886.645773032,
+        "portfolio_return_pct": 9.299108086479803,
+        "gain_loss": 13938.121197633358,
+        "balance_before_withdrawal": 163824.76697066537,
+        "withdrawal": 20000.0,
+        "ending_balance": 143824.76697066537
+      },
+      {
+        "year": "2017",
+        "starting_balance": 143824.76697066537,
+        "portfolio_return_pct": 15.379152050275218,
+        "gain_loss": 22119.02959837264,
+        "balance_before_withdrawal": 165943.796569038,
+        "withdrawal": 20000.0,
+        "ending_balance": 145943.796569038
+      },
+      {
+        "year": "2018",
+        "starting_balance": 145943.796569038,
+        "portfolio_return_pct": 3.5339294262235303,
+        "gain_loss": 5157.550772701041,
+        "balance_before_withdrawal": 151101.34734173905,
+        "withdrawal": 20000.0,
+        "ending_balance": 131101.34734173905
+      },
+      {
+        "year": "2019",
+        "starting_balance": 131101.34734173905,
+        "portfolio_return_pct": 30.619987743864947,
+        "gain_loss": 40143.21648808231,
+        "balance_before_withdrawal": 171244.56382982136,
+        "withdrawal": 20000.0,
+        "ending_balance": 151244.56382982136
+      },
+      {
+        "year": "2020",
+        "starting_balance": 151244.56382982136,
+        "portfolio_return_pct": 6.1909818641232395,
+        "gain_loss": 9363.523517176538,
+        "balance_before_withdrawal": 160608.0873469979,
+        "withdrawal": 20000.0,
+        "ending_balance": 140608.0873469979
+      },
+      {
+        "year": "2021",
+        "starting_balance": 140608.0873469979,
+        "portfolio_return_pct": 21.82966831582069,
+        "gain_loss": 30694.279093069083,
+        "balance_before_withdrawal": 171302.36644006698,
+        "withdrawal": 20000.0,
+        "ending_balance": 151302.36644006698
+      },
+      {
+        "year": "2022",
+        "starting_balance": 151302.36644006698,
+        "portfolio_return_pct": 4.423407478285162,
+        "gain_loss": 6692.720191932342,
+        "balance_before_withdrawal": 157995.08663199932,
+        "withdrawal": 20000.0,
+        "ending_balance": 137995.08663199932
+      },
+      {
+        "year": "2023",
+        "starting_balance": 137995.08663199932,
+        "portfolio_return_pct": 4.8062042607011985,
+        "gain_loss": 6632.325733265461,
+        "balance_before_withdrawal": 144627.41236526478,
+        "withdrawal": 20000.0,
+        "ending_balance": 124627.41236526478
+      },
+      {
+        "year": "2024",
+        "starting_balance": 124627.41236526478,
+        "portfolio_return_pct": 17.392466991068147,
+        "gain_loss": 21675.78155745106,
+        "balance_before_withdrawal": 146303.19392271584,
+        "withdrawal": 20000.0,
+        "ending_balance": 126303.19392271584
+      },
+      {
+        "year": "2025",
+        "starting_balance": 126303.19392271584,
+        "portfolio_return_pct": 9.553891917282147,
+        "gain_loss": 12066.870635451545,
+        "balance_before_withdrawal": 138370.0645581674,
+        "withdrawal": 20000.0,
+        "ending_balance": 118370.06455816739
+      },
+      {
+        "year": "YTD (partial)",
+        "starting_balance": 118370.06455816739,
+        "portfolio_return_pct": 10.15641125801958,
+        "gain_loss": 12022.150562910756,
+        "balance_before_withdrawal": 130392.21512107814,
+        "withdrawal": 0.0,
+        "ending_balance": 130392.21512107814
+      }
+    ],
+    "pdf_layout": "MarketScope Portfolio Split Simulator v8 - PDF rebalanced vs not-rebalanced withdrawal results + required instrument market data on page 1",
+    "pdf_artifact_name": "SIM-20260831-073635-988.pdf",
+    "pdf_download_filename": "MarketScope_Investment_Conservative_ADP_NVS_CB_PG_2026-08-31.pdf",
+    "pdf_repo_path": "data/generated_pdfs/SIM-20260831-073635-988.pdf",
+    "pdf_saved_at_et": "2026-08-31T07:36:36.290512-04:00",
+    "pdf_saved_at_display_et": "Aug 31, 2026 07:36:36 AM EDT",
+    "pdf_storage": "server+github"
+  },
+  {
     "id": "SIM-20260831-073527-989",
     "name": "Investment Conservative (ADP NVS CB PG)",
     "created_at_et": "2026-08-31T07:35:27.989861-04:00",
