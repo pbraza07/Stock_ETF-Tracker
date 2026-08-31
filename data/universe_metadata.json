@@ -1,15 +1,21 @@
 {
-  "refreshed_at_et": "2026-08-31T15:20:35.112000-04:00",
-  "refreshed_at_display_et": "Aug 31, 2026 03:20:35 PM EDT",
+  "refreshed_at_et": "2026-08-31T16:36:05.624399-04:00",
+  "refreshed_at_display_et": "Aug 31, 2026 04:36:05 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
   "stock_count": 173,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 0,
-  "added_symbols": [],
-  "removed_symbols": [],
+  "added_count": 1,
+  "removed_count": 3,
+  "added_symbols": [
+    "VLO"
+  ],
+  "removed_symbols": [
+    "CEG",
+    "HWM",
+    "VRT"
+  ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
 }
