@@ -71,6 +71,22 @@ def timeframe_display_label(value) -> str:
 
 def timeframe_column_config(columns):
     return {col: st.column_config.NumberColumn(timeframe_display_label(col), format="%.2f%%") for col in columns}
+
+def worst_completed_year_label(row: pd.Series) -> str:
+    """Return the weakest available completed calendar year as 'YYYY (-12.34%)'."""
+    worst_year = None
+    worst_return = None
+    for year in YEAR_RETURN_COLS:
+        value = pd.to_numeric(pd.Series([row.get(year)]), errors="coerce").iloc[0]
+        if pd.isna(value) or not np.isfinite(value):
+            continue
+        value = float(value)
+        if worst_return is None or value < worst_return:
+            worst_year = str(year)
+            worst_return = value
+    if worst_year is None or worst_return is None:
+        return "N/A"
+    return f"{worst_year} ({worst_return:+.2f}%)"
 SIGNAL_COLS = ["Short Buy", "Long Buy", "Fundamental Buy"]
 PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target High"]
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
@@ -3669,6 +3685,11 @@ with market_tab:
         table_df["Profit / Loss ($)"] = sim_profit_values
         table_df["Simulation Return %"] = sim_return_values
 
+        # v5.9.41: expose the weakest completed calendar year in Market Table View.
+        # Uses the same actual annual-return columns shown in cards; missing pre-IPO
+        # years are ignored rather than treated as zero.
+        table_df["Worst Year"] = table_df.apply(worst_completed_year_label, axis=1)
+
         # Average analyst target implied move is useful in table view but remains
         # stock-only; ETF values stay blank rather than being fabricated.
         _avg_target = pd.to_numeric(table_df.get("Price Target Average"), errors="coerce")
@@ -3681,7 +3702,7 @@ with market_tab:
 
         TABLE_COLUMNS = [
             "Symbol", "Name", "Type", "Sector", "Industry", "Price", "Market Cap ($B)",
-            "Analyst Rating", "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
+            "Analyst Rating", "Worst Year", "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
             "Short Buy", "Long Buy", "Fundamental Buy",
             *PERF_COLS,
             "Simulation Period", "Investment Amount ($)", "Estimated Value ($)", "Profit / Loss ($)", "Simulation Return %",
@@ -3694,7 +3715,7 @@ with market_tab:
 
         # Explicit table sorting complements Streamlit's native click-the-header sort.
         table_sort_options = [
-            "Symbol", "Name", "Price", "Market Cap ($B)", "Analyst Rating",
+            "Symbol", "Name", "Price", "Market Cap ($B)", "Analyst Rating", "Worst Year",
             "Price Target Average", "Avg Target Implied %", "Profit / Loss ($)", "Simulation Return %",
             *PERF_COLS,
         ]
@@ -3761,6 +3782,7 @@ with market_tab:
         table_column_config = {
             "Price": st.column_config.NumberColumn("Price", format="$%.2f"),
             "Market Cap ($B)": st.column_config.NumberColumn("Market Cap ($B)", format="$%.2fB"),
+            "Worst Year": st.column_config.TextColumn("Worst Year"),
             "Price Target Low": st.column_config.NumberColumn("Target Low", format="$%.2f"),
             "Price Target Average": st.column_config.NumberColumn("Target Avg", format="$%.2f"),
             "Price Target High": st.column_config.NumberColumn("Target High", format="$%.2f"),
