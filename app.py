@@ -73,7 +73,7 @@ def timeframe_column_config(columns):
     return {col: st.column_config.NumberColumn(timeframe_display_label(col), format="%.2f%%") for col in columns}
 
 def worst_completed_year_label(row: pd.Series) -> str:
-    """Return the weakest available completed calendar year as 'YYYY (-12.34%)'."""
+    """Return the weakest available completed calendar year as '-12.34% (YYYY)'."""
     worst_year = None
     worst_return = None
     for year in YEAR_RETURN_COLS:
@@ -86,7 +86,7 @@ def worst_completed_year_label(row: pd.Series) -> str:
             worst_return = value
     if worst_year is None or worst_return is None:
         return "N/A"
-    return f"{worst_year} ({worst_return:+.2f}%)"
+    return f"{worst_return:+.2f}% ({worst_year})"
 SIGNAL_COLS = ["Short Buy", "Long Buy", "Fundamental Buy"]
 PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target High"]
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
@@ -1195,7 +1195,18 @@ def apply_dynamic_filters(df: pd.DataFrame, display_cols: List[str]) -> pd.DataF
 st.markdown(
     """
 <div class="hero">
-  <h1>MarketScope</h1>
+  <div class="marketscope-brand-row">
+    <div class="marketscope-logo" aria-label="MarketScope logo">
+      <span class="marketscope-logo-bar bar-1"></span>
+      <span class="marketscope-logo-bar bar-2"></span>
+      <span class="marketscope-logo-bar bar-3"></span>
+      <span class="marketscope-logo-line"></span>
+    </div>
+    <div class="marketscope-brand-copy">
+      <h1>MarketScope</h1>
+      <div class="marketscope-version">v5.9.42</div>
+    </div>
+  </div>
   <p>Nasdaq stocks > $100B + ETFs • actual calendar-year returns • analyst consensus • persistent cloud snapshot</p>
   <span class="source-pill">● Nasdaq Stock Screener > $100B + Yahoo Finance • all displayed times: U.S. Eastern</span>
 </div>
@@ -3685,7 +3696,7 @@ with market_tab:
         table_df["Profit / Loss ($)"] = sim_profit_values
         table_df["Simulation Return %"] = sim_return_values
 
-        # v5.9.41: expose the weakest completed calendar year in Market Table View.
+        # v5.9.42: expose the weakest completed calendar year in Market Table View.
         # Uses the same actual annual-return columns shown in cards; missing pre-IPO
         # years are ignored rather than treated as zero.
         table_df["Worst Year"] = table_df.apply(worst_completed_year_label, axis=1)

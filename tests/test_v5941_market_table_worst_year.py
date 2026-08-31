@@ -11,7 +11,7 @@ def test_market_table_includes_worst_year():
 def test_worst_year_uses_completed_calendar_year_columns():
     assert "def worst_completed_year_label" in APP
     assert "for year in YEAR_RETURN_COLS:" in APP
-    assert 'return f"{worst_year} ({worst_return:+.2f}%)"' in APP
+    assert 'return f"{worst_return:+.2f}% ({worst_year})"' in APP
 
 def test_missing_preipo_years_are_skipped_not_zeroed():
     start = APP.index("def worst_completed_year_label")
@@ -20,5 +20,5 @@ def test_missing_preipo_years_are_skipped_not_zeroed():
     assert "if pd.isna(value) or not np.isfinite(value):" in fn
     assert "continue" in fn
 
-def test_release_version_is_5941():
-    assert "5.9.41" in APP
+def test_release_version_is_current():
+    assert "5.9.42" in APP
