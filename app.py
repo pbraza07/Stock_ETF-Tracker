@@ -92,12 +92,16 @@ PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target H
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
 MIN_STOCK_MARKET_CAP = 100_000_000_000.0
 
-# v5.9.43: precomputed four-stock / four-sector ranking datasets for 5Y and 10Y.
+# v5.9.44: precomputed four-stock / four-sector ranking datasets for 5Y and 10Y.
 COMBO_5Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_5y.csv"
 COMBO_5Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_5y.csv"
 COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
 COMBO_10Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_10y.csv"
+COMBO_10Y_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_withdrawal_10y.csv"
+COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_withdrawal_10y.csv"
 COMBO_SOURCE_FILE = BASE_DIR / "data" / "portfolio_combo_source_latest.csv"
+COMBO_WITHDRAWAL_START = 300_000.0
+COMBO_WITHDRAWAL_ANNUAL = 85_000.0
 COMBO_RANK_YEARS_BY_PERIOD = {
     "5Y": [str(y) for y in range(2025, 2020, -1)],
     "10Y": [str(y) for y in range(2025, 2015, -1)],
@@ -276,6 +280,67 @@ def _apply_ranked_combo_selection(select_key: str, lookup_key: str, ranking_name
     st.session_state.combo_autoload_message = (
         f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to {period} / Equal split."
     )
+
+
+def _ranked_withdrawal_combo_label(row, strategy: str) -> str:
+    rank = int(row.get("Rank") or 0)
+    combo = str(row.get("Combo") or "—")
+    try:
+        remaining = float(row.get("Remaining Balance ($)"))
+    except Exception:
+        remaining = 0.0
+    try:
+        net_profit = float(row.get("Net Profit incl. Withdrawals ($)"))
+    except Exception:
+        net_profit = 0.0
+    short_strategy = "Rebalanced" if str(strategy).lower().startswith("reb") else "Not Rebalanced"
+    return f"#{rank} {combo} • {short_strategy} remaining ${remaining:,.0f} • Net profit ${net_profit:,.0f}"
+
+
+def _apply_withdrawal_ranked_combo_selection(select_key: str, lookup_key: str, ranking_name: str) -> None:
+    selected = st.session_state.get(select_key)
+    lookup = st.session_state.get(lookup_key) or {}
+    symbols = list(lookup.get(selected) or [])
+    if len(symbols) != 4:
+        return
+    st.session_state.portfolio_symbols = symbols
+    st.session_state.portfolio_symbol_picker = symbols
+    st.session_state.portfolio_period = "10Y"
+    st.session_state.portfolio_allocation_mode = "Equal split"
+    st.session_state.portfolio_include_ytd = False
+    st.session_state.portfolio_total_amount = float(COMBO_WITHDRAWAL_START)
+    st.session_state.portfolio_withdrawals_enabled = True
+    st.session_state.portfolio_annual_withdrawal = float(COMBO_WITHDRAWAL_ANNUAL)
+    st.session_state.combo_autoload_message = (
+        f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to $300,000 start, "
+        f"10Y / Equal split, with $85,000 annual withdrawals."
+    )
+
+
+def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame()
+    years = COMBO_RANK_YEARS_BY_PERIOD["10Y"]
+    cols = [
+        "Rank", "Combo", "Strategy", *years,
+        "Worst Year", "Worst Year %", "Best Year", "Best Year %",
+        "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
+        "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
+        "Net Profit incl. Withdrawals ($)",
+    ]
+    available = [c for c in cols if c in df.columns]
+    out = df[available].copy()
+    for col in years + ["Worst Year %", "Best Year %"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
+    for col in [
+        "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
+        "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
+        "Net Profit incl. Withdrawals ($)",
+    ]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
+    return out
 
 
 def _combo_rank_table(df: pd.DataFrame, period: str) -> pd.DataFrame:
@@ -1215,7 +1280,7 @@ st.markdown(
     </div>
     <div class="marketscope-brand-copy">
       <h1>MarketScope</h1>
-      <div class="marketscope-version">v5.9.43</div>
+      <div class="marketscope-version">v5.9.44</div>
     </div>
   </div>
   <p>Nasdaq stocks > $100B + ETFs • actual calendar-year returns • analyst consensus • persistent cloud snapshot</p>
@@ -2017,8 +2082,8 @@ with portfolio_tab:
         if valid_saved_portfolio != st.session_state.portfolio_symbols:
             st.session_state.portfolio_symbols = valid_saved_portfolio
 
-        # v5.9.43: Top 200 four-stock presets for both 5Y and 10Y horizons.
-        with st.expander("🏆 Top 4-Stock Combos (5Y & 10Y) — tap to open", expanded=False):
+        # v5.9.44: Top 200 four-stock presets for both 5Y and 10Y horizons.
+        with st.expander("🏆 Top 4-Stock Combos (5Y, 10Y & Withdrawals) — tap to open", expanded=False):
             st.caption(
                 "Four stocks • four different sectors • equal 25% starting allocation • $100,000 normalized starting portfolio. "
                 "Best Profit ranks by ending value after compounding each holding over the selected period. "
@@ -2111,6 +2176,91 @@ with portfolio_tab:
                         f"Ranked by the highest minimum annual return across {years[0]}–{years[-1]}; "
                         f"Total Profit is shown as a secondary outcome for the same {period_label} path."
                     )
+
+            st.markdown("### 10Y Withdrawal Rankings · $300K Start / $85K per Year")
+            st.caption(
+                "Top 100 surviving four-stock portfolios for each withdrawal strategy. Every combo uses four different sectors, "
+                "starts with $300,000 at 25% per stock, takes the full $85,000 after each completed year from 2016 through 2025, "
+                "and is excluded if the account reaches $0 before completing all 10 withdrawals. Ranked by the remaining balance after the 10th withdrawal."
+            )
+            rebalance_rank = _load_ranked_combo_file(str(COMBO_10Y_REBALANCED_WITHDRAWAL_FILE))
+            not_rebalanced_rank = _load_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE))
+            withdrawal_col1, withdrawal_col2 = st.columns(2)
+
+            with withdrawal_col1:
+                st.markdown("#### 🔄 Top 100 — Rebalanced Annually")
+                if rebalance_rank.empty:
+                    st.warning("10Y rebalanced withdrawal ranking data is unavailable.")
+                else:
+                    lookup_key = "combo_10y_withdrawal_rebalanced_lookup"
+                    picker_key = "combo_10y_withdrawal_rebalanced_picker"
+                    reb_lookup = {}
+                    reb_options = ["— Select a Top 100 rebalanced withdrawal combo —"]
+                    for _, combo_row in rebalance_rank.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Rebalanced")
+                        reb_options.append(label)
+                        reb_lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = reb_lookup
+                    st.selectbox(
+                        "10Y rebalanced withdrawal combination",
+                        options=reb_options,
+                        index=0,
+                        key=picker_key,
+                        on_change=_apply_withdrawal_ranked_combo_selection,
+                        args=(picker_key, lookup_key, "10Y Rebalanced Withdrawal combo"),
+                        help="Selecting a combo loads its four stocks and automatically sets $300,000 / 10Y / Equal split / $85,000 annual withdrawals.",
+                    )
+
+            with withdrawal_col2:
+                st.markdown("#### ↗ Top 100 — Not Rebalanced")
+                if not_rebalanced_rank.empty:
+                    st.warning("10Y not-rebalanced withdrawal ranking data is unavailable.")
+                else:
+                    lookup_key = "combo_10y_withdrawal_not_rebalanced_lookup"
+                    picker_key = "combo_10y_withdrawal_not_rebalanced_picker"
+                    nr_lookup = {}
+                    nr_options = ["— Select a Top 100 not-rebalanced withdrawal combo —"]
+                    for _, combo_row in not_rebalanced_rank.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Not Rebalanced")
+                        nr_options.append(label)
+                        nr_lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = nr_lookup
+                    st.selectbox(
+                        "10Y not-rebalanced withdrawal combination",
+                        options=nr_options,
+                        index=0,
+                        key=picker_key,
+                        on_change=_apply_withdrawal_ranked_combo_selection,
+                        args=(picker_key, lookup_key, "10Y Not-Rebalanced Withdrawal combo"),
+                        help="Selecting a combo loads its four stocks and automatically sets $300,000 / 10Y / Equal split / $85,000 annual withdrawals.",
+                    )
+
+            withdrawal_table_reb, withdrawal_table_nr = st.tabs([
+                "🔄 Rebalanced Top 100 table",
+                "↗ Not Rebalanced Top 100 table",
+            ])
+            with withdrawal_table_reb:
+                st.dataframe(
+                    _withdrawal_combo_rank_table(rebalance_rank),
+                    use_container_width=True,
+                    hide_index=True,
+                    height=520,
+                )
+                st.caption(
+                    "Rebalanced annually: each stock receives its actual return for the year, the $85,000 withdrawal is taken, "
+                    "then the remaining balance is reset to 25% in each of the four stocks for the next year."
+                )
+            with withdrawal_table_nr:
+                st.dataframe(
+                    _withdrawal_combo_rank_table(not_rebalanced_rank),
+                    use_container_width=True,
+                    hide_index=True,
+                    height=520,
+                )
+                st.caption(
+                    "Not rebalanced: each stock receives its actual return and the $85,000 withdrawal is taken proportionally; "
+                    "the naturally drifted weights are carried into the next year."
+                )
 
             if st.session_state.combo_autoload_message:
                 st.success(st.session_state.combo_autoload_message)
@@ -3728,7 +3878,7 @@ with market_tab:
         table_df["Profit / Loss ($)"] = sim_profit_values
         table_df["Simulation Return %"] = sim_return_values
 
-        # v5.9.43: expose the weakest completed calendar year in Market Table View.
+        # v5.9.44: expose the weakest completed calendar year in Market Table View.
         # Uses the same actual annual-return columns shown in cards; missing pre-IPO
         # years are ignored rather than treated as zero.
         table_df["Worst Year"] = table_df.apply(worst_completed_year_label, axis=1)
