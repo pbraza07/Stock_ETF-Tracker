@@ -92,11 +92,16 @@ PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target H
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
 MIN_STOCK_MARKET_CAP = 100_000_000_000.0
 
-# v5.9.27: precomputed 10-year, four-stock portfolio ranking datasets.
-COMBO_PROFIT_FILE = BASE_DIR / "data" / "top50_profit_generators_10y.csv"
-COMBO_WORST_FILE = BASE_DIR / "data" / "top50_best_worst_year_10y.csv"
-COMBO_SOURCE_FILE = BASE_DIR / "data" / "portfolio_combo_source_2026-08-29.csv"
-COMBO_RANK_YEARS = [str(y) for y in range(2025, 2015, -1)]
+# v5.9.43: precomputed four-stock / four-sector ranking datasets for 5Y and 10Y.
+COMBO_5Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_5y.csv"
+COMBO_5Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_5y.csv"
+COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
+COMBO_10Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_10y.csv"
+COMBO_SOURCE_FILE = BASE_DIR / "data" / "portfolio_combo_source_latest.csv"
+COMBO_RANK_YEARS_BY_PERIOD = {
+    "5Y": [str(y) for y in range(2025, 2020, -1)],
+    "10Y": [str(y) for y in range(2025, 2015, -1)],
+}
 
 st.set_page_config(
     page_title="MarketScope — Stock & ETF Performance",
@@ -241,7 +246,6 @@ def _ranked_combo_symbols(row) -> list[str]:
 def _ranked_combo_label(row, mode: str) -> str:
     rank = int(row.get("Rank") or 0)
     combo = str(row.get("Combo") or "—")
-    semi = " • Semiconductor" if str(row.get("Includes Semiconductor") or "").strip().lower() == "yes" else ""
     try:
         profit = float(row.get("Total Profit ($)"))
     except Exception:
@@ -252,44 +256,51 @@ def _ranked_combo_label(row, mode: str) -> str:
         worst = float("nan")
     worst_year = str(row.get("Worst Year") or "—")
     if mode == "worst":
-        return f"#{rank} {combo} • Worst {worst:+.2f}% ({worst_year}) • Profit ${profit:,.0f}{semi}"
-    return f"#{rank} {combo} • Profit ${profit:,.0f} • Worst {worst:+.2f}% ({worst_year}){semi}"
+        return f"#{rank} {combo} • Worst {worst:+.2f}% ({worst_year}) • Profit ${profit:,.0f}"
+    return f"#{rank} {combo} • Profit ${profit:,.0f} • Worst {worst:+.2f}% ({worst_year})"
 
-
-def _apply_ranked_combo_selection(select_key: str, lookup_key: str, ranking_name: str) -> None:
+def _apply_ranked_combo_selection(select_key: str, lookup_key: str, ranking_name: str, period: str) -> None:
     selected = st.session_state.get(select_key)
     lookup = st.session_state.get(lookup_key) or {}
     symbols = list(lookup.get(selected) or [])
     if len(symbols) != 4:
         return
+    period = str(period or "10Y").upper()
+    if period not in {"5Y", "10Y"}:
+        period = "10Y"
     st.session_state.portfolio_symbols = symbols
     st.session_state.portfolio_symbol_picker = symbols
-    st.session_state.portfolio_period = "10Y"
+    st.session_state.portfolio_period = period
     st.session_state.portfolio_allocation_mode = "Equal split"
     st.session_state.portfolio_include_ytd = False
-    st.session_state.combo_autoload_message = f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to 10Y / Equal split."
+    st.session_state.combo_autoload_message = (
+        f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to {period} / Equal split."
+    )
 
 
-def _combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
+def _combo_rank_table(df: pd.DataFrame, period: str) -> pd.DataFrame:
     if df is None or df.empty:
         return pd.DataFrame()
+    period = str(period or "10Y").upper()
+    years = COMBO_RANK_YEARS_BY_PERIOD.get(period, COMBO_RANK_YEARS_BY_PERIOD["10Y"])
+    cagr_col = f"{len(years)}Y CAGR %"
     cols = [
-        "Rank", "Combo", "Includes Semiconductor",
-        *COMBO_RANK_YEARS,
+        "Rank", "Combo",
+        *years,
         "Worst Year", "Worst Year %",
+        "Best Year", "Best Year %",
         "Starting Value ($)", "Ending Value ($)", "Total Profit ($)",
-        "Total Return %", "10Y CAGR %",
+        "Total Return %", cagr_col,
     ]
     available = [c for c in cols if c in df.columns]
     out = df[available].copy()
-    for col in COMBO_RANK_YEARS + ["Worst Year %", "Total Return %", "10Y CAGR %"]:
+    for col in years + ["Worst Year %", "Best Year %", "Total Return %", cagr_col]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
     for col in ["Starting Value ($)", "Ending Value ($)", "Total Profit ($)"]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
     return out
-
 
 def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty or "Symbol" not in df.columns:
@@ -1204,7 +1215,7 @@ st.markdown(
     </div>
     <div class="marketscope-brand-copy">
       <h1>MarketScope</h1>
-      <div class="marketscope-version">v5.9.42</div>
+      <div class="marketscope-version">v5.9.43</div>
     </div>
   </div>
   <p>Nasdaq stocks > $100B + ETFs • actual calendar-year returns • analyst consensus • persistent cloud snapshot</p>
@@ -2006,82 +2017,103 @@ with portfolio_tab:
         if valid_saved_portfolio != st.session_state.portfolio_symbols:
             st.session_state.portfolio_symbols = valid_saved_portfolio
 
-        # v5.9.27: optional ranked four-stock portfolio presets from the user-supplied 10Y export.
-        with st.expander("🏆 Top 4-Stock Combos (10Y) — tap to open", expanded=False):
+        # v5.9.43: Top 200 four-stock presets for both 5Y and 10Y horizons.
+        with st.expander("🏆 Top 4-Stock Combos (5Y & 10Y) — tap to open", expanded=False):
             st.caption(
-                "Four stocks • four different sectors • equal 25% starting allocation • completed years 2025–2016. "
-                "Each Top 50 list intentionally contains 10 combinations with a semiconductor stock and 40 without one. "
-                "For total profit, each stock compounds its own ten annual returns from a $25,000 starting allocation and the four ending values are summed. "
-                "For the annual table and worst-year ranking, the four stock returns are combined at equal 25% weight."
+                "Four stocks • four different sectors • equal 25% starting allocation • $100,000 normalized starting portfolio. "
+                "Best Profit ranks by ending value after compounding each holding over the selected period. "
+                "Best Worst Year ranks by the strongest minimum equal-weight annual portfolio return during that same period."
             )
-            profit_rank = _load_ranked_combo_file(str(COMBO_PROFIT_FILE))
-            worst_rank = _load_ranked_combo_file(str(COMBO_WORST_FILE))
-            rank_col1, rank_col2 = st.columns(2)
 
-            with rank_col1:
-                st.markdown("#### 💰 Top 50 — Best Profit Generator")
-                if profit_rank.empty:
-                    st.warning("Profit-generator ranking data is unavailable.")
-                else:
-                    profit_lookup = {}
-                    profit_options = ["— Select a Top 50 profit combo —"]
-                    for _, combo_row in profit_rank.sort_values("Rank").iterrows():
-                        label = _ranked_combo_label(combo_row, "profit")
-                        profit_options.append(label)
-                        profit_lookup[label] = _ranked_combo_symbols(combo_row)
-                    st.session_state.combo_profit_lookup = profit_lookup
-                    st.selectbox(
-                        "Profit generator combination",
-                        options=profit_options,
-                        index=0,
-                        key="combo_profit_picker",
-                        on_change=_apply_ranked_combo_selection,
-                        args=("combo_profit_picker", "combo_profit_lookup", "Top Profit Generator combo"),
-                        help="Selecting a combination automatically loads its four stocks into the simulator and sets 10Y / Equal split.",
+            combo_sets = [
+                ("5Y", COMBO_5Y_PROFIT_FILE, COMBO_5Y_WORST_FILE),
+                ("10Y", COMBO_10Y_PROFIT_FILE, COMBO_10Y_WORST_FILE),
+            ]
+
+            for period_label, profit_file, worst_file in combo_sets:
+                st.markdown(f"### {period_label} Rankings")
+                profit_rank = _load_ranked_combo_file(str(profit_file))
+                worst_rank = _load_ranked_combo_file(str(worst_file))
+                rank_col1, rank_col2 = st.columns(2)
+
+                with rank_col1:
+                    st.markdown(f"#### 💰 Top 200 — Best Profit ({period_label})")
+                    if profit_rank.empty:
+                        st.warning(f"{period_label} profit-generator ranking data is unavailable.")
+                    else:
+                        lookup_key = f"combo_{period_label.lower()}_profit_lookup"
+                        picker_key = f"combo_{period_label.lower()}_profit_picker"
+                        profit_lookup = {}
+                        profit_options = [f"— Select a Top 200 {period_label} profit combo —"]
+                        for _, combo_row in profit_rank.sort_values("Rank").iterrows():
+                            label = _ranked_combo_label(combo_row, "profit")
+                            profit_options.append(label)
+                            profit_lookup[label] = _ranked_combo_symbols(combo_row)
+                        st.session_state[lookup_key] = profit_lookup
+                        st.selectbox(
+                            f"{period_label} profit generator combination",
+                            options=profit_options,
+                            index=0,
+                            key=picker_key,
+                            on_change=_apply_ranked_combo_selection,
+                            args=(picker_key, lookup_key, f"{period_label} Top Profit Generator combo", period_label),
+                            help=f"Selecting a combination automatically loads its four stocks into the simulator and sets {period_label} / Equal split.",
+                        )
+
+                with rank_col2:
+                    st.markdown(f"#### 🛡️ Top 200 — Best Worst Year ({period_label})")
+                    if worst_rank.empty:
+                        st.warning(f"{period_label} best-worst-year ranking data is unavailable.")
+                    else:
+                        lookup_key = f"combo_{period_label.lower()}_worst_lookup"
+                        picker_key = f"combo_{period_label.lower()}_worst_picker"
+                        worst_lookup = {}
+                        worst_options = [f"— Select a Top 200 {period_label} best-worst-year combo —"]
+                        for _, combo_row in worst_rank.sort_values("Rank").iterrows():
+                            label = _ranked_combo_label(combo_row, "worst")
+                            worst_options.append(label)
+                            worst_lookup[label] = _ranked_combo_symbols(combo_row)
+                        st.session_state[lookup_key] = worst_lookup
+                        st.selectbox(
+                            f"{period_label} best worst-year combination",
+                            options=worst_options,
+                            index=0,
+                            key=picker_key,
+                            on_change=_apply_ranked_combo_selection,
+                            args=(picker_key, lookup_key, f"{period_label} Best Worst-Year combo", period_label),
+                            help=f"Selecting a combination automatically loads its four stocks into the simulator and sets {period_label} / Equal split.",
+                        )
+
+                table_profit_tab, table_worst_tab = st.tabs([
+                    f"💰 {period_label} Profit Top 200 table",
+                    f"🛡️ {period_label} Best Worst-Year Top 200 table",
+                ])
+                with table_profit_tab:
+                    st.dataframe(
+                        _combo_rank_table(profit_rank, period_label),
+                        use_container_width=True,
+                        hide_index=True,
+                        height=520,
                     )
-
-            with rank_col2:
-                st.markdown("#### 🛡️ Top 50 — Best Worst Year")
-                if worst_rank.empty:
-                    st.warning("Best-worst-year ranking data is unavailable.")
-                else:
-                    worst_lookup = {}
-                    worst_options = ["— Select a Top 50 best-worst-year combo —"]
-                    for _, combo_row in worst_rank.sort_values("Rank").iterrows():
-                        label = _ranked_combo_label(combo_row, "worst")
-                        worst_options.append(label)
-                        worst_lookup[label] = _ranked_combo_symbols(combo_row)
-                    st.session_state.combo_worst_lookup = worst_lookup
-                    st.selectbox(
-                        "Best worst-year combination",
-                        options=worst_options,
-                        index=0,
-                        key="combo_worst_picker",
-                        on_change=_apply_ranked_combo_selection,
-                        args=("combo_worst_picker", "combo_worst_lookup", "Best Worst-Year combo"),
-                        help="Selecting a combination automatically loads its four stocks into the simulator and sets 10Y / Equal split.",
+                    st.caption(
+                        f"Annual columns are equal-weight portfolio returns for the {period_label} completed-year window. "
+                        "Total Profit uses a $100,000 start ($25,000 per stock) with each stock compounded separately, matching the Portfolio Simulator."
+                    )
+                with table_worst_tab:
+                    st.dataframe(
+                        _combo_rank_table(worst_rank, period_label),
+                        use_container_width=True,
+                        hide_index=True,
+                        height=520,
+                    )
+                    years = COMBO_RANK_YEARS_BY_PERIOD[period_label]
+                    st.caption(
+                        f"Ranked by the highest minimum annual return across {years[0]}–{years[-1]}; "
+                        f"Total Profit is shown as a secondary outcome for the same {period_label} path."
                     )
 
             if st.session_state.combo_autoload_message:
                 st.success(st.session_state.combo_autoload_message)
-
-            rank_table_profit, rank_table_worst = st.tabs(["💰 Profit Top 50 table", "🛡️ Best Worst-Year Top 50 table"])
-            with rank_table_profit:
-                st.dataframe(
-                    _combo_rank_table(profit_rank),
-                    use_container_width=True,
-                    hide_index=True,
-                    height=520,
-                )
-                st.caption("Annual columns are the equal-weight combination return for each completed calendar year. Total Profit uses a $100,000 start ($25,000 per stock) with each stock compounded separately, matching the Portfolio Simulator.")
-            with rank_table_worst:
-                st.dataframe(
-                    _combo_rank_table(worst_rank),
-                    use_container_width=True,
-                    hide_index=True,
-                    height=520,
-                )
-                st.caption("Ranked by the highest minimum annual return across 2025–2016; Total Profit is shown as a secondary outcome for the same 10-year path.")
 
         portfolio_total = st.number_input(
             "Total portfolio amount ($)",
@@ -3696,7 +3728,7 @@ with market_tab:
         table_df["Profit / Loss ($)"] = sim_profit_values
         table_df["Simulation Return %"] = sim_return_values
 
-        # v5.9.42: expose the weakest completed calendar year in Market Table View.
+        # v5.9.43: expose the weakest completed calendar year in Market Table View.
         # Uses the same actual annual-return columns shown in cards; missing pre-IPO
         # years are ignored rather than treated as zero.
         table_df["Worst Year"] = table_df.apply(worst_completed_year_label, axis=1)

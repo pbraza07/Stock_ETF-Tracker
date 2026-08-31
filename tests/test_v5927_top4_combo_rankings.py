@@ -1,45 +1,41 @@
 from pathlib import Path
-import csv
+import pandas as pd
 
-ROOT = Path(__file__).resolve().parents[1]
-APP = (ROOT / 'app.py').read_text(encoding='utf-8')
-YEARS = [str(y) for y in range(2025, 2015, -1)]
+BASE = Path(__file__).resolve().parents[1]
+APP = (BASE / "app.py").read_text(encoding="utf-8")
 
+FILES = [
+    ("top200_profit_generators_5y.csv", 5),
+    ("top200_best_worst_year_5y.csv", 5),
+    ("top200_profit_generators_10y.csv", 10),
+    ("top200_best_worst_year_10y.csv", 10),
+]
 
-def _rows(name):
-    with (ROOT / 'data' / name).open(encoding='utf-8', newline='') as f:
-        return list(csv.DictReader(f))
+def test_top200_files_exist_and_have_200_rows():
+    for filename, _ in FILES:
+        path = BASE / "data" / filename
+        assert path.exists(), filename
+        df = pd.read_csv(path)
+        assert len(df) == 200
+        assert list(df["Rank"]) == list(range(1, 201))
 
-
-def test_rank_files_have_50_rows_and_required_semiconductor_quota():
-    for filename in ['top50_profit_generators_10y.csv', 'top50_best_worst_year_10y.csv']:
-        rows = _rows(filename)
-        assert len(rows) == 50
-        assert sum(r['Includes Semiconductor'] == 'Yes' for r in rows) == 10
-        assert sum(r['Includes Semiconductor'] == 'No' for r in rows) == 40
-        for r in rows:
-            sectors = [r[f'Sector {i}'] for i in range(1, 5)]
+def test_every_combo_has_four_stocks_from_four_different_sectors():
+    for filename, _ in FILES:
+        df = pd.read_csv(BASE / "data" / filename)
+        for _, row in df.iterrows():
+            stocks = [str(row[f"Stock {i}"]) for i in range(1, 5)]
+            sectors = [str(row[f"Sector {i}"]) for i in range(1, 5)]
+            assert len(set(stocks)) == 4
             assert len(set(sectors)) == 4
-            for year in YEARS:
-                assert year in r and r[year] != ''
-            assert r['Total Profit ($)'] != ''
-            assert r['Worst Year %'] != ''
 
+def test_portfolio_ui_has_four_top200_selectors():
+    assert 'Top 4-Stock Combos (5Y & 10Y) — tap to open' in APP
+    assert 'Top 200 — Best Profit' in APP
+    assert 'Top 200 — Best Worst Year' in APP
+    assert 'f"combo_{period_label.lower()}_profit_picker"' in APP
+    assert 'f"combo_{period_label.lower()}_worst_picker"' in APP
 
-def test_portfolio_ui_has_two_rank_dropdowns_tables_and_autoload():
-    assert 'Top 4-Stock Combos (10Y) — tap to open' in APP
-    assert 'Top 50 — Best Profit Generator' in APP
-    assert 'Top 50 — Best Worst Year' in APP
-    assert 'combo_profit_picker' in APP
-    assert 'combo_worst_picker' in APP
-    assert '_apply_ranked_combo_selection' in APP
-    assert 'st.session_state.portfolio_symbol_picker = symbols' in APP
-    assert 'st.session_state.portfolio_period = "10Y"' in APP
-    assert 'st.session_state.portfolio_allocation_mode = "Equal split"' in APP
-    assert 'Profit Top 50 table' in APP
-    assert 'Best Worst-Year Top 50 table' in APP
-
-
-def test_rank_source_is_packaged():
-    source = ROOT / 'data' / 'portfolio_combo_source_2026-08-29.csv'
-    assert source.exists() and source.stat().st_size > 1000
+def test_autoload_uses_matching_5y_or_10y_period():
+    assert 'args=(picker_key, lookup_key, f"{period_label} Top Profit Generator combo", period_label)' in APP
+    assert 'args=(picker_key, lookup_key, f"{period_label} Best Worst-Year combo", period_label)' in APP
+    assert 'st.session_state.portfolio_period = period' in APP

@@ -6,7 +6,7 @@ CSS = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.40"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.43"
 
 
 def test_comparison_charts_use_selected_comparison_history_set():
