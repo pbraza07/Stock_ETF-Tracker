@@ -510,7 +510,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current first-page instrument data contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v6 - annual withdrawal schedule + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v8 - PDF rebalanced vs not-rebalanced withdrawal results + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     if market_df is None or market_df.empty:
         upgraded["pdf_layout"] = required_layout
@@ -2540,7 +2540,7 @@ with portfolio_tab:
                 "withdrawal_rebalanced": dict(portfolio_withdrawal_rebalanced_result) if portfolio_withdrawals_enabled else {},
                 "withdrawal_not_rebalanced_schedule": list(portfolio_withdrawal_not_rebalanced_result.get("schedule") or []) if portfolio_withdrawals_enabled else [],
                 "withdrawal_rebalanced_schedule": list(portfolio_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_withdrawals_enabled else [],
-                "pdf_layout": "MarketScope Portfolio Split Simulator v7 - rebalanced vs not-rebalanced annual withdrawals + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v8 - PDF rebalanced vs not-rebalanced withdrawal results + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

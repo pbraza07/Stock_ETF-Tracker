@@ -572,33 +572,40 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     c.showPage()
 
     # ------------------------------------------------------------------
-    # Optional annual-withdrawal schedule. Added in v5.9.28 and persisted with
-    # the saved simulation so the PDF matches the in-app year-by-year cash-flow path.
+    # Annual-withdrawal PDF results. v5.9.40 mirrors the in-app strategy
+    # comparison: Rebalanced annually vs Not rebalanced, plus a side-by-side
+    # yearly balance table. Legacy records still fall back to withdrawal_schedule.
     # ------------------------------------------------------------------
-    withdrawal_schedule = [dict(x) for x in (record.get("withdrawal_schedule") or []) if isinstance(x, dict)]
+    legacy_schedule = [dict(x) for x in (record.get("withdrawal_schedule") or []) if isinstance(x, dict)]
+    rb_result = dict(record.get("withdrawal_rebalanced") or {})
+    nr_result = dict(record.get("withdrawal_not_rebalanced") or {})
+    rb_schedule = [dict(x) for x in (record.get("withdrawal_rebalanced_schedule") or rb_result.get("schedule") or []) if isinstance(x, dict)]
+    nr_schedule = [dict(x) for x in (record.get("withdrawal_not_rebalanced_schedule") or nr_result.get("schedule") or legacy_schedule) if isinstance(x, dict)]
     page_no = 3
-    if bool(record.get("annual_withdrawals_enabled")) and withdrawal_schedule:
+
+    def _withdrawal_metric(result: dict, key: str, fallback=None):
+        value = result.get(key)
+        return fallback if value is None else value
+
+    def _draw_withdrawal_detail_page(title: str, subtitle: str, result: dict, schedule: list[dict], page_number: int):
         c.setPageSize((lwidth, lheight))
         draw_page_background(lwidth, lheight, wash_height=92)
         c.setFillColor(accent)
         c.setFont("Helvetica-Bold", 17)
-        c.drawCentredString(lwidth / 2, lheight - 36, "ANNUAL WITHDRAWAL BALANCE SCHEDULE")
+        c.drawCentredString(lwidth / 2, lheight - 36, title)
         c.setFillColor(muted)
-        c.setFont("Helvetica", 8)
-        c.drawCentredString(
-            lwidth / 2, lheight - 54,
-            "Each completed year's saved instrument returns are applied first; the requested withdrawal is then removed proportionally.",
-        )
+        c.setFont("Helvetica", 7.8)
+        c.drawCentredString(lwidth / 2, lheight - 54, subtitle[:175])
 
         metric_values = [
-            ("ANNUAL WITHDRAWAL", _money(record.get("annual_withdrawal_amount") or 0)),
-            ("TOTAL WITHDRAWN", _money(record.get("withdrawal_total") or 0)),
-            ("PORTFOLIO REMAINING", _money(record.get("withdrawal_ending_balance") or 0)),
-            ("REMAINING + WITHDRAWALS", _money(record.get("withdrawal_net_value") or 0)),
+            ("ANNUAL WITHDRAWAL", _money(record.get("annual_withdrawal_amount") or 0), text),
+            ("TOTAL WITHDRAWN", _money(_withdrawal_metric(result, "total_withdrawn", record.get("withdrawal_total") or 0)), text),
+            ("PORTFOLIO REMAINING", _money(_withdrawal_metric(result, "ending_balance", record.get("withdrawal_ending_balance") or 0)), cyan),
+            ("REMAINING + WITHDRAWALS", _money(_withdrawal_metric(result, "net_value_including_withdrawals", record.get("withdrawal_net_value") or 0)), cyan),
         ]
         mx, my, mgap = 24, lheight - 124, 8
         mw = (lwidth - 48 - 3 * mgap) / 4
-        for i, (label, value) in enumerate(metric_values):
+        for i, (label, value, value_color) in enumerate(metric_values):
             x = mx + i * (mw + mgap)
             c.setFillColor(card)
             c.setStrokeColor(border)
@@ -606,7 +613,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             c.setFillColor(muted)
             c.setFont("Helvetica-Bold", 6.8)
             c.drawCentredString(x + mw / 2, my + 29, label)
-            c.setFillColor(text if i != 2 else cyan)
+            c.setFillColor(value_color)
             c.setFont("Helvetica-Bold", 10.5)
             c.drawCentredString(x + mw / 2, my + 11, value)
 
@@ -624,7 +631,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             c.drawCentredString(x + w / 2, y - 14, label)
             x += w
         y -= 24
-        for ridx, row in enumerate(withdrawal_schedule[:21]):
+        for ridx, row in enumerate(schedule[:21]):
             h = 19
             c.setFillColor(card if ridx % 2 == 0 else card2)
             c.setStrokeColor(line)
@@ -652,7 +659,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
                 x += w
             y -= h
 
-        depleted = str(record.get("withdrawal_depleted_year") or "").strip()
+        depleted = str(_withdrawal_metric(result, "depleted_year", record.get("withdrawal_depleted_year") or "") or "").strip()
         c.setFillColor(negative if depleted else muted)
         c.setFont("Helvetica", 6.8)
         note = (
@@ -661,9 +668,129 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             "Current YTD, when included, is a partial-period row and does not trigger another annual withdrawal."
         )
         c.drawString(24, 35, note[:155])
-        draw_footer(lwidth, page_no, "Withdrawal schedule uses saved historical returns and the requested cash withdrawal; taxes, fees and future returns are not modeled.")
+        draw_footer(lwidth, page_number, "Withdrawal schedule uses saved historical returns and the requested cash withdrawal; taxes, fees and future returns are not modeled.")
+        c.showPage()
+
+    if bool(record.get("annual_withdrawals_enabled")) and (rb_schedule or nr_schedule):
+        # Strategy comparison summary page.
+        c.setPageSize((lwidth, lheight))
+        draw_page_background(lwidth, lheight, wash_height=92)
+        c.setFillColor(accent)
+        c.setFont("Helvetica-Bold", 17)
+        c.drawCentredString(lwidth / 2, lheight - 36, "ANNUAL WITHDRAWALS - STRATEGY COMPARISON")
+        c.setFillColor(muted)
+        c.setFont("Helvetica", 7.8)
+        c.drawCentredString(
+            lwidth / 2, lheight - 54,
+            "Same starting portfolio and annual cash withdrawal. Rebalanced restores target weights after each withdrawal; Not rebalanced lets weights drift.",
+        )
+
+        rb_end = _as_float_or_none(_withdrawal_metric(rb_result, "ending_balance", 0)) or 0.0
+        nr_end = _as_float_or_none(_withdrawal_metric(nr_result, "ending_balance", record.get("withdrawal_ending_balance") or 0)) or 0.0
+        rb_total = _as_float_or_none(_withdrawal_metric(rb_result, "total_withdrawn", 0)) or 0.0
+        nr_total = _as_float_or_none(_withdrawal_metric(nr_result, "total_withdrawn", record.get("withdrawal_total") or 0)) or 0.0
+        difference = rb_end - nr_end
+        summary_metrics = [
+            ("ANNUAL WITHDRAWAL", _money(record.get("annual_withdrawal_amount") or 0), text),
+            ("REBALANCED REMAINING", _money(rb_end), cyan),
+            ("NOT REBALANCED REMAINING", _money(nr_end), cyan),
+            ("REBALANCE DIFFERENCE", _money(difference, signed=True), color_for_number(difference)),
+        ]
+        mx, my, mgap = 24, lheight - 124, 8
+        mw = (lwidth - 48 - 3 * mgap) / 4
+        for i, (label, value, value_color) in enumerate(summary_metrics):
+            x = mx + i * (mw + mgap)
+            c.setFillColor(card)
+            c.setStrokeColor(border)
+            c.roundRect(x, my, mw, 45, 5, fill=1, stroke=1)
+            c.setFillColor(muted)
+            c.setFont("Helvetica-Bold", 6.8)
+            c.drawCentredString(x + mw / 2, my + 29, label)
+            c.setFillColor(value_color)
+            c.setFont("Helvetica-Bold", 10.2)
+            c.drawCentredString(x + mw / 2, my + 11, value)
+
+        # Side-by-side yearly balances. Match rows by year so YTD/common-start adjustments are safe.
+        rb_by_year = {str(r.get("year")): r for r in rb_schedule}
+        nr_by_year = {str(r.get("year")): r for r in nr_schedule}
+        ordered_years = []
+        for row in nr_schedule + rb_schedule:
+            key = str(row.get("year") or "-")
+            if key not in ordered_years:
+                ordered_years.append(key)
+        headers = ["YEAR", "REBAL. RETURN", "REBAL. REMAINING", "NOT REBAL. RETURN", "NOT REBAL. REMAINING", "DIFFERENCE"]
+        widths = [70, 100, 130, 110, 140, 120]
+        tx0 = (lwidth - sum(widths)) / 2
+        y = my - 24
+        c.setFillColor(HexColor("#0A1A20"))
+        c.setStrokeColor(accent)
+        c.roundRect(tx0, y - 22, sum(widths), 22, 4, fill=1, stroke=1)
+        x = tx0
+        c.setFillColor(accent)
+        c.setFont("Helvetica-Bold", 6.2)
+        for label, w in zip(headers, widths):
+            c.drawCentredString(x + w / 2, y - 14, label)
+            x += w
+        y -= 24
+        for ridx, year in enumerate(ordered_years[:21]):
+            rbr = rb_by_year.get(year, {})
+            nrr = nr_by_year.get(year, {})
+            rb_bal = _as_float_or_none(rbr.get("ending_balance"))
+            nr_bal = _as_float_or_none(nrr.get("ending_balance"))
+            diff = (rb_bal - nr_bal) if rb_bal is not None and nr_bal is not None else None
+            h = 19
+            c.setFillColor(card if ridx % 2 == 0 else card2)
+            c.setStrokeColor(line)
+            c.rect(tx0, y - h, sum(widths), h, fill=1, stroke=1)
+            vals = [
+                year,
+                _maybe_pct(rbr.get("portfolio_return_pct")) if rbr else "-",
+                _money(rb_bal) if rb_bal is not None else "-",
+                _maybe_pct(nrr.get("portfolio_return_pct")) if nrr else "-",
+                _money(nr_bal) if nr_bal is not None else "-",
+                _money(diff, signed=True) if diff is not None else "-",
+            ]
+            x = tx0
+            for idx, (value, w) in enumerate(zip(vals, widths)):
+                if idx in (1, 3):
+                    src = rbr.get("portfolio_return_pct") if idx == 1 else nrr.get("portfolio_return_pct")
+                    c.setFillColor(color_for_number(src))
+                elif idx == 5:
+                    c.setFillColor(color_for_number(diff))
+                elif idx in (2, 4):
+                    c.setFillColor(cyan)
+                else:
+                    c.setFillColor(text)
+                c.setFont("Helvetica-Bold" if idx in (0, 2, 4, 5) else "Helvetica", 6.2)
+                c.drawCentredString(x + w / 2, y - 12.5, str(value)[:24])
+                x += w
+            y -= h
+
+        c.setFillColor(muted)
+        c.setFont("Helvetica", 6.7)
+        c.drawString(24, 35, f"Total withdrawn - Rebalanced: {_money(rb_total)} | Not rebalanced: {_money(nr_total)}")
+        draw_footer(lwidth, page_no, "Strategy comparison uses identical saved annual returns and withdrawal amount; only the annual rebalancing rule differs.")
         c.showPage()
         page_no += 1
+
+        if rb_schedule:
+            _draw_withdrawal_detail_page(
+                "ANNUAL WITHDRAWAL SCHEDULE - REBALANCED",
+                "After each completed-year return and withdrawal, the remaining portfolio is restored to the saved target allocation.",
+                rb_result,
+                rb_schedule,
+                page_no,
+            )
+            page_no += 1
+        if nr_schedule:
+            _draw_withdrawal_detail_page(
+                "ANNUAL WITHDRAWAL SCHEDULE - NOT REBALANCED",
+                "After each completed-year return and withdrawal, holdings retain their post-return weights and are allowed to drift.",
+                nr_result,
+                nr_schedule,
+                page_no,
+            )
+            page_no += 1
 
     # ------------------------------------------------------------------
     # Remaining pages: individual allocation/result rows, preserving the prior layout.

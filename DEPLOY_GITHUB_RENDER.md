@@ -53,3 +53,17 @@ Upload the v5.9.8 files over the existing repository and allow Render to redeplo
 ## v5.9.18 universe status metadata
 
 The scheduled 6:00 PM ET GitHub Action now also commits `data/universe_metadata.json`. This file records the latest Nasdaq >$100B screening timestamp plus the symbols added and removed from the automatic stock universe on that refresh. Run the workflow once after upgrading so the new status strip is populated.
+
+
+## v5.9.40 — preserve saved Portfolio PDFs on every upgrade
+
+Treat these GitHub paths as protected live user data and **leave them in place** when uploading a new MarketScope release:
+
+- `data/saved_portfolio_simulations.json`
+- `data/generated_pdfs/`
+
+The release package does not ship those live paths. Upload/commit the release files **on top of** the existing repository; do not delete repository files merely because they are absent from the ZIP.
+
+Keep the Render environment variable `MARKETSCOPE_GITHUB_TOKEN` unchanged. It needs GitHub Contents read/write permission. With that token, saved simulation records and PDFs survive Render restarts and future code deployments, and missing local PDF copies are restored from GitHub automatically.
+
+Optional: for a second durable copy on a paid Render persistent disk, mount a disk and set `MARKETSCOPE_PDF_PERSIST_DIR` to a directory on that disk.

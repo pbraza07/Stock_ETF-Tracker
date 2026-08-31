@@ -14,6 +14,20 @@ from persistence import DEFAULT_BRANCH, DEFAULT_REPO, format_et, now_et
 PDF_REPO_DIR = "data/generated_pdfs"
 PDF_STATIC_DIR = Path("static") / "generated_pdfs"
 
+# Durable user artifacts. Release ZIPs must NEVER contain or overwrite these live paths.
+# GitHub is the default durable store; MARKETSCOPE_PDF_PERSIST_DIR may additionally
+# point to a Render persistent disk for a second durable copy.
+PROTECTED_PDF_REPO_DIR = PDF_REPO_DIR
+PROTECTED_SIMULATION_LIBRARY = "data/saved_portfolio_simulations.json"
+
+
+def durable_pdf_storage_configured() -> bool:
+    """True when a redeploy-safe PDF store is configured."""
+    return bool(
+        os.getenv("MARKETSCOPE_GITHUB_TOKEN", "").strip()
+        or os.getenv("MARKETSCOPE_PDF_PERSIST_DIR", "").strip()
+    )
+
 
 def _headers(token: str) -> dict:
     return {

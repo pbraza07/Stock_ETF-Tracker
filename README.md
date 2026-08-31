@@ -1,3 +1,7 @@
+## MarketScope v5.9.40
+
+Portfolio Simulator PDFs include Rebalanced vs Not-Rebalanced annual withdrawal results, side-by-side yearly balances, and detailed schedules for both strategies.
+
 # MarketScope v5.9.38
 
 ## v5.9.38 — Rebalanced vs Not-Rebalanced Annual Withdrawals

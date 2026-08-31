@@ -1,8 +1,24 @@
-# v5.9.36 deployment notes
+# MarketScope v5.9.40 - Final Deployment Notes
 
-Deploy over v5.9.35 using the existing Render procedure and environment variables.
+Parent release: MarketScope v5.9.38.
 
-## v5.9.36
-- Forces Comparison Card return-period tiles into the same 3-column grid used by Market Navigator cards.
-- Preserves native Streamlit callbacks and existing three-metric row grouping.
-- Applies the same compact mobile gap/button sizing to comparison tiles.
+## Change
+Portfolio Simulator PDFs now include the annual-withdrawal comparison that was already available in the app:
+
+1. Strategy comparison page
+   - Annual withdrawal
+   - Rebalanced remaining balance
+   - Not-rebalanced remaining balance
+   - Rebalance difference
+   - Year-by-year side-by-side return and remaining balance
+2. Detailed Rebalanced annual-withdrawal schedule
+3. Detailed Not Rebalanced annual-withdrawal schedule
+
+Each detailed table includes Year, Starting Balance, Portfolio Return, Gain/Loss, Balance Before Withdrawal, Withdrawal, and Remaining Balance.
+
+Older saved simulations are rebuilt into the v8 PDF layout when opened. Records saved before both strategy schedules existed fall back safely to the legacy not-rebalanced schedule.
+
+## QA
+- Full automated suite: 178 passed.
+- Sample PDF generated and rendered successfully.
+- Pages 3-5 visually inspected for clipping, overlap, and readability.

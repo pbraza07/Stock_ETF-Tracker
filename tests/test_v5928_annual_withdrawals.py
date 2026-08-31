@@ -18,7 +18,7 @@ def _load_schedule_function():
 
 
 def test_release_version_is_5928():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.38"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.40"
 
 
 def test_withdrawal_ui_and_persistence_contract_present():
@@ -28,8 +28,8 @@ def test_withdrawal_ui_and_persistence_contract_present():
     assert '"Remaining After Withdrawal"' in APP
     assert '"annual_withdrawals_enabled"' in APP
     assert '"withdrawal_schedule"' in APP
-    assert 'MarketScope Portfolio Split Simulator v7 - rebalanced vs not-rebalanced annual withdrawals' in APP
-    assert 'ANNUAL WITHDRAWAL BALANCE SCHEDULE' in PDF
+    assert 'MarketScope Portfolio Split Simulator v8 - PDF rebalanced vs not-rebalanced withdrawal results' in APP
+    assert 'ANNUAL WITHDRAWALS - STRATEGY COMPARISON' in PDF
 
 
 def test_schedule_applies_return_then_withdrawal_oldest_to_newest():
