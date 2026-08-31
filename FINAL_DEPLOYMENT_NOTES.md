@@ -24,8 +24,13 @@ Older saved simulations are rebuilt into the v8 PDF layout when opened. Records 
 - Pages 3-5 visually inspected for clipping, overlap, and readability.
 
 
-## v5.9.45
+## v5.9.46
 - Added Top 100 Rebalanced Monthly and Not Rebalanced Monthly 10Y presets ($300K start / $5K monthly / HWM excluded / four different sectors).
 - Renamed annual withdrawal UI to Yearly withdrawal and added mutually exclusive Monthly withdrawal controls.
 - Portfolio PDFs now include full month-by-month strategy results when monthly withdrawal mode is saved.
 - PDF layout contract upgraded to v9; saved-PDF persistence protections remain unchanged.
+
+
+## v5.9.46 deployment requirement
+
+After pushing this release to `main`, confirm the GitHub Actions workflow completes successfully. It now builds the durable 120-month adjusted-return dataset and regenerates both Top 100 monthly-withdrawal rankings from actual monthly market history. The app rejects older approximate monthly ranking CSVs until an actual-monthly refresh is available.

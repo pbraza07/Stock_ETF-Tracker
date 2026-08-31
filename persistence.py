@@ -33,6 +33,16 @@ def _raw_url(path: str) -> str:
     return f"https://raw.githubusercontent.com/{DEFAULT_REPO}/{DEFAULT_BRANCH}/{path}"
 
 
+def load_remote_csv(path: str, timeout: int = 10) -> pd.DataFrame:
+    """Load an arbitrary durable MarketScope CSV from the configured GitHub branch."""
+    try:
+        response = requests.get(_raw_url(str(path).lstrip("/")), timeout=timeout)
+        response.raise_for_status()
+        return pd.read_csv(StringIO(response.text))
+    except Exception:
+        return pd.DataFrame()
+
+
 def load_remote_snapshot(timeout: int = 8) -> pd.DataFrame:
     try:
         response = requests.get(_raw_url(SNAPSHOT_PATH), timeout=timeout)

@@ -135,6 +135,54 @@ def _year_end_price(close: pd.Series, year: int, tolerance_days: int = 10) -> Op
     return value if np.isfinite(value) and value > 0 else None
 
 
+def calculate_monthly_returns(
+    history: pd.DataFrame,
+    start_year: int,
+    end_year: int,
+) -> dict[str, Optional[float]]:
+    """Calculate actual adjusted month-end returns for an inclusive calendar span.
+
+    For month M, return = adjusted close at the final trading day of M divided by
+    the adjusted close at the final trading day of the prior calendar month - 1.
+    January therefore uses the prior December month-end close as its base. Missing
+    or incomplete month-end coverage is returned as None instead of being inferred
+    from annual returns.
+    """
+    close = _normalize_close(history)
+    start_year = int(start_year)
+    end_year = int(end_year)
+    if end_year < start_year:
+        start_year, end_year = end_year, start_year
+
+    labels = [
+        f"{year}-{month:02d}"
+        for year in range(start_year, end_year + 1)
+        for month in range(1, 13)
+    ]
+    if close.empty:
+        return {label: None for label in labels}
+
+    # Use the final observed adjusted close in each calendar month. Daily history
+    # already excludes non-trading days, so this naturally selects the final
+    # trading session of the month.
+    monthly_close = close.groupby(close.index.to_period("M")).last().sort_index()
+    result: dict[str, Optional[float]] = {}
+    for label in labels:
+        period = pd.Period(label, freq="M")
+        prior = period - 1
+        finish = monthly_close.get(period)
+        base = monthly_close.get(prior)
+        if (
+            finish is None or base is None
+            or not np.isfinite(finish) or not np.isfinite(base)
+            or float(finish) <= 0 or float(base) <= 0
+        ):
+            result[label] = None
+        else:
+            result[label] = float(finish / base - 1.0)
+    return result
+
+
 def calculate_calendar_year_returns(
     history: pd.DataFrame,
     years: int = 10,

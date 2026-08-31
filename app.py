@@ -15,11 +15,13 @@ from analytics import (
     as_percent,
     calculate_buy_signals,
     calculate_calendar_year_returns,
+    calculate_monthly_returns,
     calculate_performance,
     completed_year_labels,
 )
 from persistence import (
     format_et,
+    load_remote_csv,
     load_remote_metadata,
     load_remote_snapshot,
     load_remote_universe_metadata,
@@ -52,6 +54,8 @@ SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
 BOOTSTRAP_META_FILE = BASE_DIR / "data" / "snapshot_metadata.bootstrap.json"
 UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.json"
 BOOTSTRAP_UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.bootstrap.json"
+MONTHLY_RETURNS_FILE = BASE_DIR / "data" / "monthly_returns_10y.csv"
+MONTHLY_RETURNS_REPO_PATH = "data/monthly_returns_10y.csv"
 YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=20)
 PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]
 ALL_RETURN_COLS = ["Since Inception"] + PERF_COLS
@@ -92,7 +96,7 @@ PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target H
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
 MIN_STOCK_MARKET_CAP = 100_000_000_000.0
 
-# v5.9.45: precomputed four-stock / four-sector rankings, including yearly and monthly withdrawal survival lists.
+# v5.9.46: four-stock / four-sector rankings; monthly withdrawal rankings require actual month-end history.
 COMBO_5Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_5y.csv"
 COMBO_5Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_5y.csv"
 COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
@@ -239,6 +243,24 @@ def _load_ranked_combo_file(path_text: str) -> pd.DataFrame:
     if df.empty or "Combo" not in df.columns:
         return pd.DataFrame()
     return df
+
+
+def _load_actual_monthly_ranked_combo_file(path_text: str) -> pd.DataFrame:
+    """Use only ranking files generated from real monthly market history."""
+    path = Path(path_text)
+    candidates: list[pd.DataFrame] = []
+    local = _load_ranked_combo_file(path_text)
+    if not local.empty:
+        candidates.append(local)
+    remote = load_remote_csv(f"data/{path.name}", timeout=12)
+    if remote is not None and not remote.empty:
+        candidates.append(remote)
+    for frame in reversed(candidates):  # prefer remote/newer
+        if frame.empty or "Combo" not in frame.columns:
+            continue
+        if _monthly_csv_actual(frame):
+            return frame
+    return pd.DataFrame()
 
 
 def _ranked_combo_symbols(row) -> list[str]:
@@ -595,6 +617,125 @@ def cached_max_chart_history(symbol: str) -> pd.DataFrame:
     return provider.download_chart_history(symbol, "MAX")
 
 
+def _actual_month_labels(calendar_years: tuple[str, ...] | list[str]) -> list[str]:
+    years = sorted({int(str(y)) for y in calendar_years if str(y).isdigit()})
+    return [f"{year}-{month:02d}" for year in years for month in range(1, 13)]
+
+
+def _monthly_csv_actual(frame: pd.DataFrame) -> bool:
+    if frame is None or frame.empty or "Monthly Return Method" not in frame.columns:
+        return False
+    methods = frame["Monthly Return Method"].dropna().astype(str)
+    return bool(len(methods)) and methods.str.contains(
+        "Actual adjusted month-end return", case=False, regex=False
+    ).all()
+
+
+@st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
+def cached_actual_monthly_returns(
+    symbols: tuple[str, ...],
+    calendar_years: tuple[str, ...],
+) -> dict:
+    """Load real adjusted month-to-month returns, with Yahoo daily-history fallback.
+
+    Durable monthly snapshot values are percentages. The returned mapping stores
+    decimal returns (e.g. 0.025 for +2.5%) for direct portfolio simulation.
+    """
+    clean_symbols = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
+    years = tuple(str(y) for y in calendar_years if str(y).isdigit())
+    labels = _actual_month_labels(years)
+    if not clean_symbols or not labels:
+        return {"unavailable": True, "reason": "No symbols or completed calendar years were supplied.", "returns": {}}
+
+    sources: list[pd.DataFrame] = []
+    if MONTHLY_RETURNS_FILE.exists():
+        try:
+            sources.append(pd.read_csv(MONTHLY_RETURNS_FILE))
+        except Exception:
+            pass
+    remote = load_remote_csv(MONTHLY_RETURNS_REPO_PATH, timeout=12)
+    if remote is not None and not remote.empty:
+        sources.append(remote)
+
+    actual_frame = pd.DataFrame()
+    for candidate in sources:
+        if candidate is None or candidate.empty or "Symbol" not in candidate.columns:
+            continue
+        if not _monthly_csv_actual(candidate):
+            continue
+        candidate = candidate.copy()
+        candidate["Symbol"] = candidate["Symbol"].astype(str).str.upper().str.strip()
+        candidate = candidate.drop_duplicates("Symbol", keep="last")
+        if actual_frame.empty:
+            actual_frame = candidate
+        else:
+            # Prefer newer remote rows for overlapping symbols.
+            actual_frame = pd.concat([actual_frame, candidate], ignore_index=True).drop_duplicates("Symbol", keep="last")
+
+    returns: dict[str, dict[str, float]] = {}
+    missing_symbols: list[str] = []
+    if not actual_frame.empty:
+        actual_frame = actual_frame.set_index("Symbol", drop=False)
+    for sym in clean_symbols:
+        sym_returns: dict[str, float] = {}
+        if not actual_frame.empty and sym in actual_frame.index:
+            row = actual_frame.loc[sym]
+            if isinstance(row, pd.DataFrame):
+                row = row.iloc[-1]
+            valid = True
+            for label in labels:
+                value = pd.to_numeric(pd.Series([row.get(label)]), errors="coerce").iloc[0]
+                if pd.isna(value) or not np.isfinite(value):
+                    valid = False
+                    break
+                sym_returns[label] = float(value) / 100.0
+            if valid:
+                returns[sym] = sym_returns
+                continue
+        missing_symbols.append(sym)
+
+    # For symbols/years not yet present in the durable monthly snapshot, calculate
+    # from actual Yahoo adjusted daily history on demand. Never substitute annual
+    # returns or divide an annual return into 12 equal months.
+    if missing_symbols:
+        try:
+            histories = provider.download_daily_history(missing_symbols, period="max")
+        except Exception:
+            histories = {}
+        start_year = min(int(y) for y in years)
+        end_year = max(int(y) for y in years)
+        for sym in missing_symbols:
+            hist = histories.get(sym)
+            if hist is None or hist.empty:
+                continue
+            calculated = calculate_monthly_returns(hist, start_year, end_year)
+            sym_returns = {}
+            valid = True
+            for label in labels:
+                value = calculated.get(label)
+                if value is None or not np.isfinite(value):
+                    valid = False
+                    break
+                sym_returns[label] = float(value)
+            if valid:
+                returns[sym] = sym_returns
+
+    still_missing = [sym for sym in clean_symbols if sym not in returns]
+    if still_missing:
+        return {
+            "unavailable": True,
+            "reason": "Actual monthly history is unavailable for: " + ", ".join(still_missing),
+            "returns": returns,
+            "months": labels,
+        }
+    return {
+        "unavailable": False,
+        "returns": returns,
+        "months": labels,
+        "method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
+    }
+
+
 @st.cache_data(ttl=30 * 60, show_spinner=False)
 def cached_card_two_year_histories(symbols: tuple[str, ...]) -> dict[str, pd.DataFrame]:
     """Batch-load two years of adjusted daily closes for visible market cards."""
@@ -660,7 +801,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current first-page instrument data contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v9 - monthly + yearly rebalanced/not-rebalanced withdrawal results + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v10 - actual monthly returns + monthly/yearly rebalanced/not-rebalanced withdrawal results + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     if market_df is None or market_df.empty:
         upgraded["pdf_layout"] = required_layout
@@ -1338,7 +1479,7 @@ st.markdown(
     </div>
     <div class="marketscope-brand-copy">
       <h1>MarketScope</h1>
-      <div class="marketscope-version">v5.9.45</div>
+      <div class="marketscope-version">v5.9.46</div>
     </div>
   </div>
   <p>Nasdaq stocks > $100B + ETFs • actual calendar-year returns • analyst consensus • persistent cloud snapshot</p>
@@ -2015,16 +2156,15 @@ def _portfolio_monthly_withdrawal_schedule(
     monthly_withdrawal: float,
     calendar_years: list[str] | None = None,
     rebalance_after_withdrawal: bool = False,
+    actual_monthly_returns: dict[str, dict[str, float]] | None = None,
 ) -> dict:
-    """Run monthly cash withdrawals using the annual returns saved in the spreadsheet/snapshot.
+    """Run monthly cash withdrawals using actual adjusted month-to-month returns.
 
-    The source dataset contains completed calendar-year returns, not month-by-month prices. For each
-    stock and completed year, MarketScope therefore derives the constant equivalent monthly growth
-    factor ``(1 + annual_return) ** (1/12)``. The same derived factor is applied in each of that
-    calendar year's 12 months, then the requested cash withdrawal is taken at month-end. Rebalanced
-    mode restores the saved target allocation after every monthly withdrawal; Not rebalanced keeps
-    the naturally drifted weights. This is a monthly cash-flow simulation derived from annual data,
-    not a reconstruction of actual historical monthly price paths.
+    Each modeled month uses the instrument's genuine adjusted month-end return:
+    final adjusted close of the month / final adjusted close of the prior month - 1.
+    The engine never derives a monthly rate by dividing or rooting an annual return.
+    Rebalanced mode restores the saved target allocation after every month-end
+    withdrawal; Not rebalanced leaves the post-market weights to drift naturally.
     """
     try:
         principal = float(total_invested)
@@ -2041,18 +2181,25 @@ def _portfolio_monthly_withdrawal_schedule(
     except Exception:
         return {"unavailable": True, "reason": "Invalid portfolio period."}
 
-    lookup = market_df.copy()
-    lookup["Symbol"] = lookup["Symbol"].astype(str).str.upper()
-    lookup = lookup.drop_duplicates("Symbol", keep="first").set_index("Symbol", drop=False)
     selected_years = (list(calendar_years) if calendar_years is not None else list(YEAR_RETURN_COLS[:years_requested]))[:years_requested]
     if not selected_years:
         return {"unavailable": True, "reason": "No completed calendar year is shared by every selected instrument."}
 
+    month_labels = _actual_month_labels(tuple(selected_years))
+    monthly_data = actual_monthly_returns or {}
+    clean_symbols = [str(sym).upper() for sym in symbols]
+    for sym in clean_symbols:
+        if sym not in monthly_data:
+            return {"unavailable": True, "reason": f"Actual monthly returns are unavailable for {sym}."}
+        for label in month_labels:
+            value = monthly_data[sym].get(label)
+            if value is None or not np.isfinite(value):
+                return {"unavailable": True, "reason": f"{sym} does not have an actual monthly return for {label}."}
+            if float(value) <= -1.0:
+                return {"unavailable": True, "reason": f"{sym} has an invalid monthly return at or below -100% for {label}."}
+
     balances: dict[str, float] = {}
-    for sym in symbols:
-        sym = str(sym).upper()
-        if sym not in lookup.index:
-            return {"unavailable": True, "reason": f"{sym} is not available in the current market snapshot."}
+    for sym in clean_symbols:
         weight = float(weights.get(sym, 0.0) or 0.0)
         balances[sym] = principal * weight / 100.0
 
@@ -2060,57 +2207,54 @@ def _portfolio_monthly_withdrawal_schedule(
     total_withdrawn = 0.0
     depleted_period = None
     month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    for year in reversed(selected_years):
-        monthly_factors: dict[str, float] = {}
-        for sym in balances:
-            raw = pd.to_numeric(pd.Series([lookup.loc[sym].get(str(year))]), errors="coerce").iloc[0]
-            if pd.isna(raw) or not np.isfinite(raw):
-                return {"unavailable": True, "reason": f"{sym} does not have a saved return for {year}."}
-            annual_factor = 1.0 + float(raw) / 100.0
-            if annual_factor < 0:
-                return {"unavailable": True, "reason": f"{sym} has an invalid return below -100% for {year}."}
-            monthly_factors[sym] = annual_factor ** (1.0 / 12.0)
 
-        for month_number, month_name in enumerate(month_names, start=1):
-            starting_balance = sum(balances.values())
-            if starting_balance <= 0:
-                depleted_period = depleted_period or f"{year}-{month_number:02d}"
-                break
-            for sym in list(balances):
-                balances[sym] *= monthly_factors[sym]
-            before_withdrawal = sum(balances.values())
-            gain_loss = before_withdrawal - starting_balance
-            portfolio_return = (gain_loss / starting_balance * 100.0) if starting_balance > 0 else 0.0
-            actual_withdrawal = min(withdrawal_requested, before_withdrawal)
-            ending_balance = max(0.0, before_withdrawal - actual_withdrawal)
-            if before_withdrawal > 0 and actual_withdrawal > 0:
-                scale = ending_balance / before_withdrawal
-                for sym in balances:
-                    balances[sym] *= scale
-            if rebalance_after_withdrawal and ending_balance > 0:
-                weight_total = sum(max(0.0, float(weights.get(str(sym).upper(), 0.0) or 0.0)) for sym in balances)
-                if weight_total <= 0:
-                    return {"unavailable": True, "reason": "Target portfolio weights are invalid for monthly rebalancing."}
-                for sym in balances:
-                    target_weight = max(0.0, float(weights.get(str(sym).upper(), 0.0) or 0.0)) / weight_total
-                    balances[sym] = ending_balance * target_weight
-            total_withdrawn += actual_withdrawal
-            schedule.append({
-                "period": f"{year}-{month_number:02d}",
-                "year": str(year),
-                "month": month_number,
-                "month_name": month_name,
-                "starting_balance": starting_balance,
-                "portfolio_return_pct": portfolio_return,
-                "gain_loss": gain_loss,
-                "balance_before_withdrawal": before_withdrawal,
-                "withdrawal": actual_withdrawal,
-                "ending_balance": ending_balance,
-            })
-            if ending_balance <= 0:
-                depleted_period = f"{year}-{month_number:02d}"
-                break
-        if depleted_period:
+    for label in month_labels:
+        year, month_text = label.split("-")
+        month_number = int(month_text)
+        starting_balance = sum(balances.values())
+        if starting_balance <= 0:
+            depleted_period = depleted_period or label
+            break
+
+        for sym in list(balances):
+            balances[sym] *= 1.0 + float(monthly_data[sym][label])
+
+        before_withdrawal = sum(balances.values())
+        gain_loss = before_withdrawal - starting_balance
+        portfolio_return = (gain_loss / starting_balance * 100.0) if starting_balance > 0 else 0.0
+        actual_withdrawal = min(withdrawal_requested, before_withdrawal)
+        ending_balance = max(0.0, before_withdrawal - actual_withdrawal)
+
+        # Proportional withdrawal preserves each holding's post-return weight.
+        if before_withdrawal > 0 and actual_withdrawal > 0:
+            scale = ending_balance / before_withdrawal
+            for sym in balances:
+                balances[sym] *= scale
+
+        if rebalance_after_withdrawal and ending_balance > 0:
+            weight_total = sum(max(0.0, float(weights.get(sym, 0.0) or 0.0)) for sym in balances)
+            if weight_total <= 0:
+                return {"unavailable": True, "reason": "Target portfolio weights are invalid for monthly rebalancing."}
+            for sym in balances:
+                target_weight = max(0.0, float(weights.get(sym, 0.0) or 0.0)) / weight_total
+                balances[sym] = ending_balance * target_weight
+
+        total_withdrawn += actual_withdrawal
+        schedule.append({
+            "period": label,
+            "year": year,
+            "month": month_number,
+            "month_name": month_names[month_number - 1],
+            "starting_balance": starting_balance,
+            "portfolio_return_pct": portfolio_return,
+            "gain_loss": gain_loss,
+            "balance_before_withdrawal": before_withdrawal,
+            "withdrawal": actual_withdrawal,
+            "ending_balance": ending_balance,
+            "return_method": "Actual adjusted month-end return",
+        })
+        if ending_balance <= 0:
+            depleted_period = label
             break
 
     remaining = sum(balances.values())
@@ -2125,7 +2269,7 @@ def _portfolio_monthly_withdrawal_schedule(
         "net_profit_including_withdrawals": remaining + total_withdrawn - principal,
         "strategy": "Rebalanced monthly" if rebalance_after_withdrawal else "Not rebalanced monthly",
         "rebalanced_monthly": bool(rebalance_after_withdrawal),
-        "monthly_return_method": "Equivalent monthly rate derived from each completed calendar-year return: (1 + annual return)^(1/12) - 1",
+        "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
     }
 
 
@@ -2452,17 +2596,17 @@ with portfolio_tab:
             st.caption(
                 "Top 100 surviving four-stock portfolios for each monthly-withdrawal strategy. Every combo uses four different sectors, "
                 "starts with $300,000 at 25% per stock, excludes HWM, and funds the full $5,000 withdrawal every month for 120 months (2016–2025). "
-                "Because the spreadsheet contains annual returns, each stock's calendar-year return is converted to an equivalent constant monthly rate "
-                "using (1 + annual return)^(1/12) - 1. Rankings are by remaining balance after month 120."
+                "Each month uses the actual adjusted month-end return from Yahoo/yfinance daily market history. "
+                "No annual return is divided, averaged, or converted into 12 synthetic monthly returns."
             )
-            monthly_rebalance_rank = _load_ranked_combo_file(str(COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
-            monthly_not_rebalanced_rank = _load_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
+            monthly_rebalance_rank = _load_actual_monthly_ranked_combo_file(str(COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
+            monthly_not_rebalanced_rank = _load_actual_monthly_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
             monthly_withdrawal_col1, monthly_withdrawal_col2 = st.columns(2)
 
             with monthly_withdrawal_col1:
                 st.markdown("#### 🔄 Top 100 — Rebalanced Monthly")
                 if monthly_rebalance_rank.empty:
-                    st.warning("10Y monthly rebalanced withdrawal ranking data is unavailable.")
+                    st.warning("Actual-monthly 10Y rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.46.")
                 else:
                     lookup_key = "combo_10y_monthly_withdrawal_rebalanced_lookup"
                     picker_key = "combo_10y_monthly_withdrawal_rebalanced_picker"
@@ -2486,7 +2630,7 @@ with portfolio_tab:
             with monthly_withdrawal_col2:
                 st.markdown("#### ↗ Top 100 — Not Rebalanced Monthly")
                 if monthly_not_rebalanced_rank.empty:
-                    st.warning("10Y monthly not-rebalanced withdrawal ranking data is unavailable.")
+                    st.warning("Actual-monthly 10Y not-rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.46.")
                 else:
                     lookup_key = "combo_10y_monthly_withdrawal_not_rebalanced_lookup"
                     picker_key = "combo_10y_monthly_withdrawal_not_rebalanced_picker"
@@ -2517,7 +2661,7 @@ with portfolio_tab:
                     use_container_width=True, hide_index=True, height=520,
                 )
                 st.caption(
-                    "Rebalanced monthly: equivalent monthly stock returns are applied, $5,000 is withdrawn at month-end, "
+                    "Rebalanced monthly: actual adjusted month-end stock returns are applied, $5,000 is withdrawn at month-end, "
                     "then the remaining balance is restored to 25% per stock. HWM is excluded from all 100 combinations."
                 )
             with monthly_table_nr:
@@ -2526,7 +2670,7 @@ with portfolio_tab:
                     use_container_width=True, hide_index=True, height=520,
                 )
                 st.caption(
-                    "Not rebalanced monthly: equivalent monthly stock returns are applied and the $5,000 withdrawal is taken proportionally; "
+                    "Not rebalanced monthly: actual adjusted month-end stock returns are applied and the $5,000 withdrawal is taken proportionally; "
                     "the naturally drifted weights continue into the next month. HWM is excluded from all 100 combinations."
                 )
 
@@ -2632,7 +2776,7 @@ with portfolio_tab:
                 key="portfolio_monthly_withdrawals_enabled",
                 disabled=str(portfolio_period or "YTD") == "YTD",
                 on_change=_on_monthly_withdrawal_toggle,
-                help="Apply the same cash withdrawal every month. Monthly returns are equivalent monthly rates derived from the saved annual spreadsheet returns.",
+                help="Apply the same cash withdrawal every month using actual adjusted month-end returns from Yahoo/yfinance market history.",
             )
         with withdrawal_controls[3]:
             portfolio_monthly_withdrawal = st.number_input(
@@ -2644,7 +2788,7 @@ with portfolio_tab:
         with withdrawal_controls[4]:
             if portfolio_monthly_withdrawals_enabled:
                 st.caption(
-                    "Monthly mode: each annual spreadsheet return is converted to an equivalent constant monthly rate using (1 + annual return)^(1/12) - 1. "
+                    "Monthly mode: each stock uses its actual adjusted month-to-month return from historical market prices. "
                     "Return is applied first, then the monthly cash withdrawal. Add current YTD is not applied to monthly withdrawal schedules."
                 )
             elif portfolio_withdrawals_enabled:
@@ -2791,7 +2935,7 @@ with portfolio_tab:
                         if r.get("unavailable")
                     ]
                     if unavailable:
-                        st.warning(f"Annual withdrawal schedule unavailable: {unavailable[0].get('reason', 'required annual return data is unavailable')} ")
+                        st.warning(f"Annual withdrawal schedule unavailable: {unavailable[0].get('reason', 'required actual monthly return data is unavailable')} ")
                     else:
                         st.markdown("<div class='portfolio-analytics-title'>ANNUAL WITHDRAWAL — REBALANCED VS NOT REBALANCED</div>", unsafe_allow_html=True)
                         st.caption(
@@ -2855,24 +2999,39 @@ with portfolio_tab:
                             if result.get("depleted_year"):
                                 st.error(f"{label} portfolio is depleted during {result.get('depleted_year')} under this withdrawal amount; later withdrawals cannot be funded.")
 
-                # v5.9.45 - monthly withdrawal mode, calculated from equivalent monthly rates derived
-                # from each completed calendar-year return in the saved dataset.
+                # v5.9.46 - monthly withdrawal mode uses actual adjusted month-to-month
+                # returns from durable monthly history, with an on-demand Yahoo daily-history fallback.
                 if portfolio_monthly_withdrawals_enabled and portfolio_monthly_withdrawal > 0 and unresolved_amount <= 0.005:
-                    monthly_withdrawal_args = (
-                        market,
-                        list(selected_portfolio_symbols),
-                        dict(portfolio_weights),
-                        float(portfolio_total),
-                        str(portfolio_period or "YTD"),
-                        float(portfolio_monthly_withdrawal),
-                        effective_portfolio_years,
+                    actual_monthly_payload = cached_actual_monthly_returns(
+                        tuple(str(s).upper() for s in selected_portfolio_symbols),
+                        tuple(str(y) for y in effective_portfolio_years),
                     )
-                    portfolio_monthly_withdrawal_not_rebalanced_result = _portfolio_monthly_withdrawal_schedule(
-                        *monthly_withdrawal_args, rebalance_after_withdrawal=False,
-                    )
-                    portfolio_monthly_withdrawal_rebalanced_result = _portfolio_monthly_withdrawal_schedule(
-                        *monthly_withdrawal_args, rebalance_after_withdrawal=True,
-                    )
+                    if actual_monthly_payload.get("unavailable"):
+                        portfolio_monthly_withdrawal_not_rebalanced_result = {
+                            "unavailable": True,
+                            "reason": actual_monthly_payload.get("reason") or "Actual monthly return history is unavailable.",
+                        }
+                        portfolio_monthly_withdrawal_rebalanced_result = dict(portfolio_monthly_withdrawal_not_rebalanced_result)
+                    else:
+                        monthly_withdrawal_args = (
+                            market,
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                            str(portfolio_period or "YTD"),
+                            float(portfolio_monthly_withdrawal),
+                            effective_portfolio_years,
+                        )
+                        portfolio_monthly_withdrawal_not_rebalanced_result = _portfolio_monthly_withdrawal_schedule(
+                            *monthly_withdrawal_args,
+                            rebalance_after_withdrawal=False,
+                            actual_monthly_returns=actual_monthly_payload.get("returns") or {},
+                        )
+                        portfolio_monthly_withdrawal_rebalanced_result = _portfolio_monthly_withdrawal_schedule(
+                            *monthly_withdrawal_args,
+                            rebalance_after_withdrawal=True,
+                            actual_monthly_returns=actual_monthly_payload.get("returns") or {},
+                        )
                     portfolio_monthly_withdrawal_result = portfolio_monthly_withdrawal_not_rebalanced_result
                     unavailable = [
                         r for r in (portfolio_monthly_withdrawal_rebalanced_result, portfolio_monthly_withdrawal_not_rebalanced_result)
@@ -2883,7 +3042,7 @@ with portfolio_tab:
                     else:
                         st.markdown("<div class='portfolio-analytics-title'>MONTHLY WITHDRAWAL — REBALANCED VS NOT REBALANCED</div>", unsafe_allow_html=True)
                         st.caption(
-                            "The spreadsheet stores annual returns, so MarketScope converts each stock/year to an equivalent constant monthly rate. "
+                            "Each row uses the actual adjusted return from one historical month to the next. "
                             "Rebalanced restores target weights after every monthly withdrawal; Not rebalanced lets holdings drift."
                         )
                         rb_end = float(portfolio_monthly_withdrawal_rebalanced_result.get("ending_balance") or 0)
@@ -3141,8 +3300,8 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced": dict(portfolio_monthly_withdrawal_rebalanced_result) if portfolio_monthly_withdrawals_enabled else {},
                 "monthly_withdrawal_not_rebalanced_schedule": list(portfolio_monthly_withdrawal_not_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
-                "monthly_return_method": "Equivalent monthly rate derived from each completed calendar-year return: (1 + annual return)^(1/12) - 1" if portfolio_monthly_withdrawals_enabled else None,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v9 - monthly + yearly rebalanced/not-rebalanced withdrawal results + required instrument market data on page 1",
+                "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
+                "pdf_layout": "MarketScope Portfolio Split Simulator v10 - actual monthly returns + monthly/yearly rebalanced/not-rebalanced withdrawal results + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5030,7 +5189,7 @@ with alerts_tab:
     - **Investment simulator:** choose an investment amount and **YTD or 1–20 completed years**. YTD calculates profit from the current saved YTD return only. The 1Y–20Y choices remain available at all times; when a selected instrument did not exist for the full requested span, MarketScope automatically starts at the first completed year shared by every selected instrument and uses up to the requested number of common years. The optional current-YTD toggle can then extend that result through today. Every 1D/1M/3M/6M/YTD/calendar-year tile inside a card is also clickable and shows the dollar ending value and profit for that exact return period.
     - **Card / Table tabs:** Card View preserves the interactive futuristic cards. Table View shows all currently filtered instruments in one dense table with all current performance, rating, target, signal and selected investment-simulation fields. You can use the explicit table sort controls or click any column header to sort interactively.
     - **Unlimited Stock & ETF Comparison:** use the single searchable **Stocks & ETFs to compare** selector in the Comparison tab to add or remove instruments. There is no selection cap. Once selected, MarketScope retrieves the instrument logo from Yahoo/company metadata when available and shows it on Comparison Cards and in the Comparison Table. Cards paginate 12 at a time and now mirror Market Navigator Card View: 2-year mini chart, clickable return/profit tiles, investment simulation, analyst targets, rating/signal badges, News, ETF Holdings, and full detail/live/year charts. Comparison Table shows the full selected set with all current performance periods, ratings, available stock targets, signals and selected investment-simulation results.
-    - **Portfolio split simulator:** enter a total amount (default $200,000), select multiple tracked stocks/ETFs, choose equal split or custom percentages, and select YTD or a 1Y–20Y historical horizon. MarketScope calculates each allocation independently, then totals the simulated ending value and profit. Pre-IPO/pre-inception history is never fabricated; the simulation begins at the first completed year common to every selected instrument. Outside the optional Yearly/Monthly withdrawal modes, no deposits, withdrawals, taxes, fees, or future returns are assumed. Monthly withdrawal mode derives equivalent monthly rates from completed annual returns; it does not reconstruct actual monthly price history.
+    - **Portfolio split simulator:** enter a total amount (default $200,000), select multiple tracked stocks/ETFs, choose equal split or custom percentages, and select YTD or a 1Y–20Y historical horizon. MarketScope calculates each allocation independently, then totals the simulated ending value and profit. Pre-IPO/pre-inception history is never fabricated; the simulation begins at the first completed year common to every selected instrument. Outside the optional Yearly/Monthly withdrawal modes, no deposits, withdrawals, taxes, fees, or future returns are assumed. Monthly withdrawal mode uses actual adjusted month-end returns calculated from historical Yahoo/yfinance market prices; annual returns are never divided into synthetic monthly rates.
     - **News Impact:** the News button performs an on-demand Yahoo Finance news search for that symbol and shows up to three recent (7-day) headlines only when rule-based fundamental language produces a clear positive or negative directional read. Green ▲ means a positive fundamental catalyst; red ▼ means a negative fundamental catalyst. This is context, not a prediction or guarantee. Neutral/ambiguous stories are not forced into an UP/DOWN label.
     - **Live chart:** opening a card loads a Yahoo Finance/yfinance intraday chart for that one instrument and refreshes the chart about every 60 seconds while it remains open. Yahoo/exchange delays can apply, so it is near-real-time rather than an exchange-direct tick feed.
     - **Analyst price targets:** stock cards show Yahoo analyst **Low / Average / High** target prices when available. ETFs remain blank because stock-style analyst price-target ranges are not consistently available for funds. These are analyst estimates, not guaranteed outcomes.

@@ -793,15 +793,28 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             page_no += 1
 
     # ------------------------------------------------------------------
-    # Monthly-withdrawal PDF results. v5.9.45 shows the full month-by-month
-    # path for both strategies. The monthly rate is derived from each saved
-    # calendar-year return because the source spreadsheet does not contain
-    # actual monthly price history.
+    # Monthly-withdrawal PDF results. v5.9.46 records the full real month-by-
+    # month path. New simulations use actual adjusted month-end market returns.
+    # Older saved simulations retain their original methodology label so a PDF
+    # rebuild never misrepresents legacy equivalent-rate results as actual data.
     # ------------------------------------------------------------------
     mrb_result = dict(record.get("monthly_withdrawal_rebalanced") or {})
     mnr_result = dict(record.get("monthly_withdrawal_not_rebalanced") or {})
     mrb_schedule = [dict(x) for x in (record.get("monthly_withdrawal_rebalanced_schedule") or mrb_result.get("schedule") or []) if isinstance(x, dict)]
     mnr_schedule = [dict(x) for x in (record.get("monthly_withdrawal_not_rebalanced_schedule") or mnr_result.get("schedule") or []) if isinstance(x, dict)]
+
+    monthly_method = str(
+        record.get("monthly_return_method")
+        or mrb_result.get("monthly_return_method")
+        or mnr_result.get("monthly_return_method")
+        or ""
+    ).strip()
+    monthly_is_actual = "actual adjusted month-end return" in monthly_method.lower()
+    monthly_method_note = (
+        "Actual adjusted month-end returns from Yahoo/yfinance daily market history."
+        if monthly_is_actual
+        else "Legacy equivalent monthly rates derived from saved annual returns."
+    )
 
     def _draw_monthly_withdrawal_detail_pages(title: str, subtitle: str, result: dict, schedule: list[dict], start_page_number: int) -> int:
         rows_per_page = 20
@@ -887,7 +900,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             if depleted:
                 note = f"Portfolio depleted during {depleted}; later monthly withdrawals cannot be funded."
             else:
-                note = "Monthly rates are equivalent rates derived from each saved annual return; they are not actual historical monthly price returns."
+                note = monthly_method_note
             c.drawString(24, 33, note[:170])
             draw_footer(lwidth, page_number, "Monthly cash-flow schedule applies return first, then withdrawal; taxes, fees and future returns are not modeled.")
             c.showPage()
@@ -904,7 +917,11 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         c.setFont("Helvetica", 7.4)
         c.drawCentredString(
             lwidth / 2, lheight - 53,
-            "Same starting portfolio and monthly cash withdrawal. Annual spreadsheet returns are converted to equivalent monthly rates; Rebalanced resets weights monthly.",
+            (
+                "Same starting portfolio and monthly cash withdrawal. Actual adjusted month-end returns are used; Rebalanced resets weights monthly."
+                if monthly_is_actual
+                else "Same starting portfolio and monthly cash withdrawal. Legacy saved schedules use equivalent monthly rates; Rebalanced resets weights monthly."
+            ),
         )
 
         mrb_end = _as_float_or_none(_withdrawal_metric(mrb_result, "ending_balance", 0)) or 0.0
@@ -995,7 +1012,15 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         c.setFillColor(muted)
         c.setFont("Helvetica", 6.4)
         c.drawString(24, 35, f"Total withdrawn - Rebalanced: {_money(mrb_total)} | Not rebalanced: {_money(mnr_total)} | Full monthly schedules follow.")
-        draw_footer(lwidth, page_no, "Monthly returns shown here are equivalent monthly rates derived from the saved completed calendar-year returns.")
+        draw_footer(
+            lwidth,
+            page_no,
+            (
+                "Monthly returns shown here are actual adjusted month-end returns from Yahoo/yfinance daily history."
+                if monthly_is_actual
+                else "Legacy saved simulation: monthly returns were equivalent rates derived from annual returns."
+            ),
+        )
         c.showPage()
         page_no += 1
 

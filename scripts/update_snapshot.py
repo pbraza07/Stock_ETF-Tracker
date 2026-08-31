@@ -16,6 +16,7 @@ from analytics import (
     as_percent,
     calculate_buy_signals,
     calculate_calendar_year_returns,
+    calculate_monthly_returns,
     calculate_performance,
     completed_year_labels,
 )
@@ -25,10 +26,19 @@ from universe import load_default_universe
 
 OUT = BASE_DIR / "data" / "market_snapshot.csv"
 META_OUT = BASE_DIR / "data" / "snapshot_metadata.json"
+MONTHLY_OUT = BASE_DIR / "data" / "monthly_returns_10y.csv"
 HISTORY_PERIOD = os.getenv("MARKETSCOPE_HISTORY_PERIOD", "max")
 BATCH_SIZE = max(10, int(os.getenv("MARKETSCOPE_BATCH_SIZE", "80")))
 PAUSE_SECONDS = float(os.getenv("MARKETSCOPE_BATCH_PAUSE", "0.35"))
 YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=20)
+MONTHLY_RANK_YEARS = completed_year_labels(as_of=now_et(), years=10)
+MONTHLY_START_YEAR = min(int(y) for y in MONTHLY_RANK_YEARS)
+MONTHLY_END_YEAR = max(int(y) for y in MONTHLY_RANK_YEARS)
+MONTHLY_RETURN_COLS = [
+    f"{year}-{month:02d}"
+    for year in range(MONTHLY_START_YEAR, MONTHLY_END_YEAR + 1)
+    for month in range(1, 13)
+]
 PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]
 
 
@@ -37,6 +47,19 @@ def existing_frame() -> pd.DataFrame:
         return pd.DataFrame()
     try:
         df = pd.read_csv(OUT)
+        if "Symbol" in df.columns:
+            df["Symbol"] = df["Symbol"].astype(str).str.upper().str.strip()
+            return df.drop_duplicates("Symbol", keep="last")
+    except Exception:
+        pass
+    return pd.DataFrame()
+
+
+def existing_monthly_frame() -> pd.DataFrame:
+    if not MONTHLY_OUT.exists():
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(MONTHLY_OUT)
         if "Symbol" in df.columns:
             df["Symbol"] = df["Symbol"].astype(str).str.upper().str.strip()
             return df.drop_duplicates("Symbol", keep="last")
@@ -85,6 +108,8 @@ def main() -> None:
 
     old_df = existing_frame()
     old = old_df.set_index("Symbol", drop=False).to_dict(orient="index") if not old_df.empty else {}
+    old_monthly_df = existing_monthly_frame()
+    old_monthly = old_monthly_df.set_index("Symbol", drop=False).to_dict(orient="index") if not old_monthly_df.empty else {}
 
     # Keep only explicitly manual additions outside the automatic Nasdaq >$100B universe.
     universe_symbols = universe["Symbol"].tolist()
@@ -101,6 +126,7 @@ def main() -> None:
     meta = universe.set_index("Symbol").to_dict(orient="index")
     provider = YahooFinanceProvider()
     rows: dict[str, dict] = {}
+    monthly_rows: dict[str, dict] = {}
 
     for start in range(0, len(symbols), BATCH_SIZE):
         batch = symbols[start:start + BATCH_SIZE]
@@ -148,6 +174,8 @@ def main() -> None:
 
             hist = histories.get(symbol)
             if hist is None or hist.empty:
+                if symbol in old_monthly:
+                    monthly_rows[symbol] = dict(old_monthly[symbol])
                 row = dict(prior) if prior else {}
                 row.update(base_row)
                 if not prior:
@@ -175,6 +203,16 @@ def main() -> None:
 
             perf = calculate_performance(hist)
             annual_returns = calculate_calendar_year_returns(hist, years=20)
+            monthly_returns = calculate_monthly_returns(hist, MONTHLY_START_YEAR, MONTHLY_END_YEAR)
+            monthly_rows[symbol] = {
+                "Symbol": symbol,
+                "Name": base_row.get("Name") or symbol,
+                "Sector": base_row.get("Sector") or "Unknown",
+                "Type": base_row.get("Type") or "Unknown",
+                **{label: as_percent(monthly_returns.get(label)) for label in MONTHLY_RETURN_COLS},
+                "Monthly Return Method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
+                "Snapshot Updated ET": refresh_display,
+            }
             signals = calculate_buy_signals(hist, analyst_rating=rating, instrument_type=instrument_type)
             old_short = _as_bool(prior.get("Short Buy"))
             old_long = _as_bool(prior.get("Long Buy"))
@@ -221,6 +259,19 @@ def main() -> None:
     tmp = OUT.with_suffix(".tmp")
     df.to_csv(tmp, index=False)
     tmp.replace(OUT)
+    monthly_df = pd.DataFrame([monthly_rows[s] for s in symbols if s in monthly_rows])
+    monthly_columns = [
+        "Symbol", "Name", "Sector", "Type", *MONTHLY_RETURN_COLS,
+        "Monthly Return Method", "Snapshot Updated ET",
+    ]
+    for col in monthly_columns:
+        if col not in monthly_df.columns:
+            monthly_df[col] = pd.NA
+    monthly_df = monthly_df[monthly_columns]
+    monthly_tmp = MONTHLY_OUT.with_suffix(".tmp")
+    monthly_df.to_csv(monthly_tmp, index=False)
+    monthly_tmp.replace(MONTHLY_OUT)
+
     populated = int(pd.to_numeric(df["Price"], errors="coerce").notna().sum())
     new_alerts = int(
         df["Short Signal New"].fillna(False).astype(bool).sum()
@@ -240,7 +291,8 @@ def main() -> None:
     )
     print(
         f"Snapshot written: {OUT} ({populated:,}/{len(df):,} symbols populated) "
-        f"with {new_alerts:,} new buy-signal event(s) at {refresh_display}"
+        f"with {new_alerts:,} new buy-signal event(s) at {refresh_display}; "
+        f"actual monthly returns written for {len(monthly_df):,} symbols to {MONTHLY_OUT.name}"
     )
 
 
