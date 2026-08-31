@@ -14,7 +14,7 @@ def test_header_has_small_marketscope_logo():
 
 def test_header_shows_current_version_below_name():
     assert '<h1>MarketScope</h1>' in APP
-    assert '<div class="marketscope-version">v5.9.46</div>' in APP
+    assert '<div class="marketscope-version">v5.9.47</div>' in APP
     assert ".marketscope-version {" in CSS
 
 def test_persistence_protection_remains_in_release():

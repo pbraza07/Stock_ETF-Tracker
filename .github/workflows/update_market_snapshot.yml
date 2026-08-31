@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.46)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.47)
 # Preserves the validated max-history refresh contract introduced in (v5.9.5).
 
 on:
@@ -11,6 +11,8 @@ on:
       - 'data/snapshot_metadata.json'
       - 'data/universe_metadata.json'
       - 'data/saved_portfolio_simulations.json'
+      - 'data/generated_pdfs/**'
+      - 'static/generated_pdfs/**'
       - 'data/monthly_returns_10y.csv'
       - 'data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
       - 'data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv'

@@ -21,4 +21,4 @@ def test_missing_preipo_years_are_skipped_not_zeroed():
     assert "continue" in fn
 
 def test_release_version_is_current():
-    assert "5.9.46" in APP
+    assert "5.9.47" in APP
