@@ -7,7 +7,7 @@ RANKER = (ROOT / "scripts" / "build_actual_monthly_rankings.py").read_text(encod
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.60"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.61"
 
 
 def test_pdf_first_page_shows_marketscope_version():
@@ -53,7 +53,7 @@ def test_pdf_lists_positive_months_on_page1_strategy_page_and_instrument_table()
 
 
 def test_pdf_layout_v12_forces_rebuild_and_repairs_old_schedule_counts():
-    marker = "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1"
     assert APP.count(marker) >= 2
     assert 'Repair old v5.9.48 records' in APP
     assert 'result["positive_months"] = int(positive)' in APP

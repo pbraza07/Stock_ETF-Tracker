@@ -50,3 +50,9 @@ Monthly withdrawals use `data/monthly_returns_25y.csv`, generated from the same 
 Yahoo/yfinance remains the primary adjusted-price source. The oldest tracked completed annual return remains 2001, requiring the 2000 year-end anchor. The newest tracked annual year is derived automatically as the latest completed calendar year, so no source configuration change is required when a new year closes.
 
 The durable full-history monthly source is now `data/monthly_returns_full_history.csv`.
+
+## v5.9.61 $160K withdrawal ranking source
+
+The new $300K / $160K-per-year Top-100 ranking family is generated from the committed annual-performance CSV snapshot in `data/annual_performance_160k_source.csv`.
+
+Only completed calendar-year stock returns are used for the ten-year ranking. The generator requires complete data for all ten ranking years, four different sectors per portfolio, and a maximum of five Top-100 appearances per ticker.

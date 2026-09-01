@@ -76,3 +76,23 @@ The PDF year-level summary compounds the actual monthly portfolio returns for th
 
 Cash withdrawals are modeled separately. `End + Withdrawn` equals the December 31 remaining portfolio plus the cash withdrawn during that calendar year and is shown only as a cash-flow reconciliation measure. Because withdrawals occur throughout the year, that value is not used as the annual-return formula.
 
+## v5.9.61 — $300K / $160K yearly-withdrawal ranking
+
+The new high-withdrawal Top-100 family uses four equal-weight stocks from four different sectors and the ten completed annual-return columns in its saved CSV source.
+
+For Rebalanced:
+1. apply the equal-weight portfolio return for the year;
+2. remove up to $160,000;
+3. if funds remain, restore the four stocks to 25% each.
+
+For Not Rebalanced:
+1. apply each stock's annual return to its drifted holding;
+2. remove up to $160,000 proportionally;
+3. retain the post-withdrawal drifted weights.
+
+Ranking priority is:
+1. number of full $160,000 withdrawals funded;
+2. total withdrawal cash delivered;
+3. remaining ending balance.
+
+Each ticker is capped at five appearances across each complete Top-100 list.

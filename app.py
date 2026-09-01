@@ -66,7 +66,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
-# v5.9.60: monthly-withdrawal PDF yearly cash-flow reconciliation.
+# v5.9.61: monthly-withdrawal PDF yearly cash-flow reconciliation.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -132,6 +132,8 @@ COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
 COMBO_10Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_10y.csv"
 COMBO_10Y_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_withdrawal_10y.csv"
 COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_withdrawal_10y.csv"
+COMBO_10Y_REBALANCED_WITHDRAWAL_160K_FILE = BASE_DIR / "data" / "top100_rebalanced_withdrawal_10y_160k_max5.csv"
+COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_160K_FILE = BASE_DIR / "data" / "top100_not_rebalanced_withdrawal_10y_160k_max5.csv"
 COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv"
 COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv"
 COMBO_RECESSION_REBALANCED_FILE = BASE_DIR / "data" / "top100_recession_balanced_rebalanced_10y.csv"
@@ -139,6 +141,7 @@ COMBO_RECESSION_NOT_REBALANCED_FILE = BASE_DIR / "data" / "top100_recession_bala
 COMBO_SOURCE_FILE = BASE_DIR / "data" / "portfolio_combo_source_latest.csv"
 COMBO_WITHDRAWAL_START = 300_000.0
 COMBO_WITHDRAWAL_ANNUAL = 85_000.0
+COMBO_WITHDRAWAL_ANNUAL_160K = 160_000.0
 COMBO_WITHDRAWAL_MONTHLY = 5_000.0
 COMBO_RANK_YEARS_BY_PERIOD = {
     "5Y": rolling_completed_year_labels(5, as_of=now_et()),
@@ -350,15 +353,31 @@ def _ranked_withdrawal_combo_label(row, strategy: str) -> str:
     except Exception:
         net_profit = 0.0
     short_strategy = "Rebalanced" if str(strategy).lower().startswith("reb") else "Not Rebalanced"
-    return f"#{rank} {combo} • {short_strategy} remaining ${remaining:,.0f} • Net profit ${net_profit:,.0f}"
+    coverage = ""
+    try:
+        funded = int(float(row.get("Withdrawals Fully Funded")))
+        target = int(float(row.get("Target Withdrawals") or 10))
+        coverage = f" • Funded {funded}/{target}"
+    except Exception:
+        coverage = ""
+    return (
+        f"#{rank} {combo} • {short_strategy} remaining ${remaining:,.0f} "
+        f"• Net profit ${net_profit:,.0f}{coverage}"
+    )
 
 
-def _apply_withdrawal_ranked_combo_selection(select_key: str, lookup_key: str, ranking_name: str) -> None:
+def _apply_withdrawal_ranked_combo_selection(
+    select_key: str,
+    lookup_key: str,
+    ranking_name: str,
+    annual_withdrawal: float = COMBO_WITHDRAWAL_ANNUAL,
+) -> None:
     selected = st.session_state.get(select_key)
     lookup = st.session_state.get(lookup_key) or {}
     symbols = list(lookup.get(selected) or [])
     if len(symbols) != 4:
         return
+    annual_withdrawal = float(annual_withdrawal)
     st.session_state.portfolio_symbols = symbols
     st.session_state.portfolio_symbol_picker = symbols
     st.session_state.portfolio_period = "10Y"
@@ -367,28 +386,46 @@ def _apply_withdrawal_ranked_combo_selection(select_key: str, lookup_key: str, r
     st.session_state.portfolio_total_amount = float(COMBO_WITHDRAWAL_START)
     st.session_state.portfolio_withdrawals_enabled = True
     st.session_state.portfolio_monthly_withdrawals_enabled = False
-    st.session_state.portfolio_annual_withdrawal = float(COMBO_WITHDRAWAL_ANNUAL)
+    if abs(annual_withdrawal - float(COMBO_WITHDRAWAL_ANNUAL)) < 0.005:
+        st.session_state.portfolio_annual_withdrawal = float(COMBO_WITHDRAWAL_ANNUAL)
+    else:
+        st.session_state.portfolio_annual_withdrawal = annual_withdrawal
     st.session_state.combo_autoload_message = (
         f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to $300,000 start, "
-        f"10Y / Equal split, with $85,000 annual withdrawals."
+        f"10Y / Equal split, with ${annual_withdrawal:,.0f} annual withdrawals."
     )
 
 
 def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
-    """Display the full detailed schema stored by the 10Y $300K/$85K rankings."""
+    """Display detailed yearly-withdrawal rankings, including coverage/diversification fields when present."""
     if df is None or df.empty:
         return pd.DataFrame()
-    years = COMBO_RANK_YEARS_BY_PERIOD["10Y"]
+
+    year_cols = sorted(
+        [str(col) for col in df.columns if str(col).isdigit() and len(str(col)) == 4],
+        reverse=True,
+    )
+    years = year_cols[:10] if year_cols else COMBO_RANK_YEARS_BY_PERIOD["10Y"]
+
     identity_cols = []
     for idx in range(1, 5):
         identity_cols.extend([f"Stock {idx}", f"Sector {idx}", f"Name {idx}"])
+        if f"Stock {idx} Top100 Uses" in df.columns:
+            identity_cols.append(f"Stock {idx} Top100 Uses")
+
     balance_cols = [f"{year} Balance After Withdrawal ($)" for year in sorted(years)]
+    coverage_cols = [
+        "Target Withdrawals", "Withdrawals Fully Funded", "Full 10Y Withdrawal Goal",
+        "Depleted Year", "Max Ticker Repeats", "Distinct Tickers in Top 100",
+    ]
+    source_cols = ["Ranking Window Start", "Ranking Window End", "Ranking Source", "Ranking Method"]
     cols = [
         "Rank", "Combo", "Strategy", *identity_cols, *years,
         "Worst Year", "Worst Year %", "Best Year", "Best Year %",
+        *coverage_cols,
         "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
-        "Net Profit incl. Withdrawals ($)", *balance_cols,
+        "Net Profit incl. Withdrawals ($)", *balance_cols, *source_cols,
     ]
     available = [c for c in cols if c in df.columns]
     out = df[available].copy()
@@ -402,6 +439,13 @@ def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
     ]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
+    for col in [
+        "Target Withdrawals", "Withdrawals Fully Funded", "Max Ticker Repeats",
+        "Distinct Tickers in Top 100",
+        *[f"Stock {idx} Top100 Uses" for idx in range(1, 5)],
+    ]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").astype("Int64")
     return out
 
 
@@ -1153,7 +1197,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2994,7 +3038,7 @@ with portfolio_tab:
         # v5.9.53: ranking families stay hidden until their respective button is opened.
         st.caption("Portfolio preset rankings are grouped below. Open only the ranking family you want to use.")
         preset_row1 = st.columns(3)
-        preset_row2 = st.columns(2)
+        preset_row2 = st.columns(3)
 
         def _render_profit_worst_rankings(period_label: str, profit_file: Path, worst_file: Path) -> None:
             st.caption(
@@ -3187,6 +3231,97 @@ with portfolio_tab:
                     st.dataframe(_recession_combo_rank_table(recession_nr), use_container_width=True, hide_index=True, height=520)
                 st.caption(
                     "Recession Defense is a historical resilience screen, not a guarantee. A hard maximum of five Top-100 appearances per ticker is enforced in each strategy ranking. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
+                )
+
+        with preset_row2[2]:
+            with st.popover("💰 10Y $160K Withdrawal Top 100", use_container_width=True):
+                st.markdown("### $300K Start / $160K per Year · Max 5 Uses per Ticker")
+                st.caption(
+                    "Four stocks from four different sectors, equal 25% starting allocation, using the completed "
+                    "2016–2025 annual returns in the saved CSV ranking source. Each ticker may appear in no more "
+                    "than five of the Top 100 combinations in each strategy. Rankings prioritize the number of "
+                    "full $160,000 withdrawals funded, then total cash delivered, then ending balance."
+                )
+                high_rb = _load_ranked_combo_file(str(COMBO_10Y_REBALANCED_WITHDRAWAL_160K_FILE))
+                high_nr = _load_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_160K_FILE))
+
+                st.markdown("#### 🔄 Top 100 — Rebalanced Annually")
+                if high_rb.empty:
+                    st.warning("$160K rebalanced ranking data is unavailable.")
+                else:
+                    lookup_key = "combo_10y_160k_rebalanced_lookup"
+                    picker_key = "combo_10y_160k_rebalanced_picker"
+                    lookup = {}
+                    options = ["— Select a Top 100 $160K rebalanced combo —"]
+                    for _, combo_row in high_rb.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Rebalanced")
+                        options.append(label)
+                        lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox(
+                        "10Y $160K rebalanced withdrawal combination",
+                        options=options,
+                        index=0,
+                        key=picker_key,
+                        on_change=_apply_withdrawal_ranked_combo_selection,
+                        args=(
+                            picker_key,
+                            lookup_key,
+                            "10Y $160K Rebalanced Withdrawal combo",
+                            COMBO_WITHDRAWAL_ANNUAL_160K,
+                        ),
+                    )
+
+                st.markdown("#### ↗ Top 100 — Not Rebalanced")
+                if high_nr.empty:
+                    st.warning("$160K not-rebalanced ranking data is unavailable.")
+                else:
+                    lookup_key = "combo_10y_160k_not_rebalanced_lookup"
+                    picker_key = "combo_10y_160k_not_rebalanced_picker"
+                    lookup = {}
+                    options = ["— Select a Top 100 $160K not-rebalanced combo —"]
+                    for _, combo_row in high_nr.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Not Rebalanced")
+                        options.append(label)
+                        lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox(
+                        "10Y $160K not-rebalanced withdrawal combination",
+                        options=options,
+                        index=0,
+                        key=picker_key,
+                        on_change=_apply_withdrawal_ranked_combo_selection,
+                        args=(
+                            picker_key,
+                            lookup_key,
+                            "10Y $160K Not-Rebalanced Withdrawal combo",
+                            COMBO_WITHDRAWAL_ANNUAL_160K,
+                        ),
+                    )
+
+                high_rb_tab, high_nr_tab = st.tabs([
+                    "🔄 Rebalanced Top 100",
+                    "↗ Not Rebalanced Top 100",
+                ])
+                with high_rb_tab:
+                    st.dataframe(
+                        _withdrawal_combo_rank_table(high_rb),
+                        use_container_width=True,
+                        hide_index=True,
+                        height=540,
+                    )
+                with high_nr_tab:
+                    st.dataframe(
+                        _withdrawal_combo_rank_table(high_nr),
+                        use_container_width=True,
+                        hide_index=True,
+                        height=540,
+                    )
+
+                st.caption(
+                    "Because $160,000 per year is a very high withdrawal relative to a $300,000 starting portfolio, "
+                    "the table explicitly shows Withdrawals Fully Funded and Depleted Year. The max-five rule is "
+                    "enforced across the full Top 100 list, not just within an individual combination."
                 )
 
         portfolio_total = st.number_input(
@@ -3862,7 +3997,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

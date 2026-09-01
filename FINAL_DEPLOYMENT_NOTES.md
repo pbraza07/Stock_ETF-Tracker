@@ -1,3 +1,14 @@
+# v5.9.61 deployment note
+
+Deploy this release over the existing repository; do not delete live saved Portfolio Simulation JSON/PDF state.
+
+This release intentionally adds three committed data files under `data/` for the new fixed-source ranking family:
+- annual_performance_160k_source.csv
+- top100_rebalanced_withdrawal_10y_160k_max5.csv
+- top100_not_rebalanced_withdrawal_10y_160k_max5.csv
+
+They are ranking assets, not live user state, and should be uploaded with the code.
+
 # v5.9.60 deployment note
 
 Deploy over the existing repository. No data migration is required.

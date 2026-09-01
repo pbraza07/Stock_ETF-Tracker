@@ -1,3 +1,7 @@
+# MarketScope v5.9.61 — $160K Annual-Withdrawal Top 100
+
+Portfolio Simulator now has a dedicated **$300K start / $160K per year / 10Y** Top-100 family for Rebalanced and Not-Rebalanced portfolios. Every portfolio contains four stocks from four different sectors and each ticker is capped at five appearances across each Top 100 list. Coverage fields make it explicit when an aggressive $160K withdrawal eventually depletes a portfolio.
+
 # MarketScope v5.9.60 — UI Visibility + Card Logo Restore
 
 This release removes an internal monthly-return source-priority message that was accidentally rendered by Streamlit, replaces the monthly-withdrawal KPI row with a responsive no-truncation grid, and restores real company/ETF logos in Card View with a resilient Yahoo/issuer-first fallback chain. Ticker initials remain only as the final image-failure fallback.

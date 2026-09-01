@@ -7,7 +7,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.60"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.61"
 
 
 def test_app_uses_dynamic_completed_calendar_years():
@@ -47,7 +47,7 @@ def test_persistence_protection_remains():
 
 
 def test_saved_pdf_upgrade_refreshes_dynamic_performance_and_forces_v17():
-    marker = "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1"
     assert APP.count(marker) >= 2
     assert "for metric in PERF_COLS:" in APP
     assert 'item["performance"] = performance' in APP
