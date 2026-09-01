@@ -66,7 +66,7 @@ def _download_archive(path: Path, url: str) -> Path:
         url,
         stream=True,
         timeout=(15, 180),
-        headers={"User-Agent": "MarketScope/5.9.59 historical-verification"},
+        headers={"User-Agent": "MarketScope/5.9.60 historical-verification"},
     ) as response:
         response.raise_for_status()
         with temp.open("wb") as fh:

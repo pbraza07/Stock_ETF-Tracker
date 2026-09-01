@@ -1,3 +1,7 @@
+# MarketScope v5.9.60 — UI Visibility + Card Logo Restore
+
+This release removes an internal monthly-return source-priority message that was accidentally rendered by Streamlit, replaces the monthly-withdrawal KPI row with a responsive no-truncation grid, and restores real company/ETF logos in Card View with a resilient Yahoo/issuer-first fallback chain. Ticker initials remain only as the final image-failure fallback.
+
 # MarketScope v5.9.59 - Monthly PDF Yearly Cash-Flow Reconciliation
 
 The monthly-withdrawal PDF comparison now shows the **true compounded Jan-Dec portfolio return**, actual cash withdrawn during each year, December 31 remaining balance, and **Year-End + Withdrawn** for Rebalanced and Not Rebalanced strategies. The misleading December-only return columns have been removed.

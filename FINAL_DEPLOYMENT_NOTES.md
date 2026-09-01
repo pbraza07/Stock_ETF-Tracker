@@ -1,3 +1,11 @@
+# v5.9.60 deployment note
+
+Deploy over the existing repository. No data migration is required.
+
+The app-code change invalidates the old Streamlit logo cache. Card View will refetch logos using the restored resolver; failed remote images automatically fall back to ticker initials without leaving a broken image.
+
+The monthly-withdrawal KPI row is now custom responsive HTML and shows the complete Positive Months counts without ellipsis.
+
 # v5.9.59 deployment note
 
 Deploy over the existing repository. Saved simulation data and stored PDFs remain protected. Existing saved simulations will rebuild to PDF layout v18 when opened/downloaded so the new yearly cash-flow reconciliation page is used.

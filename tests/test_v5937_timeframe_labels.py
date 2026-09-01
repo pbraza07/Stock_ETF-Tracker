@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / "app.py"
 
 def test_version_5937():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.59"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.60"
 
 def test_pdf_setup_removed_and_timeframe_labels_centralized():
     src = APP.read_text(encoding="utf-8")

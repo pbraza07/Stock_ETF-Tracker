@@ -370,7 +370,15 @@ class YahooFinanceProvider(MarketDataProvider):
             if direct.startswith(("https://", "http://")):
                 return direct
         meta = self.get_metadata(symbol)
-        return str(meta.get("logo_url") or "").strip()
+        resolved = str(meta.get("logo_url") or "").strip()
+        if resolved.startswith(("https://", "http://")):
+            return resolved
+
+        # Final ticker-addressable image fallback. The UI includes an onerror
+        # initials fallback, so a missing asset never produces a broken card.
+        # This avoids losing every logo when Yahoo metadata is temporarily
+        # rate-limited while still preferring Yahoo/issuer metadata first.
+        return f"https://financialmodelingprep.com/image-stock/{quote(symbol)}.png"
 
     def get_logo_urls_many(self, symbols: Iterable[str], max_workers: int = 6) -> Dict[str, str]:
         symbols = self._clean_symbols(symbols)
@@ -385,8 +393,9 @@ class YahooFinanceProvider(MarketDataProvider):
                     url = str(future.result() or "").strip()
                 except Exception:
                     url = ""
-                if url.startswith(("https://", "http://")):
-                    output[symbol] = url
+                if not url.startswith(("https://", "http://")):
+                    url = f"https://financialmodelingprep.com/image-stock/{quote(symbol)}.png"
+                output[symbol] = url
         return output
 
     def get_price_targets(self, symbol: str) -> dict:

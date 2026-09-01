@@ -16,7 +16,10 @@ def test_monthly_result_no_longer_defaults_to_zero_because_key_is_missing():
 def test_portfolio_metric_reads_real_returned_counts():
     assert 'rb_positive = int(portfolio_monthly_withdrawal_rebalanced_result.get("positive_months") or 0)' in APP
     assert 'nr_positive = int(portfolio_monthly_withdrawal_not_rebalanced_result.get("positive_months") or 0)' in APP
-    assert 'mc5.metric("Positive months", f"RB {rb_positive}/{rb_months} • NR {nr_positive}/{nr_months}")' in APP
+    assert "def _monthly_withdrawal_kpi_grid" in APP
+    assert "rb_positive" in APP and "nr_positive" in APP
+    assert "monthly-positive-months-card" in APP
+    assert 'mc5.metric("Positive months"' not in APP
 
 
 def test_saved_pdf_record_persists_instrument_and_portfolio_positive_months():

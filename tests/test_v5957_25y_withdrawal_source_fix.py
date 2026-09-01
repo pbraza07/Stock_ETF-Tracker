@@ -8,8 +8,8 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.59"
-    assert "v5.9.59" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.60"
+    assert "v5.9.60" in APP
 
 
 def test_snapshot_generates_actual_monthly_history_for_full_dynamic_window():
@@ -79,7 +79,7 @@ def test_pdf_does_not_truncate_annual_withdrawal_schedule():
 
 
 def test_pdf_contract_is_v17():
-    marker = "MarketScope Portfolio Split Simulator v18 - monthly yearly cash-flow reconciliation + dynamic annual history + actual monthly returns + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1"
     assert APP.count(marker) >= 2
 
 

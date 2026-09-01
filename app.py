@@ -66,7 +66,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
-# v5.9.59: monthly-withdrawal PDF yearly cash-flow reconciliation.
+# v5.9.60: monthly-withdrawal PDF yearly cash-flow reconciliation.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -957,17 +957,8 @@ def cached_actual_monthly_returns(
     symbols: tuple[str, ...],
     calendar_years: tuple[str, ...],
 ) -> dict:
-    f"""Load actual month-end returns for 1Y-{ANNUAL_HISTORY_YEARS}Y withdrawal simulations.
-
-    Source priority:
-    1. durable dynamic full-history actual-monthly dataset generated from the same adjusted daily
-       history as Market Table annual returns;
-    2. durable 10Y monthly dataset for compatibility;
-    3. GitHub copies of those datasets;
-    4. direct Yahoo explicit-start history for missing symbols/years.
-
-    No annual return is divided/rooted into synthetic monthly returns.
-    """
+    # Internal source order only. This function intentionally emits no Streamlit
+    # text; data-source implementation details must never render in the UI.
     clean_symbols = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
     years = tuple(str(y) for y in calendar_years if str(y).isdigit())
     labels = _actual_month_labels(years)
@@ -1120,25 +1111,38 @@ def cached_income_metrics(symbols: tuple[str, ...]) -> dict:
         return {}
 
 
-@st.cache_data(ttl=24 * 60 * 60, show_spinner=False)
+@st.cache_data(ttl=30 * 60, show_spinner=False)
 def cached_logo_urls(symbols: tuple[str, ...]) -> dict:
-    """Fetch instrument logos for visible cards/comparisons only, with long-lived caching."""
+    """Fetch instrument logos for visible cards/comparisons with resilient fallback and short failure recovery."""
     clean = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
     if not clean:
         return {}
     try:
-        return provider.get_logo_urls_many(clean, max_workers=6)
+        return provider.get_logo_urls_many(clean, max_workers=3)
     except Exception:
         return {}
 
 
 def _comparison_logo_html(symbol: str, logo_url: str) -> str:
+    """Render Yahoo/issuer logo first, ticker-addressable logo second, initials last."""
     symbol = str(symbol or "").strip().upper()
     initials = escape((symbol[:2] or "?").upper())
     url = escape(str(logo_url or "").strip(), quote=True)
-    if url.startswith(("https://", "http://")):
-        return f'<span class="comparison-logo"><img src="{url}" alt="{escape(symbol)} logo" loading="lazy"></span>'
-    return f'<span class="comparison-logo comparison-logo-fallback">{initials}</span>'
+    fallback_url = escape(
+        f"https://financialmodelingprep.com/image-stock/{symbol}.png",
+        quote=True,
+    )
+    if not url.startswith(("https://", "http://")):
+        url = fallback_url
+    return (
+        '<span class="comparison-logo">'
+        f'<img src="{url}" data-logo-fallback="{fallback_url}" '
+        f'alt="{escape(symbol)} logo" loading="lazy" '
+        'onerror="if(this.src!==this.dataset.logoFallback){this.src=this.dataset.logoFallback;}'
+        'else{this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\';}">'
+        f'<span class="comparison-logo-inline-fallback">{initials}</span>'
+        '</span>'
+    )
 
 
 def _card_logo_html(symbol: str, logo_url: str) -> str:
@@ -1149,7 +1153,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v18 - monthly yearly cash-flow reconciliation + dynamic annual history + actual monthly returns + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2874,6 +2878,43 @@ def _portfolio_analytics_payload(meta_row: pd.Series, result: dict, income_metri
     }
 
 
+def _monthly_withdrawal_kpi_grid(
+    monthly_withdrawal: float,
+    rb_end: float,
+    nr_end: float,
+    rb_positive: int,
+    rb_months: int,
+    nr_positive: int,
+    nr_months: int,
+) -> str:
+    """Responsive KPI grid that never truncates the displayed metric values."""
+    diff = float(rb_end) - float(nr_end)
+    cards = [
+        ("Monthly withdrawal", f"${float(monthly_withdrawal):,.2f}", ""),
+        ("Rebalanced remaining", f"${float(rb_end):,.2f}", "accent"),
+        ("Not rebalanced remaining", f"${float(nr_end):,.2f}", "accent"),
+        ("Rebalance difference", f"${diff:+,.2f}", "positive" if diff >= 0 else "negative"),
+    ]
+    html = []
+    for label, value, css_class in cards:
+        html.append(
+            '<div class="monthly-withdrawal-kpi-card">'
+            f'<span>{escape(label)}</span>'
+            f'<b class="{css_class}">{escape(value)}</b>'
+            '</div>'
+        )
+    html.append(
+        '<div class="monthly-withdrawal-kpi-card monthly-positive-months-card">'
+        '<span>Positive months</span>'
+        '<div class="positive-month-lines">'
+        f'<b><em>RB</em> {int(rb_positive)}/{int(rb_months)}</b>'
+        f'<b><em>NR</em> {int(nr_positive)}/{int(nr_months)}</b>'
+        '</div>'
+        '</div>'
+    )
+    return '<div class="monthly-withdrawal-kpi-grid">' + "".join(html) + "</div>"
+
+
 def _portfolio_analytics_dataframe(payloads: list[dict]) -> pd.DataFrame:
     rows = []
     for item in payloads:
@@ -3523,12 +3564,18 @@ with portfolio_tab:
                         nr_positive = int(portfolio_monthly_withdrawal_not_rebalanced_result.get("positive_months") or 0)
                         rb_months = int(portfolio_monthly_withdrawal_rebalanced_result.get("months_modeled") or 0)
                         nr_months = int(portfolio_monthly_withdrawal_not_rebalanced_result.get("months_modeled") or 0)
-                        mc1, mc2, mc3, mc4, mc5 = st.columns(5)
-                        mc1.metric("Monthly withdrawal", f"${float(portfolio_monthly_withdrawal):,.2f}")
-                        mc2.metric("Rebalanced remaining", f"${rb_end:,.2f}")
-                        mc3.metric("Not rebalanced remaining", f"${nr_end:,.2f}")
-                        mc4.metric("Rebalance difference", f"${(rb_end - nr_end):+,.2f}")
-                        mc5.metric("Positive months", f"RB {rb_positive}/{rb_months} • NR {nr_positive}/{nr_months}")
+                        st.markdown(
+                            _monthly_withdrawal_kpi_grid(
+                                float(portfolio_monthly_withdrawal),
+                                rb_end,
+                                nr_end,
+                                rb_positive,
+                                rb_months,
+                                nr_positive,
+                                nr_months,
+                            ),
+                            unsafe_allow_html=True,
+                        )
 
                         def _monthly_withdrawal_table_rows(result: dict) -> list[dict]:
                             rows = []
@@ -3815,7 +3862,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v18 - monthly yearly cash-flow reconciliation + dynamic annual history + actual monthly returns + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v19 - v5.9.60 UI visibility/logo restore + monthly yearly cash-flow reconciliation + dynamic annual history + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

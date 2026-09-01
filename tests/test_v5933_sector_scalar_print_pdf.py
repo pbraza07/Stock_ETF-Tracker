@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 VIEWER = (ROOT / "static" / "pdf_viewer.html").read_text(encoding="utf-8")
 
 def test_v5933_release():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.59"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.60"
 
 def test_sector_timeframe_metric_is_always_series():
     assert "def _sector_numeric_series(frame: pd.DataFrame, column: str) -> pd.Series:" in APP
