@@ -8,7 +8,7 @@ WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_
 
 
 def test_version_5954():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.54"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
 
 
 def test_explicit_history_start_reaches_prior_anchor_for_2001():

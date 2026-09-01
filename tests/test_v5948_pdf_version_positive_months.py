@@ -7,7 +7,7 @@ RANKER = (ROOT / "scripts" / "build_actual_monthly_rankings.py").read_text(encod
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.54"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
 
 
 def test_pdf_first_page_shows_marketscope_version():

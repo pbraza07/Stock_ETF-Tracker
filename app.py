@@ -750,7 +750,7 @@ def _latest_display_timestamp(values) -> str:
 def load_snapshot() -> pd.DataFrame:
     """Load the snapshot with the strongest genuine 25-year annual coverage.
 
-    v5.9.54 preserves the migration fix where where an older local 20-year snapshot
+    v5.9.55 preserves the migration fix where where an older local 20-year snapshot
     could win simply because it already had prices, even after GitHub held a
     newer 25-year snapshot. Local, GitHub and bootstrap candidates are all
     normalized, then ranked by annual-year coverage first and populated prices
@@ -1805,7 +1805,7 @@ symbols = list(dict.fromkeys(base_symbols + snapshot_symbols + extra_symbols))
 market_base = assemble_market(symbols, snapshot)
 market = apply_live_overlay(market_base, st.session_state.live_prices)
 
-# v5.9.54: 25-year annual history is maintained by the same automatic snapshot
+# v5.9.55: 25-year annual history is maintained by the same automatic snapshot
 # refresh as every other market field. There is intentionally no separate repair
 # task or user-facing backfill button. Missing pre-inception years remain blank.
 

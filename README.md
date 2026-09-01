@@ -1,3 +1,7 @@
+# MarketScope v5.9.55 — 25Y Persistence Race Fix
+
+The automatic 25-year annual-history calculation remains unchanged from v5.9.54, but its durable GitHub persistence is now race-safe. The verified 2025–2001 snapshot is persisted immediately after validation, before slower ranking jobs, and concurrent `main` updates are handled by fetch/reset/reapply/retry logic instead of losing the generated data.
+
 # MarketScope v5.9.54 — Automatic 25-Year Annual History
 
 All 25 completed calendar-year returns are now maintained automatically by the normal MarketScope snapshot refresh. The separate repair banner/button is removed. Historical downloads explicitly begin at 2000-01-01 so 2001 can be calculated from a genuine prior-year anchor, and verified older values are preserved across temporary provider omissions.

@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.54)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.55)
 # Automatic daily refresh now owns the full 25 completed-year adjusted-history window.
 
 on:
@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -59,20 +61,18 @@ jobs:
       - name: Audit automatic 25Y annual-return coverage (2025-2001)
         run: python scripts/validate_25y_snapshot.py
 
+      # v5.9.55: persist the verified 25Y snapshot immediately. Do not wait for
+      # slower portfolio-ranking jobs before making 2005-2001 durable.
+      - name: Persist verified 25Y market snapshot
+        run: |
+          scripts/persist_generated_files.sh             "chore: persist verified MarketScope 25Y snapshot"             data/default_universe.csv             data/market_snapshot.csv             data/snapshot_metadata.json             data/universe_metadata.json             data/monthly_returns_10y.csv
+
       - name: Build actual 10Y monthly withdrawal rankings
         run: python scripts/build_actual_monthly_rankings.py
 
       - name: Build recession-balanced 10Y rankings
         run: python scripts/build_recession_rankings.py
 
-      - name: Commit refreshed persistent data
+      - name: Persist refreshed ranking data
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/default_universe.csv data/market_snapshot.csv data/snapshot_metadata.json data/universe_metadata.json data/monthly_returns_10y.csv data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv data/top100_recession_balanced_rebalanced_10y.csv data/top100_recession_balanced_not_rebalanced_10y.csv
-          if git diff --cached --quiet; then
-            echo "No universe/snapshot changes to commit."
-          else
-            git commit -m "chore: refresh MarketScope 6PM ET snapshot"
-            git push
-          fi
+          scripts/persist_generated_files.sh             "chore: refresh MarketScope ranking datasets"             data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv             data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv             data/top100_recession_balanced_rebalanced_10y.csv             data/top100_recession_balanced_not_rebalanced_10y.csv

@@ -6,8 +6,8 @@ SNAPSHOT = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 def test_release_version_5950():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.54"
-    assert "v5.9.54" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
+    assert "v5.9.55" in APP
 
 def test_app_uses_25_completed_calendar_years():
     assert "completed_year_labels(as_of=now_et(), years=25)" in APP

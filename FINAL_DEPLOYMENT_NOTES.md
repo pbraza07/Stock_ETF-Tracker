@@ -1,3 +1,15 @@
+# v5.9.55 deployment note
+
+After uploading v5.9.55 over the existing GitHub repository and committing to `main`, the normal MarketScope refresh will:
+
+1. generate the full automatic 25Y snapshot;
+2. validate 2025–2001 annual-return coverage;
+3. immediately persist the verified snapshot with race-safe retries;
+4. generate the monthly/recession ranking datasets;
+5. persist those rankings separately with the same race-safe retries.
+
+Do not delete the existing repository before deploying. Preserve the live saved Portfolio Simulation JSON/PDF files and the existing GitHub token configuration.
+
 # MarketScope v5.9.40 - Final Deployment Notes
 
 Parent release: MarketScope v5.9.38.
