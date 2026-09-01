@@ -1,5 +1,5 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.53)
-# Preserves the validated max-history refresh contract introduced in (v5.9.5).
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.54)
+# Automatic daily refresh now owns the full 25 completed-year adjusted-history window.
 
 on:
   workflow_dispatch:
@@ -49,14 +49,14 @@ jobs:
       - name: Refresh Nasdaq >$100B universe and analyst ratings
         run: python scripts/update_universe.py
 
-      - name: Build daily returns, buy signals and analyst price-target snapshot
+      - name: Build automatic 25Y returns, buy signals and analyst price-target snapshot
         env:
-          MARKETSCOPE_HISTORY_PERIOD: max
+          MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01
           MARKETSCOPE_BATCH_SIZE: 80
           MARKETSCOPE_BATCH_PAUSE: 0.35
         run: python scripts/update_snapshot.py
 
-      - name: Validate 25Y annual-return coverage (2025-2001)
+      - name: Audit automatic 25Y annual-return coverage (2025-2001)
         run: python scripts/validate_25y_snapshot.py
 
       - name: Build actual 10Y monthly withdrawal rankings

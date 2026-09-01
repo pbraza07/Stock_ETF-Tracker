@@ -69,6 +69,110 @@ class YahooFinanceProvider(MarketDataProvider):
                     continue
         return result
 
+    def download_daily_history_since(
+        self,
+        symbols: Iterable[str],
+        start: str = "2000-01-01",
+        chunk_size: int = 20,
+    ) -> Dict[str, pd.DataFrame]:
+        """Download long adjusted daily history from an explicit calendar start.
+
+        MarketScope's 25 completed annual-return window needs the prior-year anchor
+        for the oldest displayed year. During 2026 that means daily history must
+        reach back through calendar 2000 in order to calculate a genuine 2001
+        return. Using an explicit start date is more deterministic than relying on
+        a provider-specific ``period=max`` response for large multi-ticker batches.
+
+        Requests are intentionally split into small chunks. Any symbols omitted by
+        the bulk response are retried one-at-a-time with ``Ticker.history``. No
+        synthetic annual values are created when Yahoo lacks genuine price history.
+        """
+        symbols = self._clean_symbols(symbols)
+        if not symbols:
+            return {}
+
+        result: Dict[str, pd.DataFrame] = {}
+        chunk_size = max(1, int(chunk_size or 20))
+
+        for offset in range(0, len(symbols), chunk_size):
+            batch = symbols[offset:offset + chunk_size]
+            try:
+                raw = yf.download(
+                    tickers=batch,
+                    start=start,
+                    interval="1d",
+                    auto_adjust=True,
+                    actions=False,
+                    repair=False,
+                    group_by="column",
+                    threads=True,
+                    progress=False,
+                    timeout=30,
+                )
+            except Exception:
+                raw = pd.DataFrame()
+
+            if raw is not None and not raw.empty:
+                if len(batch) == 1:
+                    symbol = batch[0]
+                    frame = raw.copy()
+                    if isinstance(frame.columns, pd.MultiIndex):
+                        try:
+                            frame = frame.xs(symbol, axis=1, level=1, drop_level=True).copy()
+                        except Exception:
+                            try:
+                                frame.columns = frame.columns.get_level_values(0)
+                            except Exception:
+                                pass
+                    frame.columns = [str(c) for c in frame.columns]
+                    frame = frame.dropna(how="all")
+                    if not frame.empty:
+                        result[symbol] = frame
+                elif isinstance(raw.columns, pd.MultiIndex):
+                    top = set(map(str, raw.columns.get_level_values(0)))
+                    for symbol in batch:
+                        try:
+                            if "Close" in top:
+                                frame = raw.xs(symbol, axis=1, level=1, drop_level=True).copy()
+                            else:
+                                frame = raw.xs(symbol, axis=1, level=0, drop_level=True).copy()
+                            frame.columns = [str(c) for c in frame.columns]
+                            frame = frame.dropna(how="all")
+                            if not frame.empty:
+                                result[symbol] = frame
+                        except (KeyError, ValueError):
+                            continue
+
+            # Yahoo occasionally omits one symbol from an otherwise successful
+            # multi-ticker response. Retry only those missing symbols individually.
+            for symbol in batch:
+                if symbol in result and not result[symbol].empty:
+                    continue
+                try:
+                    frame = yf.Ticker(symbol).history(
+                        start=start,
+                        interval="1d",
+                        auto_adjust=True,
+                        actions=False,
+                        repair=False,
+                    )
+                except Exception:
+                    frame = pd.DataFrame()
+                if frame is None or frame.empty:
+                    continue
+                frame = frame.copy()
+                if isinstance(frame.columns, pd.MultiIndex):
+                    try:
+                        frame.columns = frame.columns.get_level_values(0)
+                    except Exception:
+                        pass
+                frame.columns = [str(c) for c in frame.columns]
+                frame = frame.dropna(how="all")
+                if not frame.empty:
+                    result[symbol] = frame
+
+        return result
+
     def download_live_prices(self, symbols: Iterable[str]) -> Dict[str, float]:
         symbols = self._clean_symbols(symbols)
         if not symbols:
@@ -167,7 +271,10 @@ class YahooFinanceProvider(MarketDataProvider):
         return frame.dropna(how="all")
 
     def download_chart_history(self, symbol: str, chart_period: str) -> pd.DataFrame:
-        period_map = {"1M": "1mo", "6M": "6mo", "1Y": "1y", "5Y": "5y", "MAX": "max"}
+        if str(chart_period).upper() == "MAX":
+            result = self.download_daily_history_since([symbol], start="2000-01-01", chunk_size=1)
+            return result.get(str(symbol).upper(), pd.DataFrame())
+        period_map = {"1M": "1mo", "6M": "6mo", "1Y": "1y", "5Y": "5y"}
         period = period_map.get(chart_period, "1y")
         result = self.download_daily_history([symbol], period=period)
         return result.get(str(symbol).upper(), pd.DataFrame())

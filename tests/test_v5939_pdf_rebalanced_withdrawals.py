@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.53"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.54"
 
 
 def test_pdf_contains_both_withdrawal_strategies():

@@ -1,3 +1,7 @@
+# MarketScope v5.9.54 — Automatic 25-Year Annual History
+
+All 25 completed calendar-year returns are now maintained automatically by the normal MarketScope snapshot refresh. The separate repair banner/button is removed. Historical downloads explicitly begin at 2000-01-01 so 2001 can be calculated from a genuine prior-year anchor, and verified older values are preserved across temporary provider omissions.
+
 # MarketScope v5.9.53 - Verified 25-Year Historical Backfill
 
 MarketScope now validates and repairs the five oldest annual-return years introduced by the 25Y expansion (2005-2001). The app prefers the snapshot with the strongest genuine 25-year history, provides a targeted repair action when needed, and refuses to synthesize pre-inception returns.

@@ -5,8 +5,8 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_text(encoding="utf-8")
 
 def test_version_5947():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.53"
-    assert "v5.9.53" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.54"
+    assert "v5.9.54" in APP
 
 def test_monthly_dropdowns_explicitly_use_actual_return_rankings():
     assert 'st.popover("🗓️ 10Y Actual-Monthly Withdrawal"' in APP

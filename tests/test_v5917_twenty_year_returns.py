@@ -10,8 +10,8 @@ def test_app_requests_twenty_five_completed_years_and_clickable_tiles():
     assert 'PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]' in APP
     assert "for idx in range(0, len(PERF_COLS), 3)" in APP
 
-def test_snapshot_refresh_populates_twenty_five_completed_years_from_max_history():
-    assert 'HISTORY_PERIOD = os.getenv("MARKETSCOPE_HISTORY_PERIOD", "max")' in SNAPSHOT
+def test_snapshot_refresh_populates_twenty_five_completed_years_from_explicit_start_history():
+    assert 'ANNUAL_HISTORY_START = os.getenv("MARKETSCOPE_ANNUAL_HISTORY_START", "2000-01-01")' in SNAPSHOT
     assert "YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)" in SNAPSHOT
     assert "calculate_calendar_year_returns(hist, years=25)" in SNAPSHOT
 

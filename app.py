@@ -701,12 +701,6 @@ def _snapshot_quality_key(df: pd.DataFrame) -> tuple:
     )
 
 
-def _needs_25y_backfill(df: pd.DataFrame) -> bool:
-    """True when the newly expanded 2005-2001 window has no durable annual data yet."""
-    stats = _annual_coverage_stats(df)
-    return any(stats["counts_by_year"].get(year, 0) <= 0 for year in OLDEST_FIVE_YEAR_COLS)
-
-
 def _populated_price_count(df: pd.DataFrame) -> int:
     if df is None or df.empty or "Price" not in df.columns:
         return 0
@@ -756,7 +750,7 @@ def _latest_display_timestamp(values) -> str:
 def load_snapshot() -> pd.DataFrame:
     """Load the snapshot with the strongest genuine 25-year annual coverage.
 
-    v5.9.53 fixes a migration edge case where an older local 20-year snapshot
+    v5.9.54 preserves the migration fix where where an older local 20-year snapshot
     could win simply because it already had prices, even after GitHub held a
     newer 25-year snapshot. Local, GitHub and bootstrap candidates are all
     normalized, then ranked by annual-year coverage first and populated prices
@@ -1150,7 +1144,7 @@ def cached_recent_news(symbol: str, company_name: str, instrument_type: str) -> 
 @st.cache_data(ttl=24 * 60 * 60, show_spinner=False)
 def cached_single_metrics(symbol: str) -> dict:
     symbol = str(symbol).strip().upper()
-    histories = provider.download_daily_history([symbol], period="max")
+    histories = provider.download_daily_history_since([symbol], start="2000-01-01", chunk_size=1)
     hist = histories.get(symbol)
     if hist is None or hist.empty:
         return {}
@@ -1639,7 +1633,16 @@ def apply_history_refresh(df: pd.DataFrame, histories: Dict[str, pd.DataFrame], 
         out.at[idx, "6M"] = as_percent(perf.perf_6m)
         out.at[idx, "YTD"] = as_percent(perf.ytd)
         for year in YEAR_RETURN_COLS:
-            out.at[idx, year] = as_percent(annual_returns.get(year))
+            fresh_value = as_percent(annual_returns.get(year))
+            parsed_fresh = pd.to_numeric(pd.Series([fresh_value]), errors="coerce").iloc[0]
+            if pd.notna(parsed_fresh) and np.isfinite(parsed_fresh):
+                out.at[idx, year] = float(parsed_fresh)
+            else:
+                # Do not erase a previously verified annual return because one
+                # refresh was temporarily truncated or rate-limited by Yahoo.
+                prior_value = pd.to_numeric(pd.Series([out.at[idx, year]]), errors="coerce").iloc[0]
+                if pd.isna(prior_value):
+                    out.at[idx, year] = np.nan
         out.at[idx, "Short Buy"] = signals.short_buy
         out.at[idx, "Long Buy"] = signals.long_buy
         out.at[idx, "Fundamental Buy"] = signals.fundamental_buy
@@ -1802,63 +1805,9 @@ symbols = list(dict.fromkeys(base_symbols + snapshot_symbols + extra_symbols))
 market_base = assemble_market(symbols, snapshot)
 market = apply_live_overlay(market_base, st.session_state.live_prices)
 
-# v5.9.53 migration guard: if the durable snapshot still predates the 25Y
-# expansion, offer a targeted historical-only repair immediately. The normal
-# scheduled GitHub refresh remains the primary automatic path.
-annual_coverage = _annual_coverage_stats(market_base)
-if _needs_25y_backfill(market_base):
-    missing_oldest = [year for year in OLDEST_FIVE_YEAR_COLS if annual_coverage["counts_by_year"].get(year, 0) <= 0]
-    st.warning(
-        "25-year annual-history backfill is incomplete. Missing durable coverage for: "
-        + ", ".join(missing_oldest)
-        + ". MarketScope will never invent these returns; use the repair button or let the scheduled GitHub refresh finish."
-    )
-    if st.button("↻ Repair 25Y annual history now", key="repair_25y_annual_history", type="secondary"):
-        repair_symbols = market_base["Symbol"].astype(str).str.upper().dropna().drop_duplicates().tolist()
-        repaired = market_base.copy()
-        repair_success = 0
-        stamp = format_et()
-        repair_progress = st.progress(0.0, text=f"25Y history repair: 0 / {len(repair_symbols):,}")
-        batch_size = 40
-        for start_idx in range(0, len(repair_symbols), batch_size):
-            batch = repair_symbols[start_idx:start_idx + batch_size]
-            try:
-                histories = provider.download_daily_history(batch, period="max")
-            except Exception:
-                histories = {}
-            repaired, added = apply_history_refresh(repaired, histories, batch, stamp)
-            repair_success += added
-            done = min(len(repair_symbols), start_idx + len(batch))
-            repair_progress.progress(
-                done / len(repair_symbols) if repair_symbols else 1.0,
-                text=f"25Y history repair: {done:,} / {len(repair_symbols):,} • {repair_success:,} populated",
-            )
-        repaired = _normalize_snapshot(repaired)
-        ok, save_message = persist_snapshot(
-            repaired, SNAPSHOT_FILE, "Yahoo Finance max adjusted history - 25Y repair", repair_success
-        )
-        repaired_stats = _annual_coverage_stats(repaired)
-        if all(repaired_stats["counts_by_year"].get(year, 0) > 0 for year in OLDEST_FIVE_YEAR_COLS):
-            st.success(
-                "25Y annual history repaired through "
-                + str(repaired_stats.get("oldest_year_with_data") or OLDEST_FIVE_YEAR_COLS[-1])
-                + f". {save_message}"
-            )
-        else:
-            still_missing = [year for year in OLDEST_FIVE_YEAR_COLS if repaired_stats["counts_by_year"].get(year, 0) <= 0]
-            st.error(
-                "The provider did not return enough genuine history to complete: "
-                + ", ".join(still_missing)
-                + ". No placeholder values were written."
-            )
-        load_snapshot.clear()
-        load_snapshot_metadata.clear()
-        st.rerun()
-else:
-    oldest_label = annual_coverage.get("oldest_year_with_data") or YEAR_RETURN_COLS[-1]
-    st.caption(
-        f"25Y annual-history coverage verified: completed calendar years through {oldest_label} are available where each instrument has genuine price history."
-    )
+# v5.9.54: 25-year annual history is maintained by the same automatic snapshot
+# refresh as every other market field. There is intentionally no separate repair
+# task or user-facing backfill button. Missing pre-inception years remain blank.
 
 # Nasdaq universe membership audit strip. The scheduled 6 PM ET workflow writes
 # the refresh timestamp plus exact symbols crossing the >$100B screening boundary.
@@ -2142,7 +2091,7 @@ with market_tab:
         for start in range(0, total, history_batch_size):
             batch = targets[start:start + history_batch_size]
             try:
-                histories = provider.download_daily_history(batch, period="max")
+                histories = provider.download_daily_history_since(batch, start="2000-01-01", chunk_size=20)
             except Exception:
                 histories = {}
             refreshed, added = apply_history_refresh(refreshed, histories, batch, stamp)
@@ -2980,7 +2929,7 @@ with portfolio_tab:
                 with nrt:
                     st.dataframe(_recession_combo_rank_table(recession_nr), use_container_width=True, hide_index=True, height=520)
                 st.caption(
-                    "Recession Defense is a historical resilience screen, not a guarantee. v5.9.53 also enforces a hard maximum of five Top-100 appearances per ticker in each strategy ranking. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
+                    "Recession Defense is a historical resilience screen, not a guarantee. A hard maximum of five Top-100 appearances per ticker is enforced in each strategy ranking. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
                 )
 
         portfolio_total = st.number_input(

@@ -27,7 +27,7 @@ from universe import load_default_universe
 OUT = BASE_DIR / "data" / "market_snapshot.csv"
 META_OUT = BASE_DIR / "data" / "snapshot_metadata.json"
 MONTHLY_OUT = BASE_DIR / "data" / "monthly_returns_10y.csv"
-HISTORY_PERIOD = os.getenv("MARKETSCOPE_HISTORY_PERIOD", "max")
+ANNUAL_HISTORY_START = os.getenv("MARKETSCOPE_ANNUAL_HISTORY_START", "2000-01-01")
 BATCH_SIZE = max(10, int(os.getenv("MARKETSCOPE_BATCH_SIZE", "80")))
 PAUSE_SECONDS = float(os.getenv("MARKETSCOPE_BATCH_PAUSE", "0.35"))
 YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)
@@ -73,13 +73,26 @@ def _basis(instrument_type: str) -> str:
 
 
 def _history_batch(provider: YahooFinanceProvider, batch: list[str]) -> dict:
-    histories = provider.download_daily_history(batch, period=HISTORY_PERIOD)
-    if len(histories) >= max(1, len(batch) // 3):
+    """Load the complete 25Y annual-history window automatically.
+
+    An explicit 2000 start is required because the oldest displayed annual return
+    (2001 during 2026) needs a genuine prior-year-end price anchor. The provider
+    internally uses small Yahoo batches and single-symbol retries for omissions.
+    """
+    histories = provider.download_daily_history_since(
+        batch, start=ANNUAL_HISTORY_START, chunk_size=20
+    )
+    if len(histories) >= len(batch):
         return histories
-    time.sleep(2)
+    time.sleep(1)
     recovered = dict(histories)
-    for i in range(0, len(batch), 20):
-        recovered.update(provider.download_daily_history(batch[i:i + 20], period=HISTORY_PERIOD))
+    missing = [symbol for symbol in batch if symbol not in recovered]
+    for i in range(0, len(missing), 10):
+        recovered.update(
+            provider.download_daily_history_since(
+                missing[i:i + 10], start=ANNUAL_HISTORY_START, chunk_size=5
+            )
+        )
         time.sleep(0.25)
     return recovered
 
@@ -90,6 +103,32 @@ def _as_bool(value) -> bool:
     if value is None or (isinstance(value, float) and pd.isna(value)):
         return False
     return str(value).strip().lower() in {"true", "1", "yes", "buy"}
+
+
+def _numeric_or_na(value):
+    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    return float(parsed) if pd.notna(parsed) else pd.NA
+
+
+def _annual_value_or_prior(annual_returns: dict, year: str, prior: dict):
+    """Prefer a freshly calculated annual return, but never erase durable history.
+
+    A temporary Yahoo omission must not turn an already verified 2001-2005 value
+    back into a blank cell on the next daily refresh.
+    """
+    fresh = as_percent(annual_returns.get(year))
+    parsed_fresh = pd.to_numeric(pd.Series([fresh]), errors="coerce").iloc[0]
+    if pd.notna(parsed_fresh):
+        return float(parsed_fresh)
+    return _numeric_or_na(prior.get(year))
+
+
+def _monthly_value_or_prior(monthly_returns: dict, label: str, prior: dict):
+    fresh = as_percent(monthly_returns.get(label))
+    parsed_fresh = pd.to_numeric(pd.Series([fresh]), errors="coerce").iloc[0]
+    if pd.notna(parsed_fresh):
+        return float(parsed_fresh)
+    return _numeric_or_na(prior.get(label))
 
 
 def main() -> None:
@@ -132,7 +171,7 @@ def main() -> None:
         batch = symbols[start:start + BATCH_SIZE]
         batch_no = start // BATCH_SIZE + 1
         total_batches = (len(symbols) + BATCH_SIZE - 1) // BATCH_SIZE
-        print(f"History batch {batch_no}/{total_batches}: {len(batch)} symbols")
+        print(f"History batch {batch_no}/{total_batches}: {len(batch)} symbols from {ANNUAL_HISTORY_START}")
         histories = _history_batch(provider, batch)
         # Analyst price targets are fetched only for stock rows. They are stored
         # in the durable daily snapshot so loading the dashboard does not trigger
@@ -209,7 +248,7 @@ def main() -> None:
                 "Name": base_row.get("Name") or symbol,
                 "Sector": base_row.get("Sector") or "Unknown",
                 "Type": base_row.get("Type") or "Unknown",
-                **{label: as_percent(monthly_returns.get(label)) for label in MONTHLY_RETURN_COLS},
+                **{label: _monthly_value_or_prior(monthly_returns, label, old_monthly.get(symbol, {})) for label in MONTHLY_RETURN_COLS},
                 "Monthly Return Method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
                 "Snapshot Updated ET": refresh_display,
             }
@@ -227,7 +266,7 @@ def main() -> None:
                 "3M": as_percent(perf.perf_3m),
                 "6M": as_percent(perf.perf_6m),
                 "YTD": as_percent(perf.ytd),
-                **{year: as_percent(annual_returns.get(year)) for year in YEAR_RETURN_COLS},
+                **{year: _annual_value_or_prior(annual_returns, year, prior) for year in YEAR_RETURN_COLS},
                 "Short Buy": signals.short_buy,
                 "Long Buy": signals.long_buy,
                 "Fundamental Buy": signals.fundamental_buy,
@@ -295,6 +334,8 @@ def main() -> None:
             "snapshot_rows": int(len(df)),
             "new_buy_signal_events": new_alerts,
             "annual_history_year_count": len(YEAR_RETURN_COLS),
+            "annual_history_start_requested": ANNUAL_HISTORY_START,
+            "annual_history_refresh_mode": "automatic explicit-start adjusted daily history",
             "oldest_annual_year_with_data": oldest_annual_year,
             "annual_coverage_by_year": annual_coverage_by_year,
         }, indent=2) + "\n",

@@ -42,12 +42,12 @@ def test_app_has_dollar_investment_simulator_and_year_sorting():
 
 def test_snapshot_uses_max_history_and_dynamic_year_columns():
     script = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
-    assert 'MARKETSCOPE_HISTORY_PERIOD", "max"' in script
+    assert 'MARKETSCOPE_ANNUAL_HISTORY_START", "2000-01-01"' in script
     assert 'YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)' in script
-    assert '**{year: as_percent(annual_returns.get(year)) for year in YEAR_RETURN_COLS}' in script
+    assert '**{year: _annual_value_or_prior(annual_returns, year, prior) for year in YEAR_RETURN_COLS}' in script
 
 
 def test_workflow_requests_max_history():
     workflow = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_text(encoding="utf-8")
-    assert 'MARKETSCOPE_HISTORY_PERIOD: max' in workflow
-    assert '(v5.9.5)' in workflow
+    assert 'MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01' in workflow
+    assert 'full 25 completed-year adjusted-history window' in workflow

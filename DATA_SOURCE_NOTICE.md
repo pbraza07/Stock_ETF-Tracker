@@ -1,3 +1,7 @@
+# Data Source Notice — v5.9.54
+
+Annual returns use Yahoo Finance/yfinance adjusted daily market history. The automatic refresh requests history from 2000-01-01 so the 25 completed calendar-year window has the prior-year anchor required for the oldest annual return. Values remain unavailable before genuine full-year price history exists. No annual return is synthesized.
+
 # MarketScope Data Source Notice — v5.9.1
 
 MarketScope uses free/public data paths and does not require a paid market-data API.
