@@ -21,3 +21,8 @@ Portfolio regular-yield information is retrieved on demand from Yahoo Finance vi
 Visible card charts use Yahoo Finance adjusted **1-day bars over the prior 2 years** through `yfinance`. The app batches only the currently visible card symbols and caches the result for 30 minutes.
 
 `data/universe_metadata.json` is generated from each successful Nasdaq >$100B universe refresh and records the refresh timestamp plus symbols added/removed versus the prior automatic Nasdaq stock universe.
+
+
+## v5.9.53 25-year annual history
+
+The five oldest annual-return columns (2005-2001 during 2026) are populated only from genuine Yahoo/yfinance max adjusted-price history. MarketScope does not interpolate, extrapolate, copy adjacent years, or fabricate pre-inception returns. The bootstrap file contains the 25-year schema but may leave an older year blank until the durable history refresh succeeds for that instrument.

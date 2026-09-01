@@ -116,6 +116,19 @@ def persist_snapshot(df: pd.DataFrame, local_path: Path, source: str, updated_co
     local_path.write_text(csv_text, encoding="utf-8")
 
     stamp = now_et()
+    year_cols = sorted(
+        [str(c) for c in df.columns if str(c).isdigit() and len(str(c)) == 4],
+        key=int,
+        reverse=True,
+    )
+    annual_coverage_by_year = {
+        year: int(pd.to_numeric(df[year], errors="coerce").notna().sum())
+        for year in year_cols
+    }
+    oldest_annual_year = next(
+        (year for year in reversed(year_cols) if annual_coverage_by_year.get(year, 0) > 0),
+        None,
+    )
     metadata = {
         "updated_at_et": stamp.isoformat(),
         "updated_at_display_et": format_et(stamp),
@@ -123,6 +136,9 @@ def persist_snapshot(df: pd.DataFrame, local_path: Path, source: str, updated_co
         "source": source,
         "updated_instruments": int(updated_count),
         "snapshot_rows": int(len(df)),
+        "annual_history_year_count": int(len(year_cols)),
+        "oldest_annual_year_with_data": oldest_annual_year,
+        "annual_coverage_by_year": annual_coverage_by_year,
     }
     meta_text = json.dumps(metadata, indent=2) + "\n"
     (local_path.parent / "snapshot_metadata.json").write_text(meta_text, encoding="utf-8")

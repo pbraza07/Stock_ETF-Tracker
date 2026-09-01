@@ -9,7 +9,7 @@ WORKFLOW = (ROOT / '.github' / 'workflows' / 'update_market_snapshot.yml').read_
 
 
 def test_release_version_5951():
-    assert (ROOT / 'VERSION.txt').read_text().strip() == '5.9.51'
+    assert (ROOT / 'VERSION.txt').read_text().strip() == '5.9.53'
 
 
 def test_rankings_are_hidden_in_respective_popover_buttons():
@@ -36,7 +36,7 @@ def test_recession_rankings_have_two_profit_and_two_defense_roles():
 
 
 def test_recession_method_uses_nber_periods_and_annual_stress_years():
-    assert "RECESSION_STRESS_YEARS = ['2001', '2008', '2009', '2020']" in RANKER
+    assert 'RECESSION_STRESS_YEARS = ["2001", "2008", "2009", "2020"]' in RANKER
     assert 'https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions' in RANKER
     assert 'Mar-Nov 2001; Dec 2007-Jun 2009; Feb-Apr 2020' in RANKER
 

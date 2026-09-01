@@ -6,6 +6,14 @@
     "December 2007-June 2009",
     "February-April 2020"
   ],
-  "annual_stress_years": [2001, 2008, 2009, 2020],
-  "notes": "Annual stress years are used only when a stock has a genuine annual return for that year. This is a historical resilience screen, not a guarantee of future recession performance."
+  "annual_stress_years": [
+    2001,
+    2008,
+    2009,
+    2020
+  ],
+  "notes": "Annual stress years are used only when a stock has a genuine annual return for that year. This is a historical resilience screen, not a guarantee of future recession performance. The Top 100 is diversity-constrained so no ticker appears more than five times in either the Rebalanced or Not Rebalanced ranking.",
+  "portfolio_constraint": "Exactly 4 stocks from 4 different sectors: 2 Profit Engines + 2 Recession Defense stocks.",
+  "top100_ticker_repeat_cap": 5,
+  "selection_method": "Profit-ranked diversified Top 100; each ticker can appear in at most five selected combinations per strategy."
 }

@@ -1,3 +1,11 @@
+# MarketScope v5.9.53 - Verified 25-Year Historical Backfill
+
+MarketScope now validates and repairs the five oldest annual-return years introduced by the 25Y expansion (2005-2001). The app prefers the snapshot with the strongest genuine 25-year history, provides a targeted repair action when needed, and refuses to synthesize pre-inception returns.
+
+# MarketScope v5.9.52 — Recession Top 100 Max-5 Diversification
+
+Recession-Balanced Top 100 rankings now enforce a hard **maximum of five appearances per ticker** in each strategy list while preserving the 2 Profit Engines + 2 Recession Defense + 4 different sectors structure.
+
 # MarketScope v5.9.51 — Compact Ranking Buttons + Recession-Balanced Portfolios
 
 Portfolio Simulator ranking families are now hidden behind separate buttons. A new Recession-Balanced Top 100 provides Rebalanced and Not-Rebalanced four-stock portfolios with two Profit Engine stocks and two historically Recession-Defense stocks, all from different sectors. Detailed Rebalanced/Not-Rebalanced tables now use the same full-field contract as the 10Y $300K / $85K yearly-withdrawal ranking.

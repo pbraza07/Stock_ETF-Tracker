@@ -6,8 +6,8 @@ SNAPSHOT = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 def test_release_version_5950():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.51"
-    assert "v5.9.51" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.53"
+    assert "v5.9.53" in APP
 
 def test_app_uses_25_completed_calendar_years():
     assert "completed_year_labels(as_of=now_et(), years=25)" in APP
@@ -42,7 +42,7 @@ def test_persistence_protection_remains():
     assert 'PDF_REPO_DIR = "data/generated_pdfs"' in storage
 
 def test_saved_pdf_upgrade_refreshes_25y_performance_and_forces_v13():
-    marker = "MarketScope Portfolio Split Simulator v13 - 25Y annual returns + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v14 - verified 25Y annual backfill + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
     assert APP.count(marker) >= 2
     assert "for metric in PERF_COLS:" in APP
     assert 'item["performance"] = performance' in APP

@@ -277,6 +277,14 @@ def main() -> None:
         df["Short Signal New"].fillna(False).astype(bool).sum()
         + df["Long Signal New"].fillna(False).astype(bool).sum()
     )
+    annual_coverage_by_year = {
+        year: int(pd.to_numeric(df[year], errors="coerce").notna().sum())
+        for year in YEAR_RETURN_COLS
+    }
+    oldest_annual_year = next(
+        (year for year in reversed(YEAR_RETURN_COLS) if annual_coverage_by_year.get(year, 0) > 0),
+        None,
+    )
     META_OUT.write_text(
         json.dumps({
             "updated_at_et": refresh_started.isoformat(),
@@ -286,6 +294,9 @@ def main() -> None:
             "updated_instruments": populated,
             "snapshot_rows": int(len(df)),
             "new_buy_signal_events": new_alerts,
+            "annual_history_year_count": len(YEAR_RETURN_COLS),
+            "oldest_annual_year_with_data": oldest_annual_year,
+            "annual_coverage_by_year": annual_coverage_by_year,
         }, indent=2) + "\n",
         encoding="utf-8",
     )

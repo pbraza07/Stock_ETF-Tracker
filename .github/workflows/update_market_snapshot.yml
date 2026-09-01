@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.51)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.53)
 # Preserves the validated max-history refresh contract introduced in (v5.9.5).
 
 on:
@@ -55,6 +55,9 @@ jobs:
           MARKETSCOPE_BATCH_SIZE: 80
           MARKETSCOPE_BATCH_PAUSE: 0.35
         run: python scripts/update_snapshot.py
+
+      - name: Validate 25Y annual-return coverage (2025-2001)
+        run: python scripts/validate_25y_snapshot.py
 
       - name: Build actual 10Y monthly withdrawal rankings
         run: python scripts/build_actual_monthly_rankings.py

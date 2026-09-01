@@ -65,6 +65,7 @@ BOOTSTRAP_UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.bootstrap.
 MONTHLY_RETURNS_FILE = BASE_DIR / "data" / "monthly_returns_10y.csv"
 MONTHLY_RETURNS_REPO_PATH = "data/monthly_returns_10y.csv"
 YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)
+OLDEST_FIVE_YEAR_COLS = list(YEAR_RETURN_COLS[-5:])
 PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]
 ALL_RETURN_COLS = ["Since Inception"] + PERF_COLS
 
@@ -104,7 +105,7 @@ PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target H
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
 MIN_STOCK_MARKET_CAP = 100_000_000_000.0
 
-# v5.9.51: ranked portfolio families are hidden behind separate buttons; recession-balanced presets added.
+# v5.9.53: ranked portfolio families are hidden behind separate buttons; recession-balanced presets added.
 COMBO_5Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_5y.csv"
 COMBO_5Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_5y.csv"
 COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
@@ -410,13 +411,17 @@ def _recession_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
     years = COMBO_RANK_YEARS_BY_PERIOD["10Y"]
     identity_cols = []
     for idx in range(1, 5):
-        identity_cols.extend([f"Stock {idx}", f"Sector {idx}", f"Name {idx}", f"Role {idx}"])
+        identity_cols.extend([
+            f"Stock {idx}", f"Sector {idx}", f"Name {idx}", f"Role {idx}",
+            f"Stock {idx} Top100 Uses",
+        ])
     balance_cols = [f"{year} Balance After Withdrawal ($)" for year in sorted(years)]
     cols = [
         "Rank", "Combo", "Strategy", *identity_cols, *years,
         "Worst Year", "Worst Year %", "Best Year", "Best Year %",
         "Defense Recession Worst %", "Defense Recession Avg %",
         "Defense Recession Positive Years", "Defense Recession Observations", "Recession Stress Years",
+        "Max Ticker Repeats", "Distinct Tickers in Top 100",
         "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
         "Net Profit incl. Withdrawals ($)", *balance_cols,
@@ -656,6 +661,52 @@ def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates("Symbol", keep="last")
 
 
+def _annual_coverage_stats(df: pd.DataFrame) -> dict:
+    """Summarize real saved annual-return coverage for the 25 completed-year window."""
+    if df is None or df.empty:
+        return {
+            "rows": 0, "years_with_any": 0, "annual_cells": 0, "oldest_five_cells": 0,
+            "oldest_year_with_data": None, "counts_by_year": {year: 0 for year in YEAR_RETURN_COLS},
+        }
+    counts = {}
+    for year in YEAR_RETURN_COLS:
+        if year not in df.columns:
+            counts[year] = 0
+            continue
+        counts[year] = int(pd.to_numeric(df[year], errors="coerce").notna().sum())
+    oldest = None
+    for year in reversed(YEAR_RETURN_COLS):
+        if counts.get(year, 0) > 0:
+            oldest = year
+            break
+    return {
+        "rows": int(len(df)),
+        "years_with_any": int(sum(1 for year in YEAR_RETURN_COLS if counts.get(year, 0) > 0)),
+        "annual_cells": int(sum(counts.values())),
+        "oldest_five_cells": int(sum(counts.get(year, 0) for year in OLDEST_FIVE_YEAR_COLS)),
+        "oldest_year_with_data": oldest,
+        "counts_by_year": counts,
+    }
+
+
+def _snapshot_quality_key(df: pd.DataFrame) -> tuple:
+    """Prefer the snapshot with the strongest 25Y history, then the most populated prices."""
+    stats = _annual_coverage_stats(df)
+    return (
+        int(stats["years_with_any"]),
+        int(stats["oldest_five_cells"]),
+        int(stats["annual_cells"]),
+        int(_populated_price_count(df)),
+        int(stats["rows"]),
+    )
+
+
+def _needs_25y_backfill(df: pd.DataFrame) -> bool:
+    """True when the newly expanded 2005-2001 window has no durable annual data yet."""
+    stats = _annual_coverage_stats(df)
+    return any(stats["counts_by_year"].get(year, 0) <= 0 for year in OLDEST_FIVE_YEAR_COLS)
+
+
 def _populated_price_count(df: pd.DataFrame) -> int:
     if df is None or df.empty or "Price" not in df.columns:
         return 0
@@ -703,33 +754,48 @@ def _latest_display_timestamp(values) -> str:
 
 @st.cache_data(ttl=60, show_spinner=False)
 def load_snapshot() -> pd.DataFrame:
-    """Load durable generated data first, then GitHub, then bootstrap.
+    """Load the snapshot with the strongest genuine 25-year annual coverage.
 
-    v5.3 does not bundle data/market_snapshot.csv, so upgrades can no longer
-    overwrite the populated snapshot. That lets normal startup stay fast: when
-    the generated local snapshot is present, no network call is required.
+    v5.9.53 fixes a migration edge case where an older local 20-year snapshot
+    could win simply because it already had prices, even after GitHub held a
+    newer 25-year snapshot. Local, GitHub and bootstrap candidates are all
+    normalized, then ranked by annual-year coverage first and populated prices
+    second. No annual value is synthesized.
     """
-    local = pd.DataFrame()
+    candidates: list[tuple[str, pd.DataFrame]] = []
+
     if SNAPSHOT_FILE.exists():
         try:
             local = _normalize_snapshot(pd.read_csv(SNAPSHOT_FILE))
+            if not local.empty:
+                candidates.append(("local", local))
         except Exception:
-            local = pd.DataFrame()
-    if _populated_price_count(local) > 0:
-        return local
+            pass
 
-    remote = _normalize_snapshot(load_remote_snapshot())
-    if _populated_price_count(remote) > 0:
-        return remote
+    try:
+        remote = _normalize_snapshot(load_remote_snapshot())
+        if not remote.empty:
+            candidates.append(("github", remote))
+    except Exception:
+        pass
 
     if BOOTSTRAP_SNAPSHOT_FILE.exists():
         try:
             bootstrap = _normalize_snapshot(pd.read_csv(BOOTSTRAP_SNAPSHOT_FILE))
             if not bootstrap.empty:
-                return bootstrap
+                candidates.append(("bootstrap", bootstrap))
         except Exception:
             pass
-    return local if not local.empty else remote
+
+    if not candidates:
+        return pd.DataFrame()
+
+    populated = [(name, df) for name, df in candidates if _populated_price_count(df) > 0]
+    pool = populated or candidates
+    # Python max is stable; local/GitHub/bootstrap order breaks exact ties without
+    # changing data. A true 25Y remote snapshot outranks a stale 20Y local one.
+    _, best = max(pool, key=lambda pair: _snapshot_quality_key(pair[1]))
+    return best
 
 
 def _read_metadata_file(path: Path) -> dict:
@@ -982,7 +1048,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v13 - 25Y annual returns + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v14 - verified 25Y annual backfill + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -1735,6 +1801,64 @@ extra_symbols = [s for s in st.session_state.extra_symbols if s not in set(base_
 symbols = list(dict.fromkeys(base_symbols + snapshot_symbols + extra_symbols))
 market_base = assemble_market(symbols, snapshot)
 market = apply_live_overlay(market_base, st.session_state.live_prices)
+
+# v5.9.53 migration guard: if the durable snapshot still predates the 25Y
+# expansion, offer a targeted historical-only repair immediately. The normal
+# scheduled GitHub refresh remains the primary automatic path.
+annual_coverage = _annual_coverage_stats(market_base)
+if _needs_25y_backfill(market_base):
+    missing_oldest = [year for year in OLDEST_FIVE_YEAR_COLS if annual_coverage["counts_by_year"].get(year, 0) <= 0]
+    st.warning(
+        "25-year annual-history backfill is incomplete. Missing durable coverage for: "
+        + ", ".join(missing_oldest)
+        + ". MarketScope will never invent these returns; use the repair button or let the scheduled GitHub refresh finish."
+    )
+    if st.button("↻ Repair 25Y annual history now", key="repair_25y_annual_history", type="secondary"):
+        repair_symbols = market_base["Symbol"].astype(str).str.upper().dropna().drop_duplicates().tolist()
+        repaired = market_base.copy()
+        repair_success = 0
+        stamp = format_et()
+        repair_progress = st.progress(0.0, text=f"25Y history repair: 0 / {len(repair_symbols):,}")
+        batch_size = 40
+        for start_idx in range(0, len(repair_symbols), batch_size):
+            batch = repair_symbols[start_idx:start_idx + batch_size]
+            try:
+                histories = provider.download_daily_history(batch, period="max")
+            except Exception:
+                histories = {}
+            repaired, added = apply_history_refresh(repaired, histories, batch, stamp)
+            repair_success += added
+            done = min(len(repair_symbols), start_idx + len(batch))
+            repair_progress.progress(
+                done / len(repair_symbols) if repair_symbols else 1.0,
+                text=f"25Y history repair: {done:,} / {len(repair_symbols):,} • {repair_success:,} populated",
+            )
+        repaired = _normalize_snapshot(repaired)
+        ok, save_message = persist_snapshot(
+            repaired, SNAPSHOT_FILE, "Yahoo Finance max adjusted history - 25Y repair", repair_success
+        )
+        repaired_stats = _annual_coverage_stats(repaired)
+        if all(repaired_stats["counts_by_year"].get(year, 0) > 0 for year in OLDEST_FIVE_YEAR_COLS):
+            st.success(
+                "25Y annual history repaired through "
+                + str(repaired_stats.get("oldest_year_with_data") or OLDEST_FIVE_YEAR_COLS[-1])
+                + f". {save_message}"
+            )
+        else:
+            still_missing = [year for year in OLDEST_FIVE_YEAR_COLS if repaired_stats["counts_by_year"].get(year, 0) <= 0]
+            st.error(
+                "The provider did not return enough genuine history to complete: "
+                + ", ".join(still_missing)
+                + ". No placeholder values were written."
+            )
+        load_snapshot.clear()
+        load_snapshot_metadata.clear()
+        st.rerun()
+else:
+    oldest_label = annual_coverage.get("oldest_year_with_data") or YEAR_RETURN_COLS[-1]
+    st.caption(
+        f"25Y annual-history coverage verified: completed calendar years through {oldest_label} are available where each instrument has genuine price history."
+    )
 
 # Nasdaq universe membership audit strip. The scheduled 6 PM ET workflow writes
 # the refresh timestamp plus exact symbols crossing the >$100B screening boundary.
@@ -2661,7 +2785,7 @@ with portfolio_tab:
         if valid_saved_portfolio != st.session_state.portfolio_symbols:
             st.session_state.portfolio_symbols = valid_saved_portfolio
 
-        # v5.9.51: ranking families stay hidden until their respective button is opened.
+        # v5.9.53: ranking families stay hidden until their respective button is opened.
         st.caption("Portfolio preset rankings are grouped below. Open only the ranking family you want to use.")
         preset_row1 = st.columns(3)
         preset_row2 = st.columns(2)
@@ -2818,8 +2942,8 @@ with portfolio_tab:
             with st.popover("🛡️ Recession-Balanced Top 100", use_container_width=True):
                 st.markdown("### 2 Profit Engines + 2 Recession-Defense Stocks")
                 st.caption(
-                    "Exactly four stocks from four different sectors. Two are selected from the strongest 2016–2025 profit engines; "
-                    "two are selected for resilience in official NBER recession stress years represented by the annual data. "
+                    "Exactly four stocks from four different sectors: 2 Profit Engines + 2 Recession Defense stocks. "
+                    "Each ticker may appear in no more than 5 of the Top 100 combinations, so the list is intentionally diversified instead of repeatedly recycling the same winners. "
                     "NBER periods: Mar–Nov 2001, Dec 2007–Jun 2009, and Feb–Apr 2020. Rankings use a $300,000 equal-weight start and no withdrawals to isolate growth and recession behavior."
                 )
                 recession_rb = _load_ranked_combo_file(str(COMBO_RECESSION_REBALANCED_FILE))
@@ -2856,7 +2980,7 @@ with portfolio_tab:
                 with nrt:
                     st.dataframe(_recession_combo_rank_table(recession_nr), use_container_width=True, hide_index=True, height=520)
                 st.caption(
-                    "Recession Defense is a historical resilience screen, not a guarantee. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
+                    "Recession Defense is a historical resilience screen, not a guarantee. v5.9.53 also enforces a hard maximum of five Top-100 appearances per ticker in each strategy ranking. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
                 )
 
         portfolio_total = st.number_input(
@@ -3516,7 +3640,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v13 - 25Y annual returns + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v14 - verified 25Y annual backfill + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
