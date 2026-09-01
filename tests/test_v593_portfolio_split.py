@@ -13,7 +13,7 @@ def test_portfolio_split_simulator_exists():
     assert ".portfolio-result-card" in CSS
 
 def test_portfolio_supports_ytd_and_multi_year_horizons():
-    assert '["YTD", *[f"{i}Y" for i in range(1, 26)]]' in APP
+    assert '["YTD", *ANNUAL_HORIZON_OPTIONS]' in APP
     assert 'period_choice == "YTD"' in APP
     assert 'value *= factor' in APP
 

@@ -1,47 +1,69 @@
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pandas as pd
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from history_config import (
+    ANNUAL_HISTORY_FIRST_YEAR,
+    annual_history_year_count,
+    annual_history_year_labels,
+    latest_completed_year,
+)
+
 SNAPSHOT = BASE_DIR / "data" / "market_snapshot.csv"
-REQUIRED_YEARS = [str(y) for y in range(2025, 2000, -1)]
-OLDEST_FIVE = ["2005", "2004", "2003", "2002", "2001"]
+REQUIRED_YEARS = annual_history_year_labels()
+OLDEST_FIVE = REQUIRED_YEARS[-5:] if len(REQUIRED_YEARS) >= 5 else list(REQUIRED_YEARS)
 MIN_OLDEST_YEAR_ROWS = 1
 
 
 def main() -> None:
     if not SNAPSHOT.exists():
-        raise SystemExit(f"Missing snapshot: {SNAPSHOT}")
+        raise SystemExit(f"Missing MarketScope snapshot: {SNAPSHOT}")
+
     df = pd.read_csv(SNAPSHOT)
     missing_columns = [year for year in REQUIRED_YEARS if year not in df.columns]
     if missing_columns:
-        raise SystemExit("25Y validation failed; missing year columns: " + ", ".join(missing_columns))
+        raise SystemExit(
+            "Dynamic annual-history schema is incomplete. Missing columns: "
+            + ", ".join(missing_columns)
+        )
 
-    counts = {
+    coverage = {
         year: int(pd.to_numeric(df[year], errors="coerce").notna().sum())
         for year in REQUIRED_YEARS
     }
-    failed = [year for year in OLDEST_FIVE if counts.get(year, 0) < MIN_OLDEST_YEAR_ROWS]
-    print("25Y annual-return coverage counts:")
-    for year in REQUIRED_YEARS:
-        print(f"  {year}: {counts[year]:,}")
-    if failed:
-        detail = ", ".join(f"{year}={counts.get(year, 0)}" for year in failed)
-        print(
-            "25Y coverage audit warning: one or more oldest-year columns still have no "
-            "genuine rows in this refresh. The snapshot is still allowed to commit so "
-            "future automatic refreshes can accumulate verified history without erasing "
-            f"prior values: {detail}"
-        )
-        return
+    oldest_coverage = coverage.get(str(ANNUAL_HISTORY_FIRST_YEAR), 0)
 
     print(
-        "25Y snapshot coverage audit passed: 2025-2001 columns exist and every oldest "
-        "year has genuine annual-return coverage where the current universe includes "
-        "instruments with sufficient trading history."
+        f"Dynamic annual-history audit: {annual_history_year_count()} completed years, "
+        f"{ANNUAL_HISTORY_FIRST_YEAR}-{latest_completed_year()}."
+    )
+    for year in REQUIRED_YEARS:
+        print(f"  {year}: {coverage[year]:,} instrument(s)")
+
+    if oldest_coverage < MIN_OLDEST_YEAR_ROWS:
+        print(
+            f"WARNING: the baseline year {ANNUAL_HISTORY_FIRST_YEAR} currently has "
+            f"{oldest_coverage} populated row(s). The schema remains valid, but the "
+            "provider may not have completed the oldest-year backfill yet."
+        )
+
+    oldest_five_cells = sum(coverage.get(year, 0) for year in OLDEST_FIVE)
+    if oldest_five_cells <= 0:
+        raise SystemExit(
+            "Dynamic annual-history audit failed: none of the oldest tracked years "
+            "contains a genuine saved annual return."
+        )
+
+    print(
+        f"Dynamic annual-history coverage audit passed through {latest_completed_year()}. "
+        "The next completed calendar year will be added automatically without code changes."
     )
 
 

@@ -6,7 +6,7 @@ APP = (BASE / "app.py").read_text(encoding="utf-8")
 
 def test_market_table_includes_worst_year():
     assert 'table_df["Worst Year"] = table_df.apply(worst_completed_year_label, axis=1)' in APP
-    assert '"Analyst Rating", "Worst Year", "Price Target Low"' in APP
+    assert '"Analyst Rating", "Worst Year", "History Verification"' in APP
 
 def test_worst_year_uses_completed_calendar_year_columns():
     assert "def worst_completed_year_label" in APP
@@ -21,4 +21,4 @@ def test_missing_preipo_years_are_skipped_not_zeroed():
     assert "continue" in fn
 
 def test_release_version_is_current():
-    assert "5.9.55" in APP
+    assert "5.9.59" in APP

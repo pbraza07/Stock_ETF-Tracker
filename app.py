@@ -19,6 +19,16 @@ from analytics import (
     calculate_performance,
     completed_year_labels,
 )
+from history_config import (
+    ANNUAL_HISTORY_FIRST_YEAR,
+    ANNUAL_HISTORY_START,
+    annual_history_year_count,
+    annual_history_year_labels,
+    annual_horizon_options,
+    chart_year_labels,
+    latest_completed_year,
+    rolling_completed_year_labels,
+)
 from persistence import (
     format_et,
     load_remote_csv,
@@ -56,6 +66,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
+# v5.9.59: monthly-withdrawal PDF yearly cash-flow reconciliation.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -64,7 +75,16 @@ UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.json"
 BOOTSTRAP_UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.bootstrap.json"
 MONTHLY_RETURNS_FILE = BASE_DIR / "data" / "monthly_returns_10y.csv"
 MONTHLY_RETURNS_REPO_PATH = "data/monthly_returns_10y.csv"
-YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)
+MONTHLY_RETURNS_FULL_FILE = BASE_DIR / "data" / "monthly_returns_full_history.csv"
+MONTHLY_RETURNS_FULL_REPO_PATH = "data/monthly_returns_full_history.csv"
+# v5.9.58 compatibility fallback; v5.9.58+ writes the future-proof full-history file.
+MONTHLY_RETURNS_25Y_FILE = BASE_DIR / "data" / "monthly_returns_25y.csv"
+MONTHLY_RETURNS_25Y_REPO_PATH = "data/monthly_returns_25y.csv"
+
+ANNUAL_HISTORY_YEARS = annual_history_year_count(as_of=now_et())
+YEAR_RETURN_COLS = annual_history_year_labels(as_of=now_et())
+ANNUAL_HORIZON_OPTIONS = annual_horizon_options(as_of=now_et())
+LATEST_COMPLETED_YEAR = latest_completed_year(as_of=now_et())
 OLDEST_FIVE_YEAR_COLS = list(YEAR_RETURN_COLS[-5:])
 PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]
 ALL_RETURN_COLS = ["Since Inception"] + PERF_COLS
@@ -121,8 +141,8 @@ COMBO_WITHDRAWAL_START = 300_000.0
 COMBO_WITHDRAWAL_ANNUAL = 85_000.0
 COMBO_WITHDRAWAL_MONTHLY = 5_000.0
 COMBO_RANK_YEARS_BY_PERIOD = {
-    "5Y": [str(y) for y in range(2025, 2020, -1)],
-    "10Y": [str(y) for y in range(2025, 2015, -1)],
+    "5Y": rolling_completed_year_labels(5, as_of=now_et()),
+    "10Y": rolling_completed_year_labels(10, as_of=now_et()),
 }
 
 st.set_page_config(
@@ -641,14 +661,22 @@ def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
     # v5.7 intentionally does not map legacy CAGR columns into calendar-year returns.
     # Annual return cells remain blank until a real historical refresh computes
     # each completed calendar year from adjusted year-end closes.
-    numeric = ["MarketCap", "Price", "NAV", *PRICE_TARGET_COLS] + ALL_RETURN_COLS
+    numeric = [
+        "MarketCap", "Price", "NAV", *PRICE_TARGET_COLS, *ALL_RETURN_COLS,
+        "Verified Years", "Verification Available Years", "Verification Compared Years",
+        "Verification Discrepancies", "Max Verification Diff (pp)", "Verification Tolerance (pp)",
+    ]
     for col in numeric:
         if col not in df.columns:
             df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    for col in ["Analyst Rating", "Rating Source", "Rating Updated ET", "Price Target Updated ET", "Snapshot Updated ET"]:
+    for col in [
+        "Analyst Rating", "Rating Source", "Rating Updated ET", "Price Target Updated ET", "Snapshot Updated ET",
+        "History Verification", "Verification Coverage", "Verification Exceptions",
+        "Verification Source", "Verification Updated ET",
+    ]:
         if col not in df.columns:
-            df[col] = "Not Rated" if col == "Analyst Rating" else "—"
+            df[col] = "Not Rated" if col == "Analyst Rating" else ("Pending" if col == "History Verification" else "—")
     df["Analyst Rating"] = df["Analyst Rating"].fillna("Not Rated").replace({"": "Not Rated", "nan": "Not Rated"})
     for col in SIGNAL_COLS + ["Short Signal New", "Long Signal New"]:
         if col not in df.columns:
@@ -662,7 +690,7 @@ def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _annual_coverage_stats(df: pd.DataFrame) -> dict:
-    """Summarize real saved annual-return coverage for the 25 completed-year window."""
+    """Summarize real saved annual-return coverage for the dynamically growing completed-year window."""
     if df is None or df.empty:
         return {
             "rows": 0, "years_with_any": 0, "annual_cells": 0, "oldest_five_cells": 0,
@@ -690,7 +718,7 @@ def _annual_coverage_stats(df: pd.DataFrame) -> dict:
 
 
 def _snapshot_quality_key(df: pd.DataFrame) -> tuple:
-    """Prefer the snapshot with the strongest 25Y history, then the most populated prices."""
+    """Prefer the snapshot with the strongest dynamically tracked annual history, then the most populated prices."""
     stats = _annual_coverage_stats(df)
     return (
         int(stats["years_with_any"]),
@@ -748,11 +776,11 @@ def _latest_display_timestamp(values) -> str:
 
 @st.cache_data(ttl=60, show_spinner=False)
 def load_snapshot() -> pd.DataFrame:
-    """Load the snapshot with the strongest genuine 25-year annual coverage.
+    """Load the snapshot with the strongest genuine dynamic annual coverage.
 
-    v5.9.55 preserves the migration fix where where an older local 20-year snapshot
+    v5.9.58 preserves the migration fix where where an older local 20-year snapshot
     could win simply because it already had prices, even after GitHub held a
-    newer 25-year snapshot. Local, GitHub and bootstrap candidates are all
+    newer full-history snapshot. Local, GitHub and bootstrap candidates are all
     normalized, then ranked by annual-year coverage first and populated prices
     second. No annual value is synthesized.
     """
@@ -787,7 +815,7 @@ def load_snapshot() -> pd.DataFrame:
     populated = [(name, df) for name, df in candidates if _populated_price_count(df) > 0]
     pool = populated or candidates
     # Python max is stable; local/GitHub/bootstrap order breaks exact ties without
-    # changing data. A true 25Y remote snapshot outranks a stale 20Y local one.
+    # changing data. A complete dynamic-history remote snapshot outranks a stale shorter local one.
     _, best = max(pool, key=lambda pair: _snapshot_quality_key(pair[1]))
     return best
 
@@ -872,15 +900,73 @@ def _monthly_csv_actual(frame: pd.DataFrame) -> bool:
     ).all()
 
 
+def _monthly_year_compound(month_map: dict[str, float], year: str) -> float | None:
+    """Compound 12 actual monthly decimal returns for one completed calendar year."""
+    factor = 1.0
+    for month in range(1, 13):
+        label = f"{year}-{month:02d}"
+        value = month_map.get(label)
+        if value is None or not np.isfinite(value) or float(value) <= -1.0:
+            return None
+        factor *= 1.0 + float(value)
+    return (factor - 1.0) * 100.0
+
+
+def _monthly_matches_market_table(
+    market_df: pd.DataFrame,
+    symbol: str,
+    years: tuple[str, ...] | list[str],
+    month_map: dict[str, float],
+    tolerance_pp: float = 0.05,
+) -> tuple[bool, list[str]]:
+    """Require actual monthly history to reconcile to the annual return shown in Market Table.
+
+    Both values come from adjusted daily history. This prevents a stale monthly CSV
+    from silently driving a withdrawal simulation that disagrees with Table View.
+    """
+    if market_df is None or market_df.empty or "Symbol" not in market_df.columns:
+        return True, []
+    lookup = market_df.copy()
+    lookup["Symbol"] = lookup["Symbol"].astype(str).str.upper().str.strip()
+    lookup = lookup.drop_duplicates("Symbol", keep="first").set_index("Symbol", drop=False)
+    sym = str(symbol).upper().strip()
+    if sym not in lookup.index:
+        return True, []
+    row = lookup.loc[sym]
+    if isinstance(row, pd.DataFrame):
+        row = row.iloc[0]
+    mismatches: list[str] = []
+    for year in years:
+        annual = pd.to_numeric(pd.Series([row.get(str(year))]), errors="coerce").iloc[0]
+        if pd.isna(annual) or not np.isfinite(annual):
+            continue
+        compounded = _monthly_year_compound(month_map, str(year))
+        if compounded is None:
+            mismatches.append(f"{year}: missing monthly anchors")
+            continue
+        diff = abs(float(annual) - float(compounded))
+        if diff > float(tolerance_pp):
+            mismatches.append(
+                f"{year}: Market Table {float(annual):+.3f}% vs monthly compound {float(compounded):+.3f}% (Δ {diff:.3f}pp)"
+            )
+    return not mismatches, mismatches
+
+
 @st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
 def cached_actual_monthly_returns(
     symbols: tuple[str, ...],
     calendar_years: tuple[str, ...],
 ) -> dict:
-    """Load real adjusted month-to-month returns, with Yahoo daily-history fallback.
+    f"""Load actual month-end returns for 1Y-{ANNUAL_HISTORY_YEARS}Y withdrawal simulations.
 
-    Durable monthly snapshot values are percentages. The returned mapping stores
-    decimal returns (e.g. 0.025 for +2.5%) for direct portfolio simulation.
+    Source priority:
+    1. durable dynamic full-history actual-monthly dataset generated from the same adjusted daily
+       history as Market Table annual returns;
+    2. durable 10Y monthly dataset for compatibility;
+    3. GitHub copies of those datasets;
+    4. direct Yahoo explicit-start history for missing symbols/years.
+
+    No annual return is divided/rooted into synthetic monthly returns.
     """
     clean_symbols = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
     years = tuple(str(y) for y in calendar_years if str(y).isdigit())
@@ -889,14 +975,16 @@ def cached_actual_monthly_returns(
         return {"unavailable": True, "reason": "No symbols or completed calendar years were supplied.", "returns": {}}
 
     sources: list[pd.DataFrame] = []
-    if MONTHLY_RETURNS_FILE.exists():
-        try:
-            sources.append(pd.read_csv(MONTHLY_RETURNS_FILE))
-        except Exception:
-            pass
-    remote = load_remote_csv(MONTHLY_RETURNS_REPO_PATH, timeout=12)
-    if remote is not None and not remote.empty:
-        sources.append(remote)
+    for local_path in (MONTHLY_RETURNS_FILE, MONTHLY_RETURNS_25Y_FILE, MONTHLY_RETURNS_FULL_FILE):
+        if local_path.exists():
+            try:
+                sources.append(pd.read_csv(local_path))
+            except Exception:
+                pass
+    for repo_path in (MONTHLY_RETURNS_REPO_PATH, MONTHLY_RETURNS_25Y_REPO_PATH, MONTHLY_RETURNS_FULL_REPO_PATH):
+        remote = load_remote_csv(repo_path, timeout=15)
+        if remote is not None and not remote.empty:
+            sources.append(remote)
 
     actual_frame = pd.DataFrame()
     for candidate in sources:
@@ -910,13 +998,15 @@ def cached_actual_monthly_returns(
         if actual_frame.empty:
             actual_frame = candidate
         else:
-            # Prefer newer remote rows for overlapping symbols.
+            # Later sources fill/override the same symbols. A full-history row can therefore
+            # coexist with legacy 10Y data without changing ranking compatibility.
             actual_frame = pd.concat([actual_frame, candidate], ignore_index=True).drop_duplicates("Symbol", keep="last")
 
     returns: dict[str, dict[str, float]] = {}
     missing_symbols: list[str] = []
     if not actual_frame.empty:
         actual_frame = actual_frame.set_index("Symbol", drop=False)
+
     for sym in clean_symbols:
         sym_returns: dict[str, float] = {}
         if not actual_frame.empty and sym in actual_frame.index:
@@ -935,14 +1025,27 @@ def cached_actual_monthly_returns(
                 continue
         missing_symbols.append(sym)
 
-    # For symbols/years not yet present in the durable monthly snapshot, calculate
-    # from actual Yahoo adjusted daily history on demand. Never substitute annual
-    # returns or divide an annual return into 12 equal months.
+    # Strong explicit-start fallback. v5.9.58 intentionally uses the exact same
+    # configured anchor history boundary as the dynamic annual Table View calculation. Batch first,
+    # then retry each missing symbol individually so one Yahoo omission (e.g. LLY)
+    # cannot invalidate the entire portfolio schedule.
     if missing_symbols:
         try:
-            histories = provider.download_daily_history(missing_symbols, period="max")
+            histories = provider.download_daily_history_since(
+                missing_symbols, start=ANNUAL_HISTORY_START, chunk_size=min(10, max(1, len(missing_symbols)))
+            )
         except Exception:
             histories = {}
+        still_batch_missing = [sym for sym in missing_symbols if sym not in histories or histories.get(sym) is None or histories.get(sym).empty]
+        for sym in still_batch_missing:
+            try:
+                one = provider.download_daily_history_since([sym], start=ANNUAL_HISTORY_START, chunk_size=1)
+                hist = one.get(sym)
+                if hist is not None and not hist.empty:
+                    histories[sym] = hist
+            except Exception:
+                continue
+
         start_year = min(int(y) for y in years)
         end_year = max(int(y) for y in years)
         for sym in missing_symbols:
@@ -950,7 +1053,7 @@ def cached_actual_monthly_returns(
             if hist is None or hist.empty:
                 continue
             calculated = calculate_monthly_returns(hist, start_year, end_year)
-            sym_returns = {}
+            sym_returns: dict[str, float] = {}
             valid = True
             for label in labels:
                 value = calculated.get(label)
@@ -965,7 +1068,10 @@ def cached_actual_monthly_returns(
     if still_missing:
         return {
             "unavailable": True,
-            "reason": "Actual monthly history is unavailable for: " + ", ".join(still_missing),
+            "reason": (
+                "Actual monthly history could not be loaded after the durable full-history dataset "
+                "and direct Yahoo retries for: " + ", ".join(still_missing)
+            ),
             "returns": returns,
             "months": labels,
         }
@@ -973,7 +1079,8 @@ def cached_actual_monthly_returns(
         "unavailable": False,
         "returns": returns,
         "months": labels,
-        "method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
+        "method": "Actual adjusted month-end return from the same Yahoo/yfinance history as Market Table",
+        "annual_reconciliation": "Monthly compounds are checked against Market Table annual returns before withdrawal simulation.",
     }
 
 
@@ -1042,7 +1149,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v14 - verified 25Y annual backfill + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v18 - monthly yearly cash-flow reconciliation + dynamic annual history + actual monthly returns + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -1078,7 +1185,7 @@ def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame
         else:
             period_text = str(upgraded.get("period") or "10Y").upper()
             try:
-                year_count = max(1, min(25, int(period_text.replace("Y", ""))))
+                year_count = max(1, min(ANNUAL_HISTORY_YEARS, int(period_text.replace("Y", ""))))
             except Exception:
                 year_count = 10
             monthly_years = tuple(YEAR_RETURN_COLS[:year_count])
@@ -1109,6 +1216,12 @@ def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame
             item["name"] = str(row.get("Name") or item.get("name") or sym)
             item["sector"] = str(row.get("Sector") or item.get("sector") or "")
             item["analyst_rating"] = str(row.get("Analyst Rating") or item.get("analyst_rating") or "Not Rated")
+            item["history_verification"] = str(row.get("History Verification") or item.get("history_verification") or "Pending")
+            item["verification_coverage"] = str(row.get("Verification Coverage") or item.get("verification_coverage") or "")
+            item["verification_exceptions"] = str(row.get("Verification Exceptions") or item.get("verification_exceptions") or "")
+            item["verification_source"] = str(row.get("Verification Source") or item.get("verification_source") or "")
+            _max_diff = pd.to_numeric(pd.Series([row.get("Max Verification Diff (pp)")]), errors="coerce").iloc[0]
+            item["max_verification_diff_pp"] = float(_max_diff) if pd.notna(_max_diff) and np.isfinite(_max_diff) else None
             performance = dict(item.get("performance") or {})
             for metric in PERF_COLS:
                 val = pd.to_numeric(pd.Series([row.get(metric)]), errors="coerce").iloc[0]
@@ -1144,12 +1257,12 @@ def cached_recent_news(symbol: str, company_name: str, instrument_type: str) -> 
 @st.cache_data(ttl=24 * 60 * 60, show_spinner=False)
 def cached_single_metrics(symbol: str) -> dict:
     symbol = str(symbol).strip().upper()
-    histories = provider.download_daily_history_since([symbol], start="2000-01-01", chunk_size=1)
+    histories = provider.download_daily_history_since([symbol], start=ANNUAL_HISTORY_START, chunk_size=1)
     hist = histories.get(symbol)
     if hist is None or hist.empty:
         return {}
     perf = calculate_performance(hist)
-    annual_returns = calculate_calendar_year_returns(hist, years=25)
+    annual_returns = calculate_calendar_year_returns(hist, years=ANNUAL_HISTORY_YEARS)
     meta = default_meta.get(symbol, {})
     provider_meta = provider.get_metadata(symbol)
     quote_type = provider_meta.get("quote_type")
@@ -1616,7 +1729,7 @@ def apply_history_refresh(df: pd.DataFrame, histories: Dict[str, pd.DataFrame], 
             continue
         try:
             perf = calculate_performance(hist)
-            annual_returns = calculate_calendar_year_returns(hist, years=25)
+            annual_returns = calculate_calendar_year_returns(hist, years=ANNUAL_HISTORY_YEARS)
         except Exception:
             continue
         idx = out.index[mask][0]
@@ -1805,7 +1918,7 @@ symbols = list(dict.fromkeys(base_symbols + snapshot_symbols + extra_symbols))
 market_base = assemble_market(symbols, snapshot)
 market = apply_live_overlay(market_base, st.session_state.live_prices)
 
-# v5.9.55: 25-year annual history is maintained by the same automatic snapshot
+# v5.9.58: dynamic annual history is maintained by the same automatic snapshot
 # refresh as every other market field. There is intentionally no separate repair
 # task or user-facing backfill button. Missing pre-inception years remain blank.
 
@@ -2091,7 +2204,7 @@ with market_tab:
         for start in range(0, total, history_batch_size):
             batch = targets[start:start + history_batch_size]
             try:
-                histories = provider.download_daily_history_since(batch, start="2000-01-01", chunk_size=20)
+                histories = provider.download_daily_history_since(batch, start=ANNUAL_HISTORY_START, chunk_size=20)
             except Exception:
                 histories = {}
             refreshed, added = apply_history_refresh(refreshed, histories, batch, stamp)
@@ -2222,13 +2335,16 @@ with market_tab:
         unsafe_allow_html=True,
     )
 
-def _portfolio_common_calendar_years(market_df: pd.DataFrame, symbols: list[str], max_years: int = 25) -> list[str]:
+def _portfolio_common_calendar_years(market_df: pd.DataFrame, symbols: list[str], max_years: int | None = None) -> list[str]:
     """Return completed calendar years for which every selected instrument has a valid saved return.
 
-    Years are returned newest-to-oldest and are capped to MarketScope's 25-year window. This lets a
-    requested 1Y-25Y horizon remain selectable even when one instrument listed later: the effective
+    Years are returned newest-to-oldest and are capped to MarketScope's dynamically growing annual-history window. This lets a
+    requested 1Y-{ANNUAL_HISTORY_YEARS}Y horizon remain selectable even when one instrument listed later: the effective
     simulation begins with the earliest year in the common-data window instead of failing.
     """
+    if max_years is None:
+        max_years = ANNUAL_HISTORY_YEARS
+    max_years = max(1, min(ANNUAL_HISTORY_YEARS, int(max_years)))
     if not symbols:
         return list(YEAR_RETURN_COLS[:max_years])
     lookup = market_df.copy()
@@ -2256,10 +2372,10 @@ def _portfolio_common_calendar_years(market_df: pd.DataFrame, symbols: list[str]
 def _effective_portfolio_years(market_df: pd.DataFrame, symbols: list[str], period_choice: str) -> list[str]:
     """Newest-to-oldest common years used for the requested portfolio horizon."""
     try:
-        requested = max(1, min(25, int(str(period_choice).replace("Y", ""))))
+        requested = max(1, min(ANNUAL_HISTORY_YEARS, int(str(period_choice).replace("Y", ""))))
     except Exception:
         return []
-    return _portfolio_common_calendar_years(market_df, symbols, 25)[:requested]
+    return _portfolio_common_calendar_years(market_df, symbols, ANNUAL_HISTORY_YEARS)[:requested]
 
 
 def _portfolio_horizon_projection(row: pd.Series, principal: float, period_choice: str, include_ytd: bool, calendar_years: list[str] | None = None) -> dict | None:
@@ -2285,7 +2401,7 @@ def _portfolio_horizon_projection(row: pd.Series, principal: float, period_choic
         years_requested = int(period_choice.replace("Y", ""))
     except Exception:
         return None
-    years_requested = max(1, min(25, years_requested))
+    years_requested = max(1, min(ANNUAL_HISTORY_YEARS, years_requested))
     requested_year_labels = (list(calendar_years) if calendar_years is not None else list(YEAR_RETURN_COLS[:years_requested]))[:years_requested]
     selected: list[tuple[str, float]] = []
     for year in requested_year_labels:
@@ -2322,6 +2438,89 @@ def _portfolio_horizon_projection(row: pd.Series, principal: float, period_choic
     }
 
 
+def _market_table_annual_withdrawal_projection(
+    row: pd.Series,
+    principal: float,
+    period_choice: str,
+    annual_withdrawal: float,
+    include_ytd: bool = False,
+) -> dict:
+    """Single-instrument withdrawal simulation sourced directly from Market Table annual columns.
+
+    For the maximum-history selection, every completed annual return from the configured baseline through the latest completed year is
+    processed oldest-to-newest when present. The withdrawal occurs after each
+    completed year's listed return. Current YTD, when enabled, is applied last
+    without another annual withdrawal.
+    """
+    try:
+        principal = float(principal)
+        withdrawal = max(0.0, float(annual_withdrawal))
+    except Exception:
+        return {"unavailable": True}
+    if principal <= 0 or str(period_choice or "YTD") == "YTD":
+        return {"unavailable": True}
+    try:
+        requested = max(1, min(ANNUAL_HISTORY_YEARS, int(str(period_choice).replace("Y", ""))))
+    except Exception:
+        return {"unavailable": True}
+
+    annual: list[tuple[str, float]] = []
+    for year in YEAR_RETURN_COLS[:requested]:
+        value = pd.to_numeric(pd.Series([row.get(year)]), errors="coerce").iloc[0]
+        if pd.isna(value) or not np.isfinite(value):
+            return {
+                "unavailable": True,
+                "reason": f"Missing Market Table annual return for {year}.",
+                "years_used": len(annual),
+            }
+        annual.append((str(year), float(value)))
+
+    balance = principal
+    total_withdrawn = 0.0
+    funded = 0
+    schedule: list[dict] = []
+    for year, pct in reversed(annual):
+        start = balance
+        factor = 1.0 + pct / 100.0
+        if factor < 0:
+            return {"unavailable": True, "reason": f"Invalid Market Table annual return for {year}."}
+        before = start * factor
+        actual = min(withdrawal, before)
+        balance = max(0.0, before - actual)
+        total_withdrawn += actual
+        funded += 1 if actual >= withdrawal - 0.005 else 0
+        schedule.append({
+            "year": year,
+            "starting_balance": start,
+            "annual_return_pct": pct,
+            "balance_before_withdrawal": before,
+            "withdrawal": actual,
+            "ending_balance": balance,
+            "return_method": "Market Table completed calendar-year return",
+        })
+        if balance <= 0:
+            break
+
+    if include_ytd and balance > 0:
+        ytd = pd.to_numeric(pd.Series([row.get("YTD")]), errors="coerce").iloc[0]
+        if pd.notna(ytd) and np.isfinite(ytd):
+            factor = 1.0 + float(ytd) / 100.0
+            if factor >= 0:
+                balance *= factor
+
+    return {
+        "unavailable": False,
+        "ending_balance": balance,
+        "total_withdrawn": total_withdrawn,
+        "net_value_including_withdrawals": balance + total_withdrawn,
+        "net_profit_including_withdrawals": balance + total_withdrawn - principal,
+        "years_used": len(annual),
+        "withdrawals_funded": funded,
+        "schedule": schedule,
+        "return_method": "Market Table annual returns (Yahoo/yfinance adjusted history)",
+    }
+
+
 def _portfolio_annual_withdrawal_schedule(
     market_df: pd.DataFrame,
     symbols: list[str],
@@ -2351,9 +2550,9 @@ def _portfolio_annual_withdrawal_schedule(
         return {"unavailable": True, "reason": "A positive portfolio amount and at least one instrument are required."}
     period_choice = str(period_choice or "YTD")
     if period_choice == "YTD":
-        return {"unavailable": True, "reason": "Annual withdrawals require a completed-year horizon from 1Y through 25Y."}
+        return {"unavailable": True, "reason": f"Annual withdrawals require a completed-year horizon from 1Y through {ANNUAL_HISTORY_YEARS}Y."}
     try:
-        years_requested = max(1, min(25, int(period_choice.replace("Y", ""))))
+        years_requested = max(1, min(ANNUAL_HISTORY_YEARS, int(period_choice.replace("Y", ""))))
     except Exception:
         return {"unavailable": True, "reason": "Invalid portfolio period."}
 
@@ -2415,6 +2614,7 @@ def _portfolio_annual_withdrawal_schedule(
             "balance_before_withdrawal": before_withdrawal,
             "withdrawal": actual_withdrawal,
             "ending_balance": ending_balance,
+            "return_method": "Market Table completed calendar-year return (Yahoo/yfinance adjusted history)",
         })
         if ending_balance <= 0:
             depleted_year = str(year)
@@ -2485,9 +2685,9 @@ def _portfolio_monthly_withdrawal_schedule(
         return {"unavailable": True, "reason": "A positive portfolio amount and at least one instrument are required."}
     period_choice = str(period_choice or "YTD")
     if period_choice == "YTD":
-        return {"unavailable": True, "reason": "Monthly withdrawals require a completed-year horizon from 1Y through 25Y."}
+        return {"unavailable": True, "reason": f"Monthly withdrawals require a completed-year horizon from 1Y through {ANNUAL_HISTORY_YEARS}Y."}
     try:
-        years_requested = max(1, min(25, int(period_choice.replace("Y", ""))))
+        years_requested = max(1, min(ANNUAL_HISTORY_YEARS, int(period_choice.replace("Y", ""))))
     except Exception:
         return {"unavailable": True, "reason": "Invalid portfolio period."}
 
@@ -2507,6 +2707,22 @@ def _portfolio_monthly_withdrawal_schedule(
                 return {"unavailable": True, "reason": f"{sym} does not have an actual monthly return for {label}."}
             if float(value) <= -1.0:
                 return {"unavailable": True, "reason": f"{sym} has an invalid monthly return at or below -100% for {label}."}
+
+    # Reconcile every modeled year to the annual return currently displayed in
+    # Market Table. If a stale monthly file disagrees, fail clearly instead of
+    # silently using inconsistent data.
+    reconciliation_issues: list[str] = []
+    for sym in clean_symbols:
+        ok, issues = _monthly_matches_market_table(
+            market_df, sym, selected_years, monthly_data.get(sym) or {}, tolerance_pp=0.05
+        )
+        if not ok:
+            reconciliation_issues.extend([f"{sym} {issue}" for issue in issues])
+    if reconciliation_issues:
+        return {
+            "unavailable": True,
+            "reason": "Monthly history does not reconcile to Market Table annual returns: " + " | ".join(reconciliation_issues[:6]),
+        }
 
     balances: dict[str, float] = {}
     for sym in clean_symbols:
@@ -2804,7 +3020,7 @@ with portfolio_tab:
             with st.popover("💵 10Y Yearly Withdrawal", use_container_width=True):
                 st.markdown("### $300K Start / $85K per Year")
                 st.caption(
-                    "Top 100 surviving four-stock portfolios, four different sectors, 2016–2025. "
+                    f"Top 100 surviving four-stock portfolios, four different sectors, {COMBO_RANK_YEARS_BY_PERIOD['10Y'][-1]}–{COMBO_RANK_YEARS_BY_PERIOD['10Y'][0]}. "
                     "Every table now exposes the full stock/sector/name, annual-return, worst/best-year, cash-flow, ending-balance, and yearly-balance fields."
                 )
                 rebalance_rank = _load_ranked_combo_file(str(COMBO_10Y_REBALANCED_WITHDRAWAL_FILE))
@@ -2957,13 +3173,13 @@ with portfolio_tab:
         )
         st.session_state.portfolio_symbols = list(selected_portfolio_symbols)
 
-        # v5.9.32 - keep every 1Y-25Y choice available. If a selected instrument did not exist
+        # v5.9.32 - keep every 1Y-{ANNUAL_HISTORY_YEARS}Y choice available. If a selected instrument did not exist
         # for the full requested span, begin at the first completed year shared by all selections.
-        portfolio_period_options = ["YTD", *[f"{i}Y" for i in range(1, 26)]]
+        portfolio_period_options = ["YTD", *ANNUAL_HORIZON_OPTIONS]
         _saved_period = str(st.session_state.get("portfolio_period") or "YTD")
         if _saved_period not in portfolio_period_options:
             st.session_state["portfolio_period"] = "YTD"
-        common_calendar_years = _portfolio_common_calendar_years(market, list(selected_portfolio_symbols), 25)
+        common_calendar_years = _portfolio_common_calendar_years(market, list(selected_portfolio_symbols), ANNUAL_HISTORY_YEARS)
 
         port_controls = st.columns([1.7, 1.35, 1.35, 2.4])
         with port_controls[0]:
@@ -2999,7 +3215,7 @@ with portfolio_tab:
                 value=False,
                 key="portfolio_include_ytd",
                 disabled=str(portfolio_period or "YTD") == "YTD",
-                help="For 1Y–25Y only, optionally apply the current YTD return after the completed-year history.",
+                help=f"For 1Y–{ANNUAL_HISTORY_YEARS}Y only, optionally apply the current YTD return after the completed-year history.",
             )
         with port_controls[3]:
             st.caption(
@@ -3015,7 +3231,7 @@ with portfolio_tab:
                 key="portfolio_withdrawals_enabled",
                 disabled=str(portfolio_period or "YTD") == "YTD",
                 on_change=_on_yearly_withdrawal_toggle,
-                help="Apply the same withdrawal after each completed calendar year's return. Yearly and Monthly withdrawal modes are mutually exclusive.",
+                help=f"Apply the same withdrawal after each completed calendar year return shown in Market Table. Supports the full 1Y–{ANNUAL_HISTORY_YEARS}Y history where every selected instrument has data. Yearly and Monthly withdrawal modes are mutually exclusive.",
             )
         with withdrawal_controls[1]:
             portfolio_annual_withdrawal = st.number_input(
@@ -3031,7 +3247,7 @@ with portfolio_tab:
                 key="portfolio_monthly_withdrawals_enabled",
                 disabled=str(portfolio_period or "YTD") == "YTD",
                 on_change=_on_monthly_withdrawal_toggle,
-                help="Apply the same cash withdrawal every month using actual adjusted month-end returns from Yahoo/yfinance market history.",
+                help="Apply the same cash withdrawal every month using the durable actual month-end history generated from the same adjusted daily prices as Market Table. Monthly returns are reconciled to each listed annual return.",
             )
         with withdrawal_controls[3]:
             portfolio_monthly_withdrawal = st.number_input(
@@ -3043,12 +3259,13 @@ with portfolio_tab:
         with withdrawal_controls[4]:
             if portfolio_monthly_withdrawals_enabled:
                 st.caption(
-                    "Monthly mode: each stock uses its actual adjusted month-to-month return from historical market prices. "
+                    "Monthly mode: each stock uses actual adjusted month-to-month returns generated from the same historical prices as Market Table. "
+                    "Each completed year's 12 monthly returns are reconciled to the annual return shown in Table View before withdrawals are modeled. "
                     "Return is applied first, then the monthly cash withdrawal. Add current YTD is not applied to monthly withdrawal schedules."
                 )
             elif portfolio_withdrawals_enabled:
                 st.caption(
-                    "Yearly mode: each stock receives its actual saved calendar-year return, then the requested yearly cash withdrawal is removed proportionally. "
+                    "Yearly mode: each stock receives the exact completed calendar-year return shown in Market Table, then the requested yearly cash withdrawal is removed proportionally. "
                     "If current YTD is added, it appears as a final partial row with no additional yearly withdrawal."
                 )
             else:
@@ -3136,7 +3353,7 @@ with portfolio_tab:
                 if unresolved_amount > 0:
                     st.warning(
                         f"${unresolved_amount:,.2f} of the starting allocation could not be simulated because no common return data was available. "
-                        "MarketScope otherwise shortens the requested 1Y–25Y horizon automatically to the years shared by every selected instrument."
+                        f"MarketScope otherwise shortens the requested 1Y–{ANNUAL_HISTORY_YEARS}Y horizon automatically to the years shared by every selected instrument."
                     )
 
                 if portfolio_results:
@@ -3297,8 +3514,8 @@ with portfolio_tab:
                     else:
                         st.markdown("<div class='portfolio-analytics-title'>MONTHLY WITHDRAWAL — REBALANCED VS NOT REBALANCED</div>", unsafe_allow_html=True)
                         st.caption(
-                            "Each row uses the actual adjusted return from one historical month to the next. "
-                            "Rebalanced restores target weights after every monthly withdrawal; Not rebalanced lets holdings drift."
+                            "Each row uses the actual adjusted return from one historical month to the next, sourced from the same daily history as Market Table. "
+                            "The monthly path is reconciled to each displayed annual return. Rebalanced restores target weights after every monthly withdrawal; Not rebalanced lets holdings drift."
                         )
                         rb_end = float(portfolio_monthly_withdrawal_rebalanced_result.get("ending_balance") or 0)
                         nr_end = float(portfolio_monthly_withdrawal_not_rebalanced_result.get("ending_balance") or 0)
@@ -3503,6 +3720,15 @@ with portfolio_tab:
                     "industry": str(analytics.get("industry") or (meta_row.get("Industry") if meta_row is not None else "")),
                     "name": str(meta_row.get("Name") if meta_row is not None else sym),
                     "analyst_rating": str(meta_row.get("Analyst Rating") if meta_row is not None else "Not Rated"),
+                    "history_verification": str(meta_row.get("History Verification") if meta_row is not None else "Pending"),
+                    "verification_coverage": str(meta_row.get("Verification Coverage") if meta_row is not None else ""),
+                    "verification_exceptions": str(meta_row.get("Verification Exceptions") if meta_row is not None else ""),
+                    "verification_source": str(meta_row.get("Verification Source") if meta_row is not None else ""),
+                    "max_verification_diff_pp": (
+                        float(pd.to_numeric(pd.Series([meta_row.get("Max Verification Diff (pp)")]), errors="coerce").iloc[0])
+                        if meta_row is not None and pd.notna(pd.to_numeric(pd.Series([meta_row.get("Max Verification Diff (pp)")]), errors="coerce").iloc[0])
+                        else None
+                    ),
                     "current_price": (
                         float(meta_row.get("Price"))
                         if meta_row is not None and pd.notna(pd.to_numeric(pd.Series([meta_row.get("Price")]), errors="coerce").iloc[0])
@@ -3589,7 +3815,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v14 - verified 25Y annual backfill + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v18 - monthly yearly cash-flow reconciliation + dynamic annual history + actual monthly returns + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -3728,11 +3954,11 @@ with market_tab:
     with sim_cols[1]:
         investment_period_choice = st.segmented_control(
             "Investment period",
-            ["YTD", *[f"{i}Y" for i in range(1, 26)]],
-            default=(_query_scalar_early("sim_period", "10Y") if _query_scalar_early("sim_period", "10Y") in ["YTD", *[f"{i}Y" for i in range(1, 26)]] else "10Y"),
+            ["YTD", *ANNUAL_HORIZON_OPTIONS],
+            default=(_query_scalar_early("sim_period", "10Y") if _query_scalar_early("sim_period", "10Y") in ["YTD", *ANNUAL_HORIZON_OPTIONS] else "10Y"),
             key="investment_period_choice",
             format_func=timeframe_display_label,
-            help="Choose YTD only, or compound 1–25 of the most recent completed calendar years.",
+            help=f"Choose YTD only, or compound 1–{ANNUAL_HISTORY_YEARS} of the most recent completed calendar years.",
         )
         investment_period_choice = str(investment_period_choice or "10Y")
         investment_is_ytd = investment_period_choice == "YTD"
@@ -3743,14 +3969,46 @@ with market_tab:
             value=_query_scalar_early("include_ytd", "1").lower() in {"1", "true", "yes"},
             key="include_current_ytd",
             disabled=investment_is_ytd,
-            help="For 1Y–25Y selections, apply the current YTD return after the completed calendar years. YTD-only always uses YTD by itself.",
+            help=f"For 1Y–{ANNUAL_HISTORY_YEARS}Y selections, apply the current YTD return after the completed calendar years. YTD-only always uses YTD by itself.",
         )
         include_current_ytd = True if investment_is_ytd else bool(include_current_ytd_toggle)
     with sim_cols[3]:
         st.caption(
-            "Investment years: choose YTD for a current-year-only profit calculation, or 1–25 completed calendar years for historical compounding. "
+            f"Investment years: choose YTD for a current-year-only profit calculation, or 1–{ANNUAL_HISTORY_YEARS} completed calendar years for historical compounding. The maximum grows automatically after each year closes. "
             "You can also tap any return period/year inside an individual card to calculate profit for that exact period using this dollar amount."
         )
+
+    table_withdraw_cols = st.columns([1.35, 1.55, 4.7])
+    with table_withdraw_cols[0]:
+        market_table_withdrawals_enabled = st.toggle(
+            "Table yearly withdrawal",
+            value=False,
+            key="market_table_withdrawals_enabled",
+            disabled=investment_is_ytd,
+            help=f"Add a withdrawal simulation to Market Table using the exact annual-return columns shown in the table. The maximum {ANNUAL_HISTORY_YEARS}Y selection uses every tracked completed year where the instrument has full history.",
+        )
+    with table_withdraw_cols[1]:
+        market_table_annual_withdrawal = st.number_input(
+            "Table withdrawal / year ($)",
+            min_value=0.0,
+            max_value=1_000_000_000.0,
+            value=10_000.0,
+            step=5_000.0,
+            format="%.2f",
+            key="market_table_annual_withdrawal",
+            disabled=not bool(market_table_withdrawals_enabled),
+        )
+    with table_withdraw_cols[2]:
+        if market_table_withdrawals_enabled:
+            st.caption(
+                f"Withdrawal source: the exact annual returns displayed in Market Table for {timeframe_display_label(investment_period_choice)}. "
+                "Returns are applied oldest-to-newest; the cash withdrawal is taken after each completed year's return. "
+                f"For {ANNUAL_HISTORY_YEARS}Y, this uses {ANNUAL_HISTORY_FIRST_YEAR}–{LATEST_COMPLETED_YEAR} where the instrument traded for the full required history."
+            )
+        else:
+            st.caption(
+                "Enable Table yearly withdrawal to rank individual stocks/ETFs by remaining balance and net value after recurring annual cash withdrawals."
+            )
 
     # Display-mode tabs: preserve the full futuristic card experience while adding a sortable table view.
     view_filtered = filtered.copy()
@@ -3770,7 +4028,7 @@ with market_tab:
 
         st.markdown(
             "<div class='navigator-title'><span>MARKET NAVIGATOR</span>"
-            "<small>Every card shows short-horizon + 25 calendar-year returns • tap News for catalysts or Open for yearly charts</small></div>",
+            f"<small>Every card shows short-horizon + {ANNUAL_HISTORY_YEARS} calendar-year returns • tap News for catalysts or Open for yearly charts</small></div>",
             unsafe_allow_html=True,
         )
 
@@ -3783,7 +4041,7 @@ with market_tab:
         )
         if card_local_search and card_local_search.strip():
             _card_query = card_local_search.strip().lower()
-            _card_search_columns = ["Symbol", "Name", "Type", "Sector", "Industry", "Analyst Rating"]
+            _card_search_columns = ["Symbol", "Name", "Type", "Sector", "Industry", "Analyst Rating", "History Verification"]
             _card_search_mask = pd.Series(False, index=filtered.index)
             for _search_col in _card_search_columns:
                 if _search_col in filtered.columns:
@@ -3822,7 +4080,7 @@ with market_tab:
                 if pd.isna(value) or not np.isfinite(value):
                     break
                 newest_to_oldest.append((year, float(value)))
-            years_requested = max(1, min(25, int(years_requested)))
+            years_requested = max(1, min(ANNUAL_HISTORY_YEARS, int(years_requested)))
             if len(newest_to_oldest) < years_requested:
                 return None
             newest_to_oldest = newest_to_oldest[:years_requested]
@@ -4207,6 +4465,35 @@ with market_tab:
 
 
 
+        def _history_verification_badge_html(row: pd.Series) -> str:
+            """Compact independent-history cross-check flag for cards/comparison."""
+            status = str(row.get("History Verification") or "Pending").strip()
+            if status.lower() in {"", "nan", "none", "—"}:
+                status = "Pending"
+            coverage = str(row.get("Verification Coverage") or "").strip()
+            if coverage.lower() in {"nan", "none", "—"}:
+                coverage = ""
+            max_diff = pd.to_numeric(pd.Series([row.get("Max Verification Diff (pp)")]), errors="coerce").iloc[0]
+            exceptions = str(row.get("Verification Exceptions") or "").strip()
+            palette = {
+                "verified": ("#062f27", "#5eead4", "✓"),
+                "review": ("#3a1d19", "#fca5a5", "⚠"),
+                "partial": ("#30270b", "#fde68a", "◐"),
+                "unavailable": ("#1e293b", "#cbd5e1", "○"),
+                "pending": ("#1e293b", "#cbd5e1", "…"),
+            }
+            bg, fg, icon = palette.get(status.lower(), palette["pending"])
+            suffix = f" {coverage}" if coverage else ""
+            diff_text = f" • max Δ {float(max_diff):.2f}pp" if pd.notna(max_diff) and np.isfinite(max_diff) else ""
+            title = exceptions or str(row.get("Verification Source") or "Independent historical cross-check")
+            return (
+                f'<div title="{escape(title, quote=True)}" style="margin-top:6px;">'
+                f'<span style="display:inline-block;padding:3px 7px;border-radius:999px;'
+                f'background:{bg};color:{fg};font-size:10px;font-weight:700;border:1px solid {fg}55;">'
+                f'{icon} History {escape(status)}{escape(suffix)}{escape(diff_text)}</span></div>'
+            )
+
+
         def _instrument_card_header_html(
             row: pd.Series, price: str, cap_display: str,
             logo_url: str = "", chart_histories: dict[str, pd.DataFrame] | None = None,
@@ -4238,6 +4525,7 @@ with market_tab:
                 '</div>',
                 f'<div class="card-quote-row"><span class="price-line">{escape(price)}</span><span class="cap-line">Mkt Cap {escape(cap_display)}</span></div>',
                 _price_target_html(row),
+                _history_verification_badge_html(row),
                 '</div>',
             ]
             return ''.join(part for part in parts if part)
@@ -4308,7 +4596,7 @@ with market_tab:
                 if pd.isna(value) or not np.isfinite(value):
                     break
                 newest_to_oldest.append((year, float(value)))
-            years_requested = max(1, min(25, int(years_requested)))
+            years_requested = max(1, min(ANNUAL_HISTORY_YEARS, int(years_requested)))
             if len(newest_to_oldest) < years_requested:
                 return {"insufficient": True, "available_years": len(newest_to_oldest), "requested_years": years_requested}
             newest_to_oldest = newest_to_oldest[:years_requested]
@@ -4620,13 +4908,13 @@ with market_tab:
 
             st.markdown("#### Year-by-year historical chart")
             current_year = int(now_et().year)
-            chart_year_options = [str(current_year - offset) for offset in range(0, 26)]
+            chart_year_options = chart_year_labels(as_of=now_et(), include_current=True)
             chart_year = st.segmented_control(
                 "Chart year",
                 chart_year_options,
                 default=str(current_year),
                 key=f"chart_year_{selected}",
-                help="Choose the current year or any of the prior 25 calendar years. The graph and summary metrics update to that year only.",
+                help=f"Choose the current year or any tracked calendar year back to {ANNUAL_HISTORY_FIRST_YEAR}. The graph and summary metrics update to that year only.",
             )
             selected_chart_year = int(chart_year or current_year)
             with st.spinner(f"Loading {selected} history for {selected_chart_year}..."):
@@ -4679,7 +4967,7 @@ with market_tab:
                     height=1,
                 )
         else:
-            st.info("Choose an instrument card to open its full short-horizon and 25-calendar-year performance view.")
+            st.info("Choose an instrument card to open its full short-horizon and {ANNUAL_HISTORY_YEARS}-calendar-year performance view.")
 
 
 
@@ -4695,6 +4983,12 @@ with market_tab:
         sim_ending_values = []
         sim_profit_values = []
         sim_return_values = []
+        withdrawal_remaining_values = []
+        withdrawal_total_values = []
+        withdrawal_net_values = []
+        withdrawal_profit_values = []
+        withdrawal_years_used = []
+        withdrawal_years_funded = []
         for _, _row in table_df.iterrows():
             _projection = _portfolio_horizon_projection(
                 _row,
@@ -4711,12 +5005,51 @@ with market_tab:
                 sim_profit_values.append(float(_projection.get("profit", np.nan)))
                 sim_return_values.append(float(_projection.get("return_pct", np.nan)))
 
+            if market_table_withdrawals_enabled:
+                _withdrawal_projection = _market_table_annual_withdrawal_projection(
+                    _row,
+                    float(investment_amount),
+                    str(investment_period_choice),
+                    float(market_table_annual_withdrawal),
+                    bool(include_current_ytd),
+                )
+                if not _withdrawal_projection or _withdrawal_projection.get("unavailable"):
+                    withdrawal_remaining_values.append(np.nan)
+                    withdrawal_total_values.append(np.nan)
+                    withdrawal_net_values.append(np.nan)
+                    withdrawal_profit_values.append(np.nan)
+                    withdrawal_years_used.append(np.nan)
+                    withdrawal_years_funded.append(np.nan)
+                else:
+                    withdrawal_remaining_values.append(float(_withdrawal_projection.get("ending_balance", np.nan)))
+                    withdrawal_total_values.append(float(_withdrawal_projection.get("total_withdrawn", np.nan)))
+                    withdrawal_net_values.append(float(_withdrawal_projection.get("net_value_including_withdrawals", np.nan)))
+                    withdrawal_profit_values.append(float(_withdrawal_projection.get("net_profit_including_withdrawals", np.nan)))
+                    withdrawal_years_used.append(float(_withdrawal_projection.get("years_used", np.nan)))
+                    withdrawal_years_funded.append(float(_withdrawal_projection.get("withdrawals_funded", np.nan)))
+            else:
+                withdrawal_remaining_values.append(np.nan)
+                withdrawal_total_values.append(np.nan)
+                withdrawal_net_values.append(np.nan)
+                withdrawal_profit_values.append(np.nan)
+                withdrawal_years_used.append(np.nan)
+                withdrawal_years_funded.append(np.nan)
+
         table_df["Market Cap ($B)"] = pd.to_numeric(table_df.get("MarketCap"), errors="coerce") / 1_000_000_000
         table_df["Simulation Period"] = timeframe_display_label(investment_period_choice)
         table_df["Investment Amount ($)"] = float(investment_amount)
         table_df["Estimated Value ($)"] = sim_ending_values
         table_df["Profit / Loss ($)"] = sim_profit_values
         table_df["Simulation Return %"] = sim_return_values
+        table_df["Withdrawal / Year ($)"] = (
+            float(market_table_annual_withdrawal) if market_table_withdrawals_enabled else np.nan
+        )
+        table_df["Withdrawal Years Used"] = withdrawal_years_used
+        table_df["Withdrawals Fully Funded"] = withdrawal_years_funded
+        table_df["Total Withdrawn ($)"] = withdrawal_total_values
+        table_df["Remaining After Withdrawals ($)"] = withdrawal_remaining_values
+        table_df["Net Value incl. Withdrawals ($)"] = withdrawal_net_values
+        table_df["Net Profit incl. Withdrawals ($)"] = withdrawal_profit_values
 
         # v5.9.44: expose the weakest completed calendar year in Market Table View.
         # Uses the same actual annual-return columns shown in cards; missing pre-IPO
@@ -4735,10 +5068,15 @@ with market_tab:
 
         TABLE_COLUMNS = [
             "Symbol", "Name", "Type", "Sector", "Industry", "Price", "Market Cap ($B)",
-            "Analyst Rating", "Worst Year", "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
+            "Analyst Rating", "Worst Year", "History Verification", "Verification Coverage",
+            "Verification Discrepancies", "Max Verification Diff (pp)", "Verification Exceptions",
+            "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
             "Short Buy", "Long Buy", "Fundamental Buy",
             *PERF_COLS,
             "Simulation Period", "Investment Amount ($)", "Estimated Value ($)", "Profit / Loss ($)", "Simulation Return %",
+            "Withdrawal / Year ($)", "Withdrawal Years Used", "Withdrawals Fully Funded",
+            "Total Withdrawn ($)", "Remaining After Withdrawals ($)",
+            "Net Value incl. Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             "Signal Reasons",
         ]
         for _col in TABLE_COLUMNS:
@@ -4748,8 +5086,9 @@ with market_tab:
 
         # Explicit table sorting complements Streamlit's native click-the-header sort.
         table_sort_options = [
-            "Symbol", "Name", "Price", "Market Cap ($B)", "Analyst Rating", "Worst Year",
+            "Symbol", "Name", "Price", "Market Cap ($B)", "Analyst Rating", "Worst Year", "History Verification",
             "Price Target Average", "Avg Target Implied %", "Profit / Loss ($)", "Simulation Return %",
+            "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
         ]
         # v5.9.13: Table View search retained; Card View uses the same search behavior.
@@ -4780,12 +5119,17 @@ with market_tab:
         with ts3:
             st.caption(
                 "Use these controls for a default ranking, or click any table column header for an instant interactive re-sort. "
-                f"Profit columns use ${investment_amount:,.2f} and the currently selected {investment_period_choice} simulator period."
+                f"Profit columns use ${investment_amount:,.2f} and the currently selected {investment_period_choice} simulator period. "
+                + (
+                    f"Withdrawal columns use ${market_table_annual_withdrawal:,.2f}/year against the exact displayed annual returns."
+                    if market_table_withdrawals_enabled else
+                    "Enable Table yearly withdrawal above to add recurring-withdrawal results."
+                )
             )
 
         if table_local_search and table_local_search.strip():
             _table_query = table_local_search.strip().lower()
-            _table_search_columns = ["Symbol", "Name", "Type", "Sector", "Industry", "Analyst Rating"]
+            _table_search_columns = ["Symbol", "Name", "Type", "Sector", "Industry", "Analyst Rating", "History Verification"]
             _table_search_mask = pd.Series(False, index=table_df.index)
             for _search_col in _table_search_columns:
                 if _search_col in table_df.columns:
@@ -4816,6 +5160,11 @@ with market_tab:
             "Price": st.column_config.NumberColumn("Price", format="$%.2f"),
             "Market Cap ($B)": st.column_config.NumberColumn("Market Cap ($B)", format="$%.2fB"),
             "Worst Year": st.column_config.TextColumn("Worst Year"),
+            "History Verification": st.column_config.TextColumn("History Check"),
+            "Verification Coverage": st.column_config.TextColumn("Verified Coverage"),
+            "Verification Discrepancies": st.column_config.NumberColumn("Review Years", format="%d"),
+            "Max Verification Diff (pp)": st.column_config.NumberColumn("Max Δ (pp)", format="%.2f"),
+            "Verification Exceptions": st.column_config.TextColumn("Verification Exceptions"),
             "Price Target Low": st.column_config.NumberColumn("Target Low", format="$%.2f"),
             "Price Target Average": st.column_config.NumberColumn("Target Avg", format="$%.2f"),
             "Price Target High": st.column_config.NumberColumn("Target High", format="$%.2f"),
@@ -4824,6 +5173,13 @@ with market_tab:
             "Estimated Value ($)": st.column_config.NumberColumn("Est. Value", format="$%.2f"),
             "Profit / Loss ($)": st.column_config.NumberColumn("Profit / Loss", format="$%.2f"),
             "Simulation Return %": st.column_config.NumberColumn("Simulation Return", format="%.2f%%"),
+            "Withdrawal / Year ($)": st.column_config.NumberColumn("Withdraw / Yr", format="$%.2f"),
+            "Withdrawal Years Used": st.column_config.NumberColumn("Return Years Used", format="%d"),
+            "Withdrawals Fully Funded": st.column_config.NumberColumn("Withdrawals Funded", format="%d"),
+            "Total Withdrawn ($)": st.column_config.NumberColumn("Total Withdrawn", format="$%.2f"),
+            "Remaining After Withdrawals ($)": st.column_config.NumberColumn("Remaining After Withdrawals", format="$%.2f"),
+            "Net Value incl. Withdrawals ($)": st.column_config.NumberColumn("Net Value incl. Withdrawals", format="$%.2f"),
+            "Net Profit incl. Withdrawals ($)": st.column_config.NumberColumn("Net Profit incl. Withdrawals", format="$%.2f"),
             "Short Buy": st.column_config.CheckboxColumn("Short Buy"),
             "Long Buy": st.column_config.CheckboxColumn("Long Buy"),
             "Fundamental Buy": st.column_config.CheckboxColumn("Fundamental Buy"),
@@ -4852,7 +5208,8 @@ with market_tab:
         )
         st.caption(
             f"Table View contains {len(table_df):,} instrument(s) after the same filters used by Card View. "
-            "Previously removed metadata columns (Return Basis, Rating Source, Data As Of, Rating Update ET, Snapshot Update ET, NAV, Exchange, Inception Date) remain intentionally hidden."
+            "History Check compares Yahoo/yfinance annual returns with independent Stooq bulk historical Close data. "
+            "A Review flag means at least one compared year differs by more than 0.25 percentage points; Yahoo remains the primary calculation source."
         )
 
 
@@ -5079,7 +5436,7 @@ with compare_tab:
                 current_year = int(now_et().year)
                 compare_chart_year = st.segmented_control(
                     "Comparison chart year",
-                    [str(current_year - offset) for offset in range(0, 26)],
+                    chart_year_labels(as_of=now_et(), include_current=True),
                     default=str(current_year),
                     key=f"compare_chart_year_{comparison_detail_symbol}",
                 )
@@ -5281,7 +5638,7 @@ with sector_tab:
 
             st.markdown(f"#### {drill_sector} · Top Performers")
             st.caption("Tap a timeframe below to re-rank stocks and recalculate Total Profit / Total Profit %. The table shows short-period returns plus each completed calendar year as a standalone annual return (not compounded).")
-            timeframe_options = ["1D", "1M", "3M", "6M", "YTD", *[f"{i}Y" for i in range(1, 26)]]
+            timeframe_options = ["1D", "1M", "3M", "6M", "YTD", *ANNUAL_HORIZON_OPTIONS]
             tf_key = f"sector_profit_timeframe_{key_suffix}"
             default_tf = str(st.session_state.get(tf_key) or sector_sort_period or "YTD")
             if default_tf not in timeframe_options:
@@ -5321,9 +5678,9 @@ with sector_tab:
                     return numeric.reindex(frame.index).astype("float64")
                 return pd.Series(float(numeric) if pd.notna(numeric) else np.nan, index=frame.index, dtype="float64")
 
-            # v5.9.35: sector drill-down periods 1Y-25Y are derived cumulative returns,
+            # v5.9.35: sector drill-down periods 1Y-{ANNUAL_HISTORY_YEARS}Y are derived cumulative returns,
             # not literal snapshot columns. The source snapshot stores completed calendar-year
-            # returns (for example 2025, 2024, ...), so trying to read a literal "6Y" column
+            # returns (for example latest completed year, prior year, ...), so trying to read a literal "6Y" column
             # previously produced NaN/None for every stock. Compound the latest N completed
             # calendar-year returns to make the selected horizon directly usable for ranking
             # and Total Profit calculations. Short periods continue to use their direct fields.
@@ -5332,7 +5689,7 @@ with sector_tab:
                 if timeframe in {"1D", "1M", "3M", "6M", "YTD"}:
                     return _sector_numeric_series(frame, timeframe)
                 if timeframe.endswith("Y") and timeframe[:-1].isdigit():
-                    years = max(1, min(25, int(timeframe[:-1])))
+                    years = max(1, min(ANNUAL_HISTORY_YEARS, int(timeframe[:-1])))
                     annual_cols = list(YEAR_RETURN_COLS[:years])
                     if len(annual_cols) < years:
                         return pd.Series(np.nan, index=frame.index, dtype="float64")
@@ -5354,13 +5711,13 @@ with sector_tab:
             drill_table = drill.copy()
             drill_table["Logo"] = drill_table["Symbol"].astype(str).str.upper().map(lambda sym: drill_logo_urls.get(sym, ""))
 
-            # v5.9.35: keep the profit/ranking selector on 1D/1M/3M/6M/YTD + 1Y-25Y,
+            # v5.9.35: keep the profit/ranking selector on 1D/1M/3M/6M/YTD + 1Y-{ANNUAL_HISTORY_YEARS}Y,
             # but show true NON-COMPOUNDED calendar-year returns in the table. This avoids
             # presenting 2Y/3Y/... cells as if they were individual annual returns. The annual
-            # columns are the snapshot's completed years (2025, 2024, ...), each representing
+            # columns are the snapshot's completed years (latest completed year, prior year, ...), each representing
             # that single calendar year's actual return for the stock.
             short_return_cols = ["1D", "1M", "3M", "6M", "YTD"]
-            annual_return_cols = list(YEAR_RETURN_COLS[:25])
+            annual_return_cols = list(YEAR_RETURN_COLS)
             for timeframe in short_return_cols:
                 drill_table[timeframe] = _sector_numeric_series(drill_table, timeframe)
             for year_col in annual_return_cols:
@@ -5474,14 +5831,14 @@ with alerts_tab:
     - **ETF analyst rating:** Nasdaq's public ETF screener does not expose the same stock-style analyst consensus. MarketScope shows **Not Rated** unless the Nasdaq ETF response itself provides a genuine analyst/recommendation field; it does not relabel a fund score or momentum signal as analyst consensus.
     - **Rating colors:** Strong Buy/Buy = green; Hold = yellow; Sell/Strong Sell = red; Not Rated = gray.
     - **Returns:** Yahoo/yfinance adjusted daily market history. 1D/1M/3M/6M/YTD are point-to-point adjusted returns. The twenty year-labeled fields are **actual completed calendar-year returns**, calculated from the adjusted close at the end of the prior year to the adjusted close at the end of that year. They are not CAGR. Stocks do not have NAV. ETF NAV is not shown in the cards; ETF returns use adjusted market history.
-    - **Investment simulator:** choose an investment amount and **YTD or 1–25 completed years**. YTD calculates profit from the current saved YTD return only. The 1Y–25Y choices remain available at all times; when a selected instrument did not exist for the full requested span, MarketScope automatically starts at the first completed year shared by every selected instrument and uses up to the requested number of common years. The optional current-YTD toggle can then extend that result through today. Every 1D/1M/3M/6M/YTD/calendar-year tile inside a card is also clickable and shows the dollar ending value and profit for that exact return period.
+    - **Investment simulator:** choose an investment amount and **YTD or 1–{ANNUAL_HISTORY_YEARS} completed years**. YTD calculates profit from the current saved YTD return only. The 1Y–{ANNUAL_HISTORY_YEARS}Y choices remain available at all times; when a selected instrument did not exist for the full requested span, MarketScope automatically starts at the first completed year shared by every selected instrument and uses up to the requested number of common years. The optional current-YTD toggle can then extend that result through today. Every 1D/1M/3M/6M/YTD/calendar-year tile inside a card is also clickable and shows the dollar ending value and profit for that exact return period.
     - **Card / Table tabs:** Card View preserves the interactive futuristic cards. Table View shows all currently filtered instruments in one dense table with all current performance, rating, target, signal and selected investment-simulation fields. You can use the explicit table sort controls or click any column header to sort interactively.
     - **Unlimited Stock & ETF Comparison:** use the single searchable **Stocks & ETFs to compare** selector in the Comparison tab to add or remove instruments. There is no selection cap. Once selected, MarketScope retrieves the instrument logo from Yahoo/company metadata when available and shows it on Comparison Cards and in the Comparison Table. Cards paginate 12 at a time and now mirror Market Navigator Card View: 2-year mini chart, clickable return/profit tiles, investment simulation, analyst targets, rating/signal badges, News, ETF Holdings, and full detail/live/year charts. Comparison Table shows the full selected set with all current performance periods, ratings, available stock targets, signals and selected investment-simulation results.
-    - **Portfolio split simulator:** enter a total amount (default $200,000), select multiple tracked stocks/ETFs, choose equal split or custom percentages, and select YTD or a 1Y–25Y historical horizon. MarketScope calculates each allocation independently, then totals the simulated ending value and profit. Pre-IPO/pre-inception history is never fabricated; the simulation begins at the first completed year common to every selected instrument. Outside the optional Yearly/Monthly withdrawal modes, no deposits, withdrawals, taxes, fees, or future returns are assumed. Monthly withdrawal mode uses actual adjusted month-end returns calculated from historical Yahoo/yfinance market prices; annual returns are never divided into synthetic monthly rates.
+    - **Portfolio split simulator:** enter a total amount (default $200,000), select multiple tracked stocks/ETFs, choose equal split or custom percentages, and select YTD or a 1Y–{ANNUAL_HISTORY_YEARS}Y historical horizon. MarketScope calculates each allocation independently, then totals the simulated ending value and profit. Pre-IPO/pre-inception history is never fabricated; the simulation begins at the first completed year common to every selected instrument. Outside the optional Yearly/Monthly withdrawal modes, no deposits, withdrawals, taxes, fees, or future returns are assumed. Monthly withdrawal mode uses actual adjusted month-end returns calculated from historical Yahoo/yfinance market prices; annual returns are never divided into synthetic monthly rates.
     - **News Impact:** the News button performs an on-demand Yahoo Finance news search for that symbol and shows up to three recent (7-day) headlines only when rule-based fundamental language produces a clear positive or negative directional read. Green ▲ means a positive fundamental catalyst; red ▼ means a negative fundamental catalyst. This is context, not a prediction or guarantee. Neutral/ambiguous stories are not forced into an UP/DOWN label.
     - **Live chart:** opening a card loads a Yahoo Finance/yfinance intraday chart for that one instrument and refreshes the chart about every 60 seconds while it remains open. Yahoo/exchange delays can apply, so it is near-real-time rather than an exchange-direct tick feed.
     - **Analyst price targets:** stock cards show Yahoo analyst **Low / Average / High** target prices when available. ETFs remain blank because stock-style analyst price-target ranges are not consistently available for funds. These are analyst estimates, not guaranteed outcomes.
-    - **Year chart:** below the live chart, opening a card lets you choose the current year or any of the prior 25 calendar years. The plotted adjusted daily closes and the chart summary update to the selected year only.
+    - **Year chart:** below the live chart, opening a card lets you choose the current year or any tracked calendar year back to the configured history baseline. The plotted adjusted daily closes and the chart summary update to the selected year only.
     - **Persistent data:** the daily GitHub Action commits `data/default_universe.csv`, `data/market_snapshot.csv`, and `data/snapshot_metadata.json`. Render serves the local snapshot immediately; GitHub is the durable source of truth.
     - **Manual persistence:** configure the Render secret `MARKETSCOPE_GITHUB_TOKEN` (fine-grained token, Contents read/write on this repository) so manual refreshes and manually added symbols are committed to the same persistent snapshot.
     - **Signals:** Short Buy is a rule-based technical signal using SMA20/SMA50, MACD, RSI and 1M/3M momentum. Long Buy uses long-trend technical rules plus Nasdaq Buy/Strong Buy consensus for stocks; ETFs use technical criteria because stock-style analyst consensus is generally unavailable. A Nasdaq Strong Buy is treated as a fundamental/consensus buy signal for stocks.

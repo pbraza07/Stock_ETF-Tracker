@@ -13,4 +13,4 @@ def test_sector_popover_profit_contract():
     assert "Investment basis ($ per stock)" in APP
     assert 'drill_table["Total Profit %"] = selected_returns' in APP
     assert 'drill_table["Total Profit"] = np.where' in APP
-    assert '*[f"{i}Y" for i in range(1, 26)]' in APP
+    assert '*ANNUAL_HORIZON_OPTIONS' in APP

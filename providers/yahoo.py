@@ -77,7 +77,7 @@ class YahooFinanceProvider(MarketDataProvider):
     ) -> Dict[str, pd.DataFrame]:
         """Download long adjusted daily history from an explicit calendar start.
 
-        MarketScope's 25 completed annual-return window needs the prior-year anchor
+        MarketScope's dynamically growing completed annual-return window needs the prior-year anchor
         for the oldest displayed year. During 2026 that means daily history must
         reach back through calendar 2000 in order to calculate a genuine 2001
         return. Using an explicit start date is more deterministic than relying on

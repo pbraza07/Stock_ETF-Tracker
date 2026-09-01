@@ -44,3 +44,35 @@ When **Monthly withdrawal** is enabled, MarketScope uses actual adjusted month-e
 Return is applied first and the selected cash withdrawal is then taken at month-end. **Rebalanced Monthly** restores the target weights after each withdrawal; **Not Rebalanced Monthly** carries the drifted holdings forward. Annual return fields are not divided, averaged, rooted, or otherwise transformed into synthetic monthly values.
 
 The scheduled GitHub refresh persists the latest ten completed years of actual monthly returns to `data/monthly_returns_10y.csv` and rebuilds the two Top 100 monthly withdrawal rankings from that actual monthly series.
+
+## v5.9.56 independent verification
+
+For each instrument and each available completed calendar year from 2025 through 2001, MarketScope compares the primary Yahoo/yfinance annual return with an independently calculated Stooq annual return when both year-end anchors exist.
+
+The comparison threshold defaults to 0.25 percentage points:
+
+`absolute(Yahoo annual return - Stooq annual return) <= 0.25 pp`
+
+Verification does not change the return used in simulations. Yahoo/yfinance remains authoritative for MarketScope calculations; Stooq disagreement is surfaced as a data-quality review flag.
+
+## v5.9.58 dynamic completed-year history
+
+The annual-history baseline is 2001 and the ending year is calculated at runtime as the latest completed calendar year.
+
+For any completed year Y:
+
+`annual return Y = adjusted year-end close Y / adjusted year-end close (Y-1) - 1`
+
+The number of displayed annual columns is therefore:
+
+`latest completed year - 2001 + 1`
+
+This means the annual history grows by one column automatically after each calendar year closes. The daily refresh also expands `monthly_returns_full_history.csv` so withdrawal simulations retain genuine monthly paths for the same dynamically growing period.
+## v5.9.59 monthly-withdrawal yearly reconciliation
+
+The PDF year-level summary compounds the actual monthly portfolio returns for the calendar year. It does not use the December monthly return as a proxy for annual performance.
+
+`Year Return = product(1 + monthly portfolio return) - 1`
+
+Cash withdrawals are modeled separately. `End + Withdrawn` equals the December 31 remaining portfolio plus the cash withdrawn during that calendar year and is shown only as a cash-flow reconciliation measure. Because withdrawals occur throughout the year, that value is not used as the annual-return formula.
+

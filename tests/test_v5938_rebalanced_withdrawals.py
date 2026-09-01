@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.55"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.59"
 
 
 def test_withdrawal_engine_supports_rebalancing():
@@ -38,7 +38,7 @@ def test_rebalanced_and_not_rebalanced_paths_diverge_numerically():
     tree = ast.parse((ROOT / "app.py").read_text(encoding="utf-8"))
     fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_portfolio_annual_withdrawal_schedule")
     module = ast.Module(body=[fn], type_ignores=[])
-    ns = {"pd": pd, "np": np, "YEAR_RETURN_COLS": [str(y) for y in range(2025, 2005, -1)]}
+    ns = {"pd": pd, "np": np, "YEAR_RETURN_COLS": [str(y) for y in range(2025, 2005, -1)], "ANNUAL_HISTORY_YEARS": 20}
     exec(compile(module, "app.py", "exec"), ns)
     run = ns["_portfolio_annual_withdrawal_schedule"]
     market = pd.DataFrame([

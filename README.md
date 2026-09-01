@@ -1,3 +1,19 @@
+# MarketScope v5.9.59 - Monthly PDF Yearly Cash-Flow Reconciliation
+
+The monthly-withdrawal PDF comparison now shows the **true compounded Jan-Dec portfolio return**, actual cash withdrawn during each year, December 31 remaining balance, and **Year-End + Withdrawn** for Rebalanced and Not Rebalanced strategies. The misleading December-only return columns have been removed.
+
+# MarketScope v5.9.58 — Dynamic Lifetime Annual History
+
+MarketScope's annual-return history now expands automatically every year from the fixed **2001** baseline. During 2026 the app shows 25 completed years (2001–2025); during 2027 it automatically becomes 26 years (2001–2026), then 27 years in 2028, with no code change required. The same dynamic horizon drives Market Table, Card View, simulations, withdrawals, comparisons, sectors, charts, verification and Portfolio PDFs.
+
+# MarketScope v5.9.57 - 25Y Withdrawal Source Fix
+
+Withdrawal simulations now use Market Table as the annual-return source of truth. The daily refresh also persists actual monthly returns for the full **2001–2025** window, so monthly Portfolio Simulator withdrawals no longer depend on a separate 10Y-only row being present. Actual monthly returns are reconciled to each displayed annual return; no synthetic annual-to-month conversion is used.
+
+# MarketScope v5.9.56 — Independent Historical Data Verification
+
+MarketScope now automatically cross-checks every comparable 2025–2001 annual return against independent **Stooq U.S. bulk historical data**. Yahoo/yfinance remains the primary adjusted-return source; Stooq is a verification layer only. Differences above **0.25 percentage points** are flagged for review and never silently replace the primary return.
+
 # MarketScope v5.9.55 — 25Y Persistence Race Fix
 
 The automatic 25-year annual-history calculation remains unchanged from v5.9.54, but its durable GitHub persistence is now race-safe. The verified 2025–2001 snapshot is persisted immediately after validation, before slower ranking jobs, and concurrent `main` updates are handled by fetch/reset/reapply/retry logic instead of losing the generated data.

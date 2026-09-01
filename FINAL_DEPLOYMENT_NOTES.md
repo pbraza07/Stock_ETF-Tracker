@@ -1,3 +1,27 @@
+# v5.9.59 deployment note
+
+Deploy over the existing repository. Saved simulation data and stored PDFs remain protected. Existing saved simulations will rebuild to PDF layout v18 when opened/downloaded so the new yearly cash-flow reconciliation page is used.
+
+# v5.9.58 deployment note
+
+Deploy over the existing repository. Do not delete live saved Portfolio Simulation JSON/PDF state.
+
+The first successful refresh after deployment creates `data/monthly_returns_full_history.csv`. After that, the normal daily refresh automatically grows the annual and monthly historical schema every January as another calendar year becomes complete. No manual yearly code update is required.
+
+# v5.9.57 deployment note
+
+Deploy v5.9.57 over the existing GitHub repository; do not delete the repository or live saved Portfolio Simulation/PDF data.
+
+After the code commit reaches `main`, the normal MarketScope refresh automatically:
+1. downloads adjusted daily history from the 2000 anchor;
+2. writes the 25 completed annual-return columns used by Market Table;
+3. writes `data/monthly_returns_25y.csv` with actual month-end returns for 2001-2025;
+4. validates that each comparable set of 12 monthly returns compounds back to its Market Table annual return within 0.05 percentage points;
+5. persists annual + monthly source data with the race-safe v5.9.55 persistence mechanism;
+6. rebuilds the existing 10Y actual-monthly and recession ranking datasets.
+
+No manual monthly-history or 25Y repair action is required.
+
 # v5.9.55 deployment note
 
 After uploading v5.9.55 over the existing GitHub repository and committing to `main`, the normal MarketScope refresh will:

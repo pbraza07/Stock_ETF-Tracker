@@ -8,7 +8,7 @@ WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_
 
 
 def test_version_5954():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.59"
 
 
 def test_explicit_history_start_reaches_prior_anchor_for_2001():
@@ -37,8 +37,8 @@ def test_verified_old_returns_are_not_erased_by_provider_gaps():
 
 
 def test_manual_refresh_and_single_metrics_use_same_25y_source():
-    assert 'provider.download_daily_history_since([symbol], start="2000-01-01", chunk_size=1)' in APP
-    assert 'provider.download_daily_history_since(batch, start="2000-01-01", chunk_size=20)' in APP
+    assert 'provider.download_daily_history_since([symbol], start=ANNUAL_HISTORY_START, chunk_size=1)' in APP
+    assert 'provider.download_daily_history_since(batch, start=ANNUAL_HISTORY_START, chunk_size=20)' in APP
 
 
 def test_max_year_chart_uses_explicit_start_history():
@@ -54,4 +54,4 @@ def test_repair_banner_and_button_are_removed():
 
 def test_workflow_automatically_requests_25y_history():
     assert 'MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01' in WORKFLOW
-    assert 'Build automatic 25Y returns' in WORKFLOW
+    assert 'Build dynamic annual returns and matching actual monthly history' in WORKFLOW

@@ -4,10 +4,10 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 def test_version_5932():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.59"
 
 def test_portfolio_keeps_1_to_25_year_choices_and_uses_common_start():
-    assert 'portfolio_period_options = ["YTD", *[f"{i}Y" for i in range(1, 26)]]' in APP
+    assert 'portfolio_period_options = ["YTD", *ANNUAL_HORIZON_OPTIONS]' in APP
     assert "def _portfolio_common_calendar_years" in APP
     assert "def _effective_portfolio_years" in APP
     assert "Simulation starts only once every selected instrument has a valid completed-year return" in APP

@@ -46,12 +46,12 @@ def test_first_page_contains_requested_combined_tables():
         "COMBINED PORTFOLIO PERFORMANCE", "10Y CAGR", "POS YEARS", "WORST YEAR", "BEST YEAR",
         "REG. YIELD", "EST. ANNUAL DIV.", "COMBINED TIMEFRAME PERFORMANCE",
         '"1D", "1M", "3M", "6M", "YTD"',
-        "25 annual returns are split into three legible timeframe bands",
+        "completed annual returns are dynamically paginated into legible timeframe bands",
     ]:
         assert token in SOURCE
     assert 'saved_years[:5]' in SOURCE
-    assert 'saved_years[5:15]' in SOURCE
-    assert 'saved_years[15:25]' in SOURCE
+    assert 'remaining_years = saved_years[5:]' in SOURCE
+    assert 'for start_index in range(0, len(remaining_years), 10)' in SOURCE
     assert 'OLDER COMPLETED CALENDAR YEARS' in SOURCE
     pdf = build_portfolio_simulation_pdf(_record())
     assert pdf.startswith(b"%PDF")

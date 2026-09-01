@@ -6,7 +6,7 @@ PERSIST = (ROOT / "scripts" / "persist_generated_files.sh").read_text(encoding="
 
 
 def test_release_version_5955():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.59"
 
 
 def test_workflow_uses_full_checkout_for_safe_fetch_reset():
@@ -14,8 +14,8 @@ def test_workflow_uses_full_checkout_for_safe_fetch_reset():
 
 
 def test_verified_25y_snapshot_is_persisted_before_rankings():
-    audit = WORKFLOW.index("Audit automatic 25Y annual-return coverage")
-    persist = WORKFLOW.index("Persist verified 25Y market snapshot")
+    audit = WORKFLOW.index("Audit dynamic annual-return coverage")
+    persist = WORKFLOW.index("Persist verified dynamic market snapshot and monthly history")
     monthly = WORKFLOW.index("Build actual 10Y monthly withdrawal rankings")
     recession = WORKFLOW.index("Build recession-balanced 10Y rankings")
     assert audit < persist < monthly < recession

@@ -6,8 +6,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import sys
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
+
+from history_config import rolling_completed_year_labels
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 FALLBACK_FILE = BASE_DIR / "data" / "portfolio_combo_source_latest.csv"
 REBALANCED_OUT = BASE_DIR / "data" / "top100_recession_balanced_rebalanced_10y.csv"
@@ -16,7 +21,7 @@ NOT_REBALANCED_OUT = BASE_DIR / "data" / "top100_recession_balanced_not_rebalanc
 STARTING_VALUE = 300_000.0
 TOP_N = 100
 MAX_TICKER_REPEATS = 5
-SIM_YEARS = [str(y) for y in range(2016, 2026)]
+SIM_YEARS = rolling_completed_year_labels(10)
 RECESSION_STRESS_YEARS = ["2001", "2008", "2009", "2020"]
 NBER_SOURCE = "https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions"
 NBER_PERIODS = "Mar-Nov 2001; Dec 2007-Jun 2009; Feb-Apr 2020"
@@ -79,7 +84,7 @@ def _candidate_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, lis
     mask &= df[SIM_YEARS].notna().all(axis=1)
     eligible = df.loc[mask].copy()
     if eligible.empty:
-        raise RuntimeError("No stocks have complete 2016-2025 annual returns.")
+        raise RuntimeError(f"No stocks have complete rolling 10Y annual returns for {SIM_YEARS[-1]}-{SIM_YEARS[0]}.")
 
     # Profit engines: strong full-10Y compounding and a repeated history of
     # profitable calendar years. Keep a broad pool so the final Top 100 can be

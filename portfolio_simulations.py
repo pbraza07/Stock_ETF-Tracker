@@ -329,7 +329,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
 
     # ------------------------------------------------------------------
     # Page 1: combined portfolio analytics and combined timeframe returns.
-    # Landscape is intentional; 25 annual returns are split into three legible timeframe bands.
+    # Landscape is intentional; completed annual returns are dynamically paginated into legible timeframe bands.
     # ------------------------------------------------------------------
     lwidth, lheight = landscape(A4)
     c.setPageSize((lwidth, lheight))
@@ -512,96 +512,109 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     c.showPage()
 
     # ------------------------------------------------------------------
-    # Page 2: combined timeframe performance. This content was previously on
-    # page 1; it is preserved on its own page so the requested first-page
-    # instrument names/ratings/targets remain legible.
+    # Combined timeframe performance. v5.9.58 grows with the annual-history
+    # baseline instead of assuming exactly 25 completed years. Additional
+    # completed years automatically spill onto continuation pages.
     # ------------------------------------------------------------------
-    c.setPageSize((lwidth, lheight))
-    draw_page_background(lwidth, lheight, wash_height=92)
-    c.setFillColor(accent)
-    c.setFont("Helvetica-Bold", 17)
-    c.drawCentredString(lwidth / 2, lheight - 36, "COMBINED TIMEFRAME PERFORMANCE")
-    c.setFillColor(muted)
-    c.setFont("Helvetica", 8)
-    c.drawCentredString(
-        lwidth / 2, lheight - 54,
-        "Allocation-weighted saved returns • actual completed calendar-year returns • not a forecast",
-    )
-
     combined_perf = combined.get("performance") or {}
     preferred_timeframes = ["1D", "1M", "3M", "6M", "YTD"]
     saved_years = sorted(
         [str(key) for key in combined_perf if str(key).isdigit() and len(str(key)) == 4],
         reverse=True,
     )
-    # v5.9.50: show all 25 completed calendar years without shrinking text.
-    # Band 1 has the five short periods plus five recent years; bands 2 and 3
-    # contain ten annual-return columns each.
-    timeframe_groups = [preferred_timeframes + saved_years[:5]]
-    if saved_years[5:15]:
-        timeframe_groups.append(saved_years[5:15])
-    if saved_years[15:25]:
-        timeframe_groups.append(saved_years[15:25])
 
-    table_x = 24
-    table_w = lwidth - 48
-    header_h = 26
-    value_h = 42
+    # First row combines short horizons plus five newest completed years.
+    # Every later row contains up to ten annual-return columns. Three rows fit
+    # comfortably per landscape page, so the PDF can expand indefinitely.
+    timeframe_groups: list[list[str]] = []
+    timeframe_groups.append(preferred_timeframes + saved_years[:5])
+    remaining_years = saved_years[5:]
+    for start_index in range(0, len(remaining_years), 10):
+        timeframe_groups.append(remaining_years[start_index:start_index + 10])
 
-    def draw_timeframe_band(columns, header_y):
-        if not columns:
-            return header_y
-        cell_w = table_w / len(columns)
-        c.setFillColor(HexColor("#0A1A20"))
-        c.setStrokeColor(accent)
-        c.setLineWidth(0.8)
-        c.roundRect(table_x, header_y, table_w, header_h, 4, fill=1, stroke=1)
-        for i, label in enumerate(columns):
-            x = table_x + i * cell_w
-            if i:
-                c.setStrokeColor(line)
-                c.line(x, header_y, x, header_y + header_h)
-            c.setFillColor(accent)
-            c.setFont("Helvetica-Bold", 7.4)
-            c.drawCentredString(x + cell_w / 2, header_y + 9.5, label)
+    groups_per_page = 3
+    combined_page_number = 2
+    for page_group_start in range(0, len(timeframe_groups), groups_per_page):
+        page_groups = timeframe_groups[page_group_start:page_group_start + groups_per_page]
 
-        values_y = header_y - value_h - 3
-        c.setFillColor(card)
-        c.setStrokeColor(border)
-        c.roundRect(table_x, values_y, table_w, value_h, 4, fill=1, stroke=1)
-        for i, label in enumerate(columns):
-            x = table_x + i * cell_w
-            if i:
-                c.setStrokeColor(line)
-                c.line(x, values_y, x, values_y + value_h)
-            value = _as_float_or_none(combined_perf.get(label))
-            c.setFillColor(color_for_number(value))
-            c.setFont("Helvetica-Bold", 8.5)
-            c.drawCentredString(x + cell_w / 2, values_y + 15, _maybe_pct(value))
-        return values_y
-
-    c.setFillColor(accent)
-    c.setFont("Helvetica-Bold", 10.5)
-    c.drawString(24, lheight - 92, "RECENT / COMPLETED YEARS")
-    first_values_y = draw_timeframe_band(timeframe_groups[0], lheight - 132)
-    values_y = first_values_y
-    for group_index, group in enumerate(timeframe_groups[1:], start=1):
+        c.setPageSize((lwidth, lheight))
+        draw_page_background(lwidth, lheight, wash_height=92)
+        c.setFillColor(accent)
+        c.setFont("Helvetica-Bold", 17)
+        c.drawCentredString(lwidth / 2, lheight - 36, "COMBINED TIMEFRAME PERFORMANCE")
         c.setFillColor(muted)
-        c.setFont("Helvetica-Bold", 7.2)
+        c.setFont("Helvetica", 8)
+        page_label = (
+            "Allocation-weighted saved returns • actual completed calendar-year returns • not a forecast"
+            if page_group_start == 0
+            else "Historical annual-return continuation • automatically expands as each calendar year completes"
+        )
+        c.drawCentredString(lwidth / 2, lheight - 54, page_label)
+
+        table_x = 24
+        table_w = lwidth - 48
+        header_h = 26
+        value_h = 42
+
+        def draw_timeframe_band(columns, header_y):
+            if not columns:
+                return header_y
+            cell_w = table_w / len(columns)
+            c.setFillColor(HexColor("#0A1A20"))
+            c.setStrokeColor(accent)
+            c.setLineWidth(0.8)
+            c.roundRect(table_x, header_y, table_w, header_h, 4, fill=1, stroke=1)
+            for i, label in enumerate(columns):
+                x = table_x + i * cell_w
+                if i:
+                    c.setStrokeColor(line)
+                    c.line(x, header_y, x, header_y + header_h)
+                c.setFillColor(accent)
+                c.setFont("Helvetica-Bold", 7.4)
+                c.drawCentredString(x + cell_w / 2, header_y + 9.5, label)
+
+            values_y = header_y - value_h - 3
+            c.setFillColor(card)
+            c.setStrokeColor(border)
+            c.roundRect(table_x, values_y, table_w, value_h, 4, fill=1, stroke=1)
+            for i, label in enumerate(columns):
+                x = table_x + i * cell_w
+                if i:
+                    c.setStrokeColor(line)
+                    c.line(x, values_y, x, values_y + value_h)
+                value = _as_float_or_none(combined_perf.get(label))
+                c.setFillColor(color_for_number(value))
+                c.setFont("Helvetica-Bold", 8.5)
+                c.drawCentredString(x + cell_w / 2, values_y + 15, _maybe_pct(value))
+            return values_y
+
+        c.setFillColor(accent)
+        c.setFont("Helvetica-Bold", 10.5)
+        heading = "RECENT / COMPLETED YEARS" if page_group_start == 0 else "EARLIER COMPLETED CALENDAR YEARS"
+        c.drawString(24, lheight - 92, heading)
+
+        values_y = lheight - 132
+        for local_index, group in enumerate(page_groups):
+            if local_index:
+                c.setFillColor(muted)
+                c.setFont("Helvetica-Bold", 7.2)
+                c.drawString(24, values_y - 28, "OLDER COMPLETED CALENDAR YEARS")
+                values_y = draw_timeframe_band(group, values_y - 67)
+            else:
+                values_y = draw_timeframe_band(group, values_y)
+
+        notes_y = values_y - 42
+        c.setFillColor(muted)
+        c.setFont("Helvetica", 7.2)
+        c.drawString(24, notes_y, "Method: each portfolio return is the saved instrument return weighted by its simulation allocation.")
         c.drawString(
             24,
-            values_y - 28,
-            "OLDER COMPLETED CALENDAR YEARS" if group_index == 1 else "EARLIEST COMPLETED CALENDAR YEARS",
+            notes_y - 14,
+            f"Completed-year history contains {len(saved_years)} annual columns on this saved simulation and expands automatically after future year-end refreshes.",
         )
-        values_y = draw_timeframe_band(group, values_y - 67)
-
-    notes_y = values_y - 42
-    c.setFillColor(muted)
-    c.setFont("Helvetica", 7.2)
-    c.drawString(24, notes_y, "Method: each portfolio return is the saved instrument return weighted by its simulation allocation.")
-    c.drawString(24, notes_y - 14, "A period is shown only when every positive-weight instrument has data. 10Y CAGR remains a 10-year compound annual growth rate.")
-    draw_footer(lwidth, 2)
-    c.showPage()
+        draw_footer(lwidth, combined_page_number)
+        c.showPage()
+        combined_page_number += 1
 
     # ------------------------------------------------------------------
     # Annual-withdrawal PDF results. v5.9.40 mirrors the in-app strategy
@@ -613,95 +626,112 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     nr_result = dict(record.get("withdrawal_not_rebalanced") or {})
     rb_schedule = [dict(x) for x in (record.get("withdrawal_rebalanced_schedule") or rb_result.get("schedule") or []) if isinstance(x, dict)]
     nr_schedule = [dict(x) for x in (record.get("withdrawal_not_rebalanced_schedule") or nr_result.get("schedule") or legacy_schedule) if isinstance(x, dict)]
-    page_no = 3
+    page_no = combined_page_number
 
     def _withdrawal_metric(result: dict, key: str, fallback=None):
         value = result.get(key)
         return fallback if value is None else value
 
-    def _draw_withdrawal_detail_page(title: str, subtitle: str, result: dict, schedule: list[dict], page_number: int):
-        c.setPageSize((lwidth, lheight))
-        draw_page_background(lwidth, lheight, wash_height=92)
-        c.setFillColor(accent)
-        c.setFont("Helvetica-Bold", 17)
-        c.drawCentredString(lwidth / 2, lheight - 36, title)
-        c.setFillColor(muted)
-        c.setFont("Helvetica", 7.8)
-        c.drawCentredString(lwidth / 2, lheight - 54, subtitle[:175])
+    def _draw_withdrawal_detail_pages(
+        title: str,
+        subtitle: str,
+        result: dict,
+        schedule: list[dict],
+        start_page_number: int,
+    ) -> int:
+        """Render every annual-withdrawal year, including dynamically growing full-history schedules."""
+        rows_per_page = 20
+        page_number = start_page_number
+        total_rows = len(schedule)
+        total_pages = max(1, (total_rows + rows_per_page - 1) // rows_per_page)
 
-        metric_values = [
-            ("ANNUAL WITHDRAWAL", _money(record.get("annual_withdrawal_amount") or 0), text),
-            ("TOTAL WITHDRAWN", _money(_withdrawal_metric(result, "total_withdrawn", record.get("withdrawal_total") or 0)), text),
-            ("PORTFOLIO REMAINING", _money(_withdrawal_metric(result, "ending_balance", record.get("withdrawal_ending_balance") or 0)), cyan),
-            ("REMAINING + WITHDRAWALS", _money(_withdrawal_metric(result, "net_value_including_withdrawals", record.get("withdrawal_net_value") or 0)), cyan),
-        ]
-        mx, my, mgap = 24, lheight - 124, 8
-        mw = (lwidth - 48 - 3 * mgap) / 4
-        for i, (label, value, value_color) in enumerate(metric_values):
-            x = mx + i * (mw + mgap)
-            c.setFillColor(card)
-            c.setStrokeColor(border)
-            c.roundRect(x, my, mw, 45, 5, fill=1, stroke=1)
+        for page_index, start in enumerate(range(0, max(1, total_rows), rows_per_page), start=1):
+            rows = schedule[start:start + rows_per_page]
+            c.setPageSize((lwidth, lheight))
+            draw_page_background(lwidth, lheight, wash_height=92)
+            c.setFillColor(accent)
+            c.setFont("Helvetica-Bold", 17)
+            c.drawCentredString(lwidth / 2, lheight - 36, title)
             c.setFillColor(muted)
-            c.setFont("Helvetica-Bold", 6.8)
-            c.drawCentredString(x + mw / 2, my + 29, label)
-            c.setFillColor(value_color)
-            c.setFont("Helvetica-Bold", 10.5)
-            c.drawCentredString(x + mw / 2, my + 11, value)
+            c.setFont("Helvetica", 7.8)
+            page_suffix = f" | Annual page {page_index}/{total_pages}" if total_pages > 1 else ""
+            c.drawCentredString(lwidth / 2, lheight - 54, (subtitle + page_suffix)[:175])
 
-        headers = ["YEAR", "START", "RETURN", "GAIN / LOSS", "BEFORE WITHDRAWAL", "WITHDRAWAL", "REMAINING"]
-        widths = [72, 110, 78, 105, 125, 105, 125]
-        tx0 = (lwidth - sum(widths)) / 2
-        y = my - 22
-        c.setFillColor(HexColor("#0A1A20"))
-        c.setStrokeColor(accent)
-        c.roundRect(tx0, y - 22, sum(widths), 22, 4, fill=1, stroke=1)
-        x = tx0
-        c.setFillColor(accent)
-        c.setFont("Helvetica-Bold", 6.2)
-        for label, w in zip(headers, widths):
-            c.drawCentredString(x + w / 2, y - 14, label)
-            x += w
-        y -= 24
-        for ridx, row in enumerate(schedule[:21]):
-            h = 19
-            c.setFillColor(card if ridx % 2 == 0 else card2)
-            c.setStrokeColor(line)
-            c.rect(tx0, y - h, sum(widths), h, fill=1, stroke=1)
-            values = [
-                str(row.get("year") or "-"),
-                _money(row.get("starting_balance") or 0),
-                _maybe_pct(row.get("portfolio_return_pct")),
-                _money(row.get("gain_loss") or 0, signed=True),
-                _money(row.get("balance_before_withdrawal") or 0),
-                _money(row.get("withdrawal") or 0),
-                _money(row.get("ending_balance") or 0),
+            metric_values = [
+                ("ANNUAL WITHDRAWAL", _money(record.get("annual_withdrawal_amount") or 0), text),
+                ("TOTAL WITHDRAWN", _money(_withdrawal_metric(result, "total_withdrawn", record.get("withdrawal_total") or 0)), text),
+                ("PORTFOLIO REMAINING", _money(_withdrawal_metric(result, "ending_balance", record.get("withdrawal_ending_balance") or 0)), cyan),
+                ("REMAINING + WITHDRAWALS", _money(_withdrawal_metric(result, "net_value_including_withdrawals", record.get("withdrawal_net_value") or 0)), cyan),
             ]
-            x = tx0
-            for cidx, (value, w) in enumerate(zip(values, widths)):
-                if cidx in (2, 3):
-                    source = row.get("portfolio_return_pct") if cidx == 2 else row.get("gain_loss")
-                    c.setFillColor(color_for_number(source))
-                elif cidx == 6:
-                    c.setFillColor(cyan)
-                else:
-                    c.setFillColor(text)
-                c.setFont("Helvetica-Bold" if cidx in (0, 2, 6) else "Helvetica", 6.1)
-                c.drawCentredString(x + w / 2, y - 12.5, str(value)[:24])
-                x += w
-            y -= h
+            mx, my, mgap = 24, lheight - 124, 8
+            mw = (lwidth - 48 - 3 * mgap) / 4
+            for i, (label, value, value_color) in enumerate(metric_values):
+                x = mx + i * (mw + mgap)
+                c.setFillColor(card)
+                c.setStrokeColor(border)
+                c.roundRect(x, my, mw, 45, 5, fill=1, stroke=1)
+                c.setFillColor(muted)
+                c.setFont("Helvetica-Bold", 6.8)
+                c.drawCentredString(x + mw / 2, my + 29, label)
+                c.setFillColor(value_color)
+                c.setFont("Helvetica-Bold", 10.5)
+                c.drawCentredString(x + mw / 2, my + 11, value)
 
-        depleted = str(_withdrawal_metric(result, "depleted_year", record.get("withdrawal_depleted_year") or "") or "").strip()
-        c.setFillColor(negative if depleted else muted)
-        c.setFont("Helvetica", 6.8)
-        note = (
-            f"Portfolio depleted during {depleted}; later annual withdrawals cannot be funded."
-            if depleted else
-            "Current YTD, when included, is a partial-period row and does not trigger another annual withdrawal."
-        )
-        c.drawString(24, 35, note[:155])
-        draw_footer(lwidth, page_number, "Withdrawal schedule uses saved historical returns and the requested cash withdrawal; taxes, fees and future returns are not modeled.")
-        c.showPage()
+            headers = ["YEAR", "START", "RETURN", "GAIN / LOSS", "BEFORE WITHDRAWAL", "WITHDRAWAL", "REMAINING"]
+            widths = [72, 110, 78, 105, 125, 105, 125]
+            tx0 = (lwidth - sum(widths)) / 2
+            y = my - 22
+            c.setFillColor(HexColor("#0A1A20"))
+            c.setStrokeColor(accent)
+            c.roundRect(tx0, y - 22, sum(widths), 22, 4, fill=1, stroke=1)
+            x = tx0
+            c.setFillColor(accent)
+            c.setFont("Helvetica-Bold", 6.2)
+            for label, w in zip(headers, widths):
+                c.drawCentredString(x + w / 2, y - 14, label)
+                x += w
+            y -= 24
+
+            for ridx, row in enumerate(rows):
+                h = 19
+                c.setFillColor(card if ridx % 2 == 0 else card2)
+                c.setStrokeColor(line)
+                c.rect(tx0, y - h, sum(widths), h, fill=1, stroke=1)
+                values = [
+                    str(row.get("year") or "-"),
+                    _money(row.get("starting_balance") or 0),
+                    _maybe_pct(row.get("portfolio_return_pct")),
+                    _money(row.get("gain_loss") or 0, signed=True),
+                    _money(row.get("balance_before_withdrawal") or 0),
+                    _money(row.get("withdrawal") or 0),
+                    _money(row.get("ending_balance") or 0),
+                ]
+                x = tx0
+                for idx, (value, w) in enumerate(zip(values, widths)):
+                    c.setFillColor(text if idx not in (2, 3) else color_for_number(row.get("portfolio_return_pct") if idx == 2 else row.get("gain_loss")))
+                    c.setFont("Helvetica-Bold" if idx in (0, 2, 6) else "Helvetica", 6.2)
+                    c.drawCentredString(x + w / 2, y - 12.5, str(value)[:24])
+                    x += w
+                y -= h
+
+            depleted = str(_withdrawal_metric(result, "depleted_year", record.get("withdrawal_depleted_year") or "") or "").strip()
+            c.setFillColor(negative if depleted else muted)
+            c.setFont("Helvetica", 6.8)
+            note = (
+                f"Portfolio depleted during {depleted}; later annual withdrawals cannot be funded."
+                if depleted else
+                "Annual returns come directly from Market Table. Maximum-history simulations use every completed year shared by the selected portfolio."
+            )
+            c.drawString(24, 35, note[:155])
+            draw_footer(
+                lwidth,
+                page_number,
+                "Withdrawal schedule uses Market Table completed annual returns; taxes, fees and future returns are not modeled.",
+            )
+            c.showPage()
+            page_number += 1
+
+        return page_number
 
     if bool(record.get("annual_withdrawals_enabled")) and (rb_schedule or nr_schedule):
         # Strategy comparison summary page.
@@ -806,23 +836,21 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         page_no += 1
 
         if rb_schedule:
-            _draw_withdrawal_detail_page(
+            page_no = _draw_withdrawal_detail_pages(
                 "ANNUAL WITHDRAWAL SCHEDULE - REBALANCED",
-                "After each completed-year return and withdrawal, the remaining portfolio is restored to the saved target allocation.",
+                "After each Market Table completed-year return and withdrawal, the remaining portfolio is restored to the saved target allocation.",
                 rb_result,
                 rb_schedule,
                 page_no,
             )
-            page_no += 1
         if nr_schedule:
-            _draw_withdrawal_detail_page(
+            page_no = _draw_withdrawal_detail_pages(
                 "ANNUAL WITHDRAWAL SCHEDULE - NOT REBALANCED",
-                "After each completed-year return and withdrawal, holdings retain their post-return weights and are allowed to drift.",
+                "After each Market Table completed-year return and withdrawal, holdings retain their post-return weights and are allowed to drift.",
                 nr_result,
                 nr_schedule,
                 page_no,
             )
-            page_no += 1
 
     # ------------------------------------------------------------------
     # Monthly-withdrawal PDF results. v5.9.46 records the full real month-by-
@@ -843,7 +871,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     ).strip()
     monthly_is_actual = "actual adjusted month-end return" in monthly_method.lower()
     monthly_method_note = (
-        "Actual adjusted month-end returns from Yahoo/yfinance daily market history."
+        "Actual adjusted month-end returns from Yahoo/yfinance daily market history. The monthly path uses the same adjusted daily history as Market Table and each completed year is reconciled to the displayed annual return."
         if monthly_is_actual
         else "Legacy equivalent monthly rates derived from saved annual returns."
     )
@@ -961,96 +989,174 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         mrb_total = _as_float_or_none(_withdrawal_metric(mrb_result, "total_withdrawn", 0)) or 0.0
         mnr_total = _as_float_or_none(_withdrawal_metric(mnr_result, "total_withdrawn", record.get("monthly_withdrawal_total") or 0)) or 0.0
         difference = mrb_end - mnr_end
+        monthly_withdrawal = _as_float_or_none(record.get("monthly_withdrawal_amount")) or 0.0
+        annual_cash_target = monthly_withdrawal * 12.0
         mrb_positive = int(_withdrawal_metric(mrb_result, "positive_months", sum(1 for row in mrb_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
         mnr_positive = int(_withdrawal_metric(mnr_result, "positive_months", sum(1 for row in mnr_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
         mrb_months = int(_withdrawal_metric(mrb_result, "months_modeled", len(mrb_schedule)) or len(mrb_schedule))
         mnr_months = int(_withdrawal_metric(mnr_result, "months_modeled", len(mnr_schedule)) or len(mnr_schedule))
         summary_metrics = [
-            ("MONTHLY WITHDRAWAL", _money(record.get("monthly_withdrawal_amount") or 0), text),
+            ("MONTHLY WITHDRAWAL", _money(monthly_withdrawal), text),
+            ("FULL-YEAR CASH TARGET", _money(annual_cash_target), text),
             ("REBALANCED REMAINING", _money(mrb_end), cyan),
             ("NOT REBALANCED REMAINING", _money(mnr_end), cyan),
-            ("REBALANCE DIFFERENCE", _money(difference, signed=True), color_for_number(difference)),
+            ("REMAINING DIFFERENCE", _money(difference, signed=True), color_for_number(difference)),
             ("POSITIVE MONTHS", f"RB {mrb_positive}/{mrb_months} | NR {mnr_positive}/{mnr_months}", positive),
         ]
-        mx, my, mgap = 24, lheight - 122, 7
-        mw = (lwidth - 48 - (len(summary_metrics) - 1) * mgap) / len(summary_metrics)
+        mx, my, mgap = 18, lheight - 122, 6
+        mw = (lwidth - 36 - (len(summary_metrics) - 1) * mgap) / len(summary_metrics)
         for i, (label, value, value_color) in enumerate(summary_metrics):
             x = mx + i * (mw + mgap)
             c.setFillColor(card)
             c.setStrokeColor(border)
             c.roundRect(x, my, mw, 43, 5, fill=1, stroke=1)
             c.setFillColor(muted)
-            c.setFont("Helvetica-Bold", 6.6)
+            c.setFont("Helvetica-Bold", 5.8)
             c.drawCentredString(x + mw / 2, my + 27, label)
             c.setFillColor(value_color)
-            c.setFont("Helvetica-Bold", 7.8 if label == "POSITIVE MONTHS" else 10.0)
+            c.setFont("Helvetica-Bold", 6.8 if label == "POSITIVE MONTHS" else 8.7)
             c.drawCentredString(x + mw / 2, my + 10, str(value)[:28])
 
-        # Compact year-end comparison provides a 10-year overview before the full 120-row schedules.
-        def _year_end_rows(schedule):
-            out = {}
+        # v5.9.59: Year-level cash-flow reconciliation. The old page displayed
+        # December's monthly return next to a full year-end balance, which could
+        # be mistaken for the annual return. Aggregate the actual Jan-Dec monthly
+        # returns and cash withdrawals instead.
+        def _year_summary(schedule):
+            grouped = {}
             for row in schedule:
-                year = str(row.get("year") or "")
-                month = int(row.get("month") or 0)
-                if year and month == 12:
-                    out[year] = row
+                year = str(row.get("year") or "").strip()
+                if not year:
+                    continue
+                grouped.setdefault(year, []).append(row)
+            out = {}
+            for year, rows in grouped.items():
+                rows = sorted(rows, key=lambda item: int(item.get("month") or 0))
+                factor = 1.0
+                valid_returns = 0
+                for row in rows:
+                    pct = _as_float_or_none(row.get("portfolio_return_pct"))
+                    if pct is None:
+                        continue
+                    factor *= 1.0 + pct / 100.0
+                    valid_returns += 1
+                start_balance = _as_float_or_none(rows[0].get("starting_balance")) if rows else None
+                ending_balance = _as_float_or_none(rows[-1].get("ending_balance")) if rows else None
+                withdrawn = sum((_as_float_or_none(row.get("withdrawal")) or 0.0) for row in rows)
+                year_return = ((factor - 1.0) * 100.0) if valid_returns else None
+                out[year] = {
+                    "start": start_balance,
+                    "return_pct": year_return,
+                    "withdrawn": withdrawn,
+                    "ending": ending_balance,
+                    "end_plus_withdrawn": (ending_balance + withdrawn) if ending_balance is not None else None,
+                    "months": len(rows),
+                }
             return out
-        mrb_years = _year_end_rows(mrb_schedule)
-        mnr_years = _year_end_rows(mnr_schedule)
+
+        mrb_years = _year_summary(mrb_schedule)
+        mnr_years = _year_summary(mnr_schedule)
         ordered_years = sorted(set(mrb_years) | set(mnr_years))
-        headers = ["YEAR", "REBAL. DEC RETURN", "REBAL. YEAR-END", "NOT REBAL. DEC RETURN", "NOT REBAL. YEAR-END", "DIFFERENCE"]
-        widths = [65, 108, 130, 118, 140, 118]
+
+        # Two short notes explain why year-end balance alone cannot be read as the
+        # investment return when cash is removed every month.
+        c.setFillColor(muted)
+        c.setFont("Helvetica", 6.15)
+        note_y = my - 13
+        c.drawString(
+            22, note_y,
+            "YEAR RETURN = compounded Jan-Dec portfolio returns before withdrawals. YEAR WITHDRAWN = actual cash paid during that calendar year."
+        )
+        c.drawString(
+            22, note_y - 10,
+            "END + WITHDRAWN = Dec. 31 remaining balance + that year's withdrawals. It reconciles cash flow; it is not the formula used for YEAR RETURN."
+        )
+
+        headers = [
+            "YEAR", "START BALANCE RB / NR", "YEAR RETURN RB / NR", "YEAR WITHDRAWN RB / NR",
+            "RB YEAR-END", "RB END + WITHDRAWN", "NR YEAR-END", "NR END + WITHDRAWN", "TOTAL VALUE DIFF"
+        ]
+        widths = [43, 104, 92, 100, 88, 94, 88, 94, 84]
         tx0 = (lwidth - sum(widths)) / 2
-        y = my - 22
+        y = note_y - 18
         c.setFillColor(HexColor("#0A1A20"))
         c.setStrokeColor(accent)
-        c.roundRect(tx0, y - 21, sum(widths), 21, 4, fill=1, stroke=1)
+        c.roundRect(tx0, y - 25, sum(widths), 25, 4, fill=1, stroke=1)
         x = tx0
         c.setFillColor(accent)
-        c.setFont("Helvetica-Bold", 5.9)
+        c.setFont("Helvetica-Bold", 4.8)
         for label, w in zip(headers, widths):
-            c.drawCentredString(x + w / 2, y - 13.5, label)
+            c.drawCentredString(x + w / 2, y - 15.5, label)
             x += w
-        y -= 23
+        y -= 27
         for ridx, year in enumerate(ordered_years[:20]):
             rb = mrb_years.get(year, {})
             nr = mnr_years.get(year, {})
-            rb_bal = _as_float_or_none(rb.get("ending_balance"))
-            nr_bal = _as_float_or_none(nr.get("ending_balance"))
-            diff = rb_bal - nr_bal if rb_bal is not None and nr_bal is not None else None
-            h = 19
+            rb_start = _as_float_or_none(rb.get("start"))
+            nr_start = _as_float_or_none(nr.get("start"))
+            rb_ret = _as_float_or_none(rb.get("return_pct"))
+            nr_ret = _as_float_or_none(nr.get("return_pct"))
+            rb_withdrawn = _as_float_or_none(rb.get("withdrawn")) or 0.0
+            nr_withdrawn = _as_float_or_none(nr.get("withdrawn")) or 0.0
+            rb_bal = _as_float_or_none(rb.get("ending"))
+            nr_bal = _as_float_or_none(nr.get("ending"))
+            rb_total_value = _as_float_or_none(rb.get("end_plus_withdrawn"))
+            nr_total_value = _as_float_or_none(nr.get("end_plus_withdrawn"))
+            total_diff = (
+                rb_total_value - nr_total_value
+                if rb_total_value is not None and nr_total_value is not None else None
+            )
+
+            def _pair_money(left, right):
+                left_text = _money(left) if left is not None else "-"
+                right_text = _money(right) if right is not None else "-"
+                return f"{left_text} / {right_text}"
+
+            def _pair_pct(left, right, left_months, right_months):
+                left_text = _maybe_pct(left) if left is not None else "-"
+                right_text = _maybe_pct(right) if right is not None else "-"
+                if left_months and left_months != 12:
+                    left_text += f" ({left_months}m)"
+                if right_months and right_months != 12:
+                    right_text += f" ({right_months}m)"
+                return f"{left_text} / {right_text}"
+
+            h = 20
             c.setFillColor(card if ridx % 2 == 0 else card2)
             c.setStrokeColor(line)
             c.rect(tx0, y - h, sum(widths), h, fill=1, stroke=1)
             values = [
                 year,
-                _maybe_pct(rb.get("portfolio_return_pct")) if rb else "-",
+                _pair_money(rb_start, nr_start),
+                _pair_pct(rb_ret, nr_ret, int(rb.get("months") or 0), int(nr.get("months") or 0)),
+                _pair_money(rb_withdrawn, nr_withdrawn),
                 _money(rb_bal) if rb_bal is not None else "-",
-                _maybe_pct(nr.get("portfolio_return_pct")) if nr else "-",
+                _money(rb_total_value) if rb_total_value is not None else "-",
                 _money(nr_bal) if nr_bal is not None else "-",
-                _money(diff, signed=True) if diff is not None else "-",
+                _money(nr_total_value) if nr_total_value is not None else "-",
+                _money(total_diff, signed=True) if total_diff is not None else "-",
             ]
             x = tx0
             for idx, (value, w) in enumerate(zip(values, widths)):
-                if idx in (1, 3):
-                    src = rb.get("portfolio_return_pct") if idx == 1 else nr.get("portfolio_return_pct")
-                    c.setFillColor(color_for_number(src))
-                elif idx == 5:
-                    c.setFillColor(color_for_number(diff))
-                elif idx in (2, 4):
+                if idx == 2:
+                    # When both returns share one cell, use neutral text rather than
+                    # implying that one strategy's sign represents the other.
+                    c.setFillColor(text)
+                elif idx == 8:
+                    c.setFillColor(color_for_number(total_diff))
+                elif idx in (4, 5, 6, 7):
                     c.setFillColor(cyan)
                 else:
                     c.setFillColor(text)
-                c.setFont("Helvetica-Bold" if idx in (0, 2, 4, 5) else "Helvetica", 6.0)
-                c.drawCentredString(x + w / 2, y - 12.5, str(value)[:23])
+                c.setFont("Helvetica-Bold" if idx in (0, 4, 5, 6, 7, 8) else "Helvetica", 5.15)
+                c.drawCentredString(x + w / 2, y - 13.0, str(value)[:31])
                 x += w
             y -= h
 
         c.setFillColor(muted)
-        c.setFont("Helvetica", 6.4)
+        c.setFont("Helvetica", 5.9)
         c.drawString(
-            24, 35,
-            f"Positive months - Rebalanced: {mrb_positive}/{len(mrb_schedule)} | Not rebalanced: {mnr_positive}/{len(mnr_schedule)} | Total withdrawn: {_money(mrb_total)} / {_money(mnr_total)}"
+            22, 34,
+            f"Total withdrawn over modeled period - RB {_money(mrb_total)} | NR {_money(mnr_total)}. Remaining + cumulative withdrawals: RB {_money(mrb_end + mrb_total)} | NR {_money(mnr_end + mnr_total)}."
         )
         draw_footer(
             lwidth,
@@ -1208,9 +1314,9 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             )
             headers = [
                 "INDUSTRY", "STOCK", "ALLOCATION", "10Y CAGR", "POS YEARS", "POS MONTHS",
-                "WORST YEAR", "BEST YEAR", "REG. YIELD", "EST. ANNUAL DIV."
+                "HISTORY CHECK", "WORST YEAR", "BEST YEAR", "REG. YIELD", "EST. ANNUAL DIV."
             ]
-            widths = [118, 48, 70, 58, 58, 68, 82, 82, 62, 78]
+            widths = [118, 48, 70, 58, 58, 68, 72, 82, 82, 62, 78]
             tx0, y = 22, lheight - 92
             total_w = sum(widths)
             c.setFillColor(HexColor("#0A1A20"))
@@ -1238,11 +1344,20 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
                     if item.get("positive_months") is not None and item.get("available_months") is not None
                     else "-"
                 )
+                verification = str(item.get("history_verification") or "Pending")
+                verification_coverage = str(item.get("verification_coverage") or "").strip()
+                verification_text = verification + (f" {verification_coverage}" if verification_coverage else "")
+                max_diff = item.get("max_verification_diff_pp")
+                try:
+                    if max_diff is not None:
+                        verification_text += f" Δ{float(max_diff):.2f}"
+                except Exception:
+                    pass
                 worst = _best_worst(item.get("worst_year"), item.get("worst_year_pct"))
                 best = _best_worst(item.get("best_year"), item.get("best_year_pct"))
                 regular_yield = _yield_pct(item.get("regular_yield_pct"))
                 est_div = _money(item.get("est_annual_dividend") or 0) if item.get("est_annual_dividend") is not None else "-"
-                values = [industry, stock, allocation, cagr, pos, pos_months, worst, best, regular_yield, est_div]
+                values = [industry, stock, allocation, cagr, pos, pos_months, verification_text, worst, best, regular_yield, est_div]
                 x = tx0
                 for col_idx, (value, w) in enumerate(zip(values, widths)):
                     c.setFillColor(text if col_idx not in (3, 7, 8) else cyan)
@@ -1255,7 +1370,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
                 y -= h
             c.setFillColor(muted)
             c.setFont("Helvetica", 6.5)
-            c.drawString(24, 18, "Regular yield is trailing/indicative and may change. Est. annual dividend = saved allocation x saved regular yield; no reinvestment/tax assumption.")
+            c.drawString(24, 18, "History Check = Yahoo annual-return calculation cross-checked against independent Stooq bulk historical Close; Review means a difference above 0.25pp.")
             c.drawRightString(lwidth - 24, 18, f"Page {page_number}")
             c.showPage()
 

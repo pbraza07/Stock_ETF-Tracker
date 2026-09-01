@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.55"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.59"
 
 
 def test_sector_multiyear_profit_selector_remains_compounded():
@@ -17,7 +17,7 @@ def test_sector_multiyear_profit_selector_remains_compounded():
 
 
 def test_sector_table_uses_true_calendar_year_returns_not_compounded_horizon_columns():
-    assert 'annual_return_cols = list(YEAR_RETURN_COLS[:25])' in APP
+    assert 'annual_return_cols = list(YEAR_RETURN_COLS)' in APP
     assert 'for year_col in annual_return_cols:' in APP
     assert 'drill_table[year_col] = _sector_numeric_series(drill_table, year_col)' in APP
     assert '*short_return_cols, *annual_return_cols' in APP

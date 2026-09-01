@@ -30,3 +30,23 @@ Visible card charts use Yahoo Finance adjusted **1-day bars over the prior 2 yea
 ## v5.9.53 25-year annual history
 
 The five oldest annual-return columns (2005-2001 during 2026) are populated only from genuine Yahoo/yfinance max adjusted-price history. MarketScope does not interpolate, extrapolate, copy adjacent years, or fabricate pre-inception returns. The bootstrap file contains the 25-year schema but may leave an older year blank until the durable history refresh succeeds for that instrument.
+
+## Independent annual-return verification — v5.9.56
+
+Primary annual-return data: Yahoo Finance / yfinance adjusted historical prices.
+
+Independent cross-check: Stooq U.S. bulk historical Close dataset (`https://static.stooq.com/db/h/d_us_txt.zip`), downloaded automatically by the GitHub refresh and cached weekly.
+
+The Stooq data is used only to compare annual returns. It never replaces the primary Yahoo/yfinance value automatically. MarketScope flags differences above 0.25 percentage points as `Review`.
+
+## v5.9.57 withdrawal source alignment
+
+Annual withdrawals use the exact completed annual-return columns displayed in Market Table.
+
+Monthly withdrawals use `data/monthly_returns_25y.csv`, generated from the same Yahoo/yfinance adjusted daily price history. The monthly path is not derived from annual returns. Each complete 12-month set is compounded and reconciled to the corresponding Market Table annual return before the data is persisted.
+
+## v5.9.58 dynamic history window
+
+Yahoo/yfinance remains the primary adjusted-price source. The oldest tracked completed annual return remains 2001, requiring the 2000 year-end anchor. The newest tracked annual year is derived automatically as the latest completed calendar year, so no source configuration change is required when a new year closes.
+
+The durable full-history monthly source is now `data/monthly_returns_full_history.csv`.
