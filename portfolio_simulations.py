@@ -329,7 +329,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
 
     # ------------------------------------------------------------------
     # Page 1: combined portfolio analytics and combined timeframe returns.
-    # Landscape is intentional; 20 annual returns are split into two legible timeframe bands.
+    # Landscape is intentional; 25 annual returns are split into three legible timeframe bands.
     # ------------------------------------------------------------------
     lwidth, lheight = landscape(A4)
     c.setPageSize((lwidth, lheight))
@@ -385,9 +385,21 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     c.drawRightString(lwidth - 24, section_y, "Allocation-weighted combination of all instruments")
 
     pos_years = f"{int(combined.get('positive_years') or 0)}/{int(combined.get('available_years') or 0)}"
+    page1_positive_months = "-"
+    if bool(record.get("monthly_withdrawals_enabled")):
+        _page1_rb = dict(record.get("monthly_withdrawal_rebalanced") or {})
+        _page1_nr = dict(record.get("monthly_withdrawal_not_rebalanced") or {})
+        _page1_rb_schedule = [dict(x) for x in (record.get("monthly_withdrawal_rebalanced_schedule") or _page1_rb.get("schedule") or []) if isinstance(x, dict)]
+        _page1_nr_schedule = [dict(x) for x in (record.get("monthly_withdrawal_not_rebalanced_schedule") or _page1_nr.get("schedule") or []) if isinstance(x, dict)]
+        _page1_rb_pos = int(_page1_rb.get("positive_months") if _page1_rb.get("positive_months") is not None else sum(1 for row in _page1_rb_schedule if float(row.get("portfolio_return_pct") or 0) > 0))
+        _page1_nr_pos = int(_page1_nr.get("positive_months") if _page1_nr.get("positive_months") is not None else sum(1 for row in _page1_nr_schedule if float(row.get("portfolio_return_pct") or 0) > 0))
+        _page1_rb_total = int(_page1_rb.get("months_modeled") if _page1_rb.get("months_modeled") is not None else len(_page1_rb_schedule))
+        _page1_nr_total = int(_page1_nr.get("months_modeled") if _page1_nr.get("months_modeled") is not None else len(_page1_nr_schedule))
+        page1_positive_months = f"RB {_page1_rb_pos}/{_page1_rb_total} | NR {_page1_nr_pos}/{_page1_nr_total}"
     stat_cells = [
         ("10Y CAGR", _maybe_pct(combined.get("cagr_10y_pct")), color_for_number(combined.get("cagr_10y_pct"))),
         ("POS YEARS", pos_years, text),
+        ("POS MONTHS", page1_positive_months, cyan),
         ("WORST YEAR", _best_worst(combined.get("worst_year"), combined.get("worst_year_pct")), color_for_number(combined.get("worst_year_pct"))),
         ("BEST YEAR", _best_worst(combined.get("best_year"), combined.get("best_year_pct")), color_for_number(combined.get("best_year_pct"))),
         ("REG. YIELD", _yield_pct(combined.get("regular_yield_pct")), cyan),
@@ -409,7 +421,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         c.drawCentredString(x + stat_w / 2, stat_y + 33, label)
         c.setFillColor(value_color)
         # Long best/worst values need slightly smaller text than CAGR/yield.
-        value_font = 9.2 if label in {"WORST YEAR", "BEST YEAR"} else 11.2
+        value_font = 8.0 if label == "POS MONTHS" else (9.2 if label in {"WORST YEAR", "BEST YEAR"} else 11.2)
         c.setFont("Helvetica-Bold", value_font)
         c.drawCentredString(x + stat_w / 2, stat_y + 13, str(value)[:22])
 
@@ -522,9 +534,14 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         [str(key) for key in combined_perf if str(key).isdigit() and len(str(key)) == 4],
         reverse=True,
     )
-    timeframe_groups = [preferred_timeframes + saved_years[:10]]
-    if saved_years[10:20]:
-        timeframe_groups.append(saved_years[10:20])
+    # v5.9.50: show all 25 completed calendar years without shrinking text.
+    # Band 1 has the five short periods plus five recent years; bands 2 and 3
+    # contain ten annual-return columns each.
+    timeframe_groups = [preferred_timeframes + saved_years[:5]]
+    if saved_years[5:15]:
+        timeframe_groups.append(saved_years[5:15])
+    if saved_years[15:25]:
+        timeframe_groups.append(saved_years[15:25])
 
     table_x = 24
     table_w = lwidth - 48
@@ -568,11 +585,15 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     c.drawString(24, lheight - 92, "RECENT / COMPLETED YEARS")
     first_values_y = draw_timeframe_band(timeframe_groups[0], lheight - 132)
     values_y = first_values_y
-    if len(timeframe_groups) > 1:
+    for group_index, group in enumerate(timeframe_groups[1:], start=1):
         c.setFillColor(muted)
         c.setFont("Helvetica-Bold", 7.2)
-        c.drawString(24, first_values_y - 28, "OLDER COMPLETED CALENDAR YEARS")
-        values_y = draw_timeframe_band(timeframe_groups[1], first_values_y - 67)
+        c.drawString(
+            24,
+            values_y - 28,
+            "OLDER COMPLETED CALENDAR YEARS" if group_index == 1 else "EARLIEST COMPLETED CALENDAR YEARS",
+        )
+        values_y = draw_timeframe_band(group, values_y - 67)
 
     notes_y = values_y - 42
     c.setFillColor(muted)
@@ -940,14 +961,19 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         mrb_total = _as_float_or_none(_withdrawal_metric(mrb_result, "total_withdrawn", 0)) or 0.0
         mnr_total = _as_float_or_none(_withdrawal_metric(mnr_result, "total_withdrawn", record.get("monthly_withdrawal_total") or 0)) or 0.0
         difference = mrb_end - mnr_end
+        mrb_positive = int(_withdrawal_metric(mrb_result, "positive_months", sum(1 for row in mrb_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
+        mnr_positive = int(_withdrawal_metric(mnr_result, "positive_months", sum(1 for row in mnr_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
+        mrb_months = int(_withdrawal_metric(mrb_result, "months_modeled", len(mrb_schedule)) or len(mrb_schedule))
+        mnr_months = int(_withdrawal_metric(mnr_result, "months_modeled", len(mnr_schedule)) or len(mnr_schedule))
         summary_metrics = [
             ("MONTHLY WITHDRAWAL", _money(record.get("monthly_withdrawal_amount") or 0), text),
             ("REBALANCED REMAINING", _money(mrb_end), cyan),
             ("NOT REBALANCED REMAINING", _money(mnr_end), cyan),
             ("REBALANCE DIFFERENCE", _money(difference, signed=True), color_for_number(difference)),
+            ("POSITIVE MONTHS", f"RB {mrb_positive}/{mrb_months} | NR {mnr_positive}/{mnr_months}", positive),
         ]
-        mx, my, mgap = 24, lheight - 122, 8
-        mw = (lwidth - 48 - 3 * mgap) / 4
+        mx, my, mgap = 24, lheight - 122, 7
+        mw = (lwidth - 48 - (len(summary_metrics) - 1) * mgap) / len(summary_metrics)
         for i, (label, value, value_color) in enumerate(summary_metrics):
             x = mx + i * (mw + mgap)
             c.setFillColor(card)
@@ -957,8 +983,8 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             c.setFont("Helvetica-Bold", 6.6)
             c.drawCentredString(x + mw / 2, my + 27, label)
             c.setFillColor(value_color)
-            c.setFont("Helvetica-Bold", 10.0)
-            c.drawCentredString(x + mw / 2, my + 10, value)
+            c.setFont("Helvetica-Bold", 7.8 if label == "POSITIVE MONTHS" else 10.0)
+            c.drawCentredString(x + mw / 2, my + 10, str(value)[:28])
 
         # Compact year-end comparison provides a 10-year overview before the full 120-row schedules.
         def _year_end_rows(schedule):
@@ -1022,8 +1048,6 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
 
         c.setFillColor(muted)
         c.setFont("Helvetica", 6.4)
-        mrb_positive = int(_withdrawal_metric(mrb_result, "positive_months", sum(1 for row in mrb_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
-        mnr_positive = int(_withdrawal_metric(mnr_result, "positive_months", sum(1 for row in mnr_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
         c.drawString(
             24, 35,
             f"Positive months - Rebalanced: {mrb_positive}/{len(mrb_schedule)} | Not rebalanced: {mnr_positive}/{len(mnr_schedule)} | Total withdrawn: {_money(mrb_total)} / {_money(mnr_total)}"
@@ -1180,13 +1204,13 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         def draw_analytics_table(items: list[dict], page_number: int):
             supplemental_background(
                 "PORTFOLIO INFORMATION TABLE",
-                "Saved instrument analytics. 10Y CAGR uses 10 completed calendar-year returns when available; dividend estimate uses saved trailing yield.",
+                "Saved instrument analytics. Positive months use actual adjusted month-end returns; 10Y CAGR uses completed calendar-year returns.",
             )
             headers = [
-                "INDUSTRY", "STOCK", "ALLOCATION", "10Y CAGR", "POS YEARS",
+                "INDUSTRY", "STOCK", "ALLOCATION", "10Y CAGR", "POS YEARS", "POS MONTHS",
                 "WORST YEAR", "BEST YEAR", "REG. YIELD", "EST. ANNUAL DIV."
             ]
-            widths = [135, 54, 78, 66, 67, 93, 93, 70, 92]
+            widths = [118, 48, 70, 58, 58, 68, 82, 82, 62, 78]
             tx0, y = 22, lheight - 92
             total_w = sum(widths)
             c.setFillColor(HexColor("#0A1A20"))
@@ -1209,11 +1233,16 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
                 allocation = f"{float(item.get('weight') or 0):.1f}% / {_money(item.get('allocated') or 0)}"
                 cagr = _maybe_pct(item.get("cagr_10y_pct"))
                 pos = f"{int(item.get('positive_years') or 0)}/{int(item.get('available_years') or 0)}"
+                pos_months = (
+                    f"{int(item.get('positive_months'))}/{int(item.get('available_months'))}"
+                    if item.get("positive_months") is not None and item.get("available_months") is not None
+                    else "-"
+                )
                 worst = _best_worst(item.get("worst_year"), item.get("worst_year_pct"))
                 best = _best_worst(item.get("best_year"), item.get("best_year_pct"))
                 regular_yield = _yield_pct(item.get("regular_yield_pct"))
                 est_div = _money(item.get("est_annual_dividend") or 0) if item.get("est_annual_dividend") is not None else "-"
-                values = [industry, stock, allocation, cagr, pos, worst, best, regular_yield, est_div]
+                values = [industry, stock, allocation, cagr, pos, pos_months, worst, best, regular_yield, est_div]
                 x = tx0
                 for col_idx, (value, w) in enumerate(zip(values, widths)):
                     c.setFillColor(text if col_idx not in (3, 7, 8) else cyan)

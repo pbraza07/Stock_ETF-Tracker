@@ -29,7 +29,8 @@ def test_every_combo_has_four_stocks_from_four_different_sectors():
             assert len(set(sectors)) == 4
 
 def test_portfolio_ui_has_four_top200_selectors():
-    assert 'Top 4-Stock Combos (5Y, 10Y & Withdrawals) — tap to open' in APP
+    assert 'st.popover("📈 5Y Combo Rankings"' in APP
+    assert 'st.popover("📊 10Y Combo Rankings"' in APP
     assert 'Top 200 — Best Profit' in APP
     assert 'Top 200 — Best Worst Year' in APP
     assert 'f"combo_{period_label.lower()}_profit_picker"' in APP

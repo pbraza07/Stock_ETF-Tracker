@@ -50,8 +50,8 @@ def test_portfolio_ui_contains_two_new_top100_dropdowns_and_tables():
     assert "Top 100 — Not Rebalanced" in APP
     assert 'picker_key = "combo_10y_withdrawal_rebalanced_picker"' in APP
     assert 'picker_key = "combo_10y_withdrawal_not_rebalanced_picker"' in APP
-    assert "Rebalanced Top 100 table" in APP
-    assert "Not Rebalanced Top 100 table" in APP
+    assert 'st.tabs(["🔄 Rebalanced Top 100", "↗ Not Rebalanced Top 100"])' in APP
+    assert "_withdrawal_combo_rank_table" in APP
 
 
 def test_preset_autoloads_300k_85k_10y_equal_split_withdrawals():

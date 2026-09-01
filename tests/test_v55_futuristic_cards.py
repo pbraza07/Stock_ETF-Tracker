@@ -17,7 +17,7 @@ def test_all_annualized_horizons_1_to_10_exist():
 
 def test_requested_performance_order_is_short_horizons_then_year_labels():
     app = (ROOT/'app.py').read_text(encoding='utf-8')
-    assert 'YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=20)' in app
+    assert 'YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)' in app
     assert 'PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]' in app
 
 def test_cards_replace_main_dataframe_table():

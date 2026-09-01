@@ -22,14 +22,14 @@ def test_news_button_and_directional_rules_present():
 def test_investment_year_selector_controls_profit_sort():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert 'Investment years' in app
-    assert '[f"{i}Y" for i in range(1, 21)]' in app
+    assert '[f"{i}Y" for i in range(1, 26)]' in app
     assert '_investment_projection_for_sort(row, investment_amount, include_current_ytd, investment_years)' in app
     assert '_investment_projection(row, investment_amount, include_current_ytd, investment_years)' in app
 
 
 def test_year_chart_supports_current_plus_prior_ten_years():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
-    assert 'chart_year_options = [str(current_year - offset) for offset in range(0, 21)]' in app
+    assert 'chart_year_options = [str(current_year - offset) for offset in range(0, 26)]' in app
     assert '_filter_history_for_calendar_year' in app
     assert 'cached_max_chart_history(selected)' in app
     assert 'Selecting another year replaces both the graph and year summary.' in app

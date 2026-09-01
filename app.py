@@ -64,7 +64,7 @@ UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.json"
 BOOTSTRAP_UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.bootstrap.json"
 MONTHLY_RETURNS_FILE = BASE_DIR / "data" / "monthly_returns_10y.csv"
 MONTHLY_RETURNS_REPO_PATH = "data/monthly_returns_10y.csv"
-YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=20)
+YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)
 PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]
 ALL_RETURN_COLS = ["Since Inception"] + PERF_COLS
 
@@ -104,7 +104,7 @@ PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target H
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
 MIN_STOCK_MARKET_CAP = 100_000_000_000.0
 
-# v5.9.48: four-stock / four-sector rankings; monthly withdrawal rankings require actual month-end history.
+# v5.9.51: ranked portfolio families are hidden behind separate buttons; recession-balanced presets added.
 COMBO_5Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_5y.csv"
 COMBO_5Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_5y.csv"
 COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
@@ -113,6 +113,8 @@ COMBO_10Y_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_wi
 COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_withdrawal_10y.csv"
 COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv"
 COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv"
+COMBO_RECESSION_REBALANCED_FILE = BASE_DIR / "data" / "top100_recession_balanced_rebalanced_10y.csv"
+COMBO_RECESSION_NOT_REBALANCED_FILE = BASE_DIR / "data" / "top100_recession_balanced_not_rebalanced_10y.csv"
 COMBO_SOURCE_FILE = BASE_DIR / "data" / "portfolio_combo_source_latest.csv"
 COMBO_WITHDRAWAL_START = 300_000.0
 COMBO_WITHDRAWAL_ANNUAL = 85_000.0
@@ -352,15 +354,20 @@ def _apply_withdrawal_ranked_combo_selection(select_key: str, lookup_key: str, r
 
 
 def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
+    """Display the full detailed schema stored by the 10Y $300K/$85K rankings."""
     if df is None or df.empty:
         return pd.DataFrame()
     years = COMBO_RANK_YEARS_BY_PERIOD["10Y"]
+    identity_cols = []
+    for idx in range(1, 5):
+        identity_cols.extend([f"Stock {idx}", f"Sector {idx}", f"Name {idx}"])
+    balance_cols = [f"{year} Balance After Withdrawal ($)" for year in sorted(years)]
     cols = [
-        "Rank", "Combo", "Strategy", *years,
+        "Rank", "Combo", "Strategy", *identity_cols, *years,
         "Worst Year", "Worst Year %", "Best Year", "Best Year %",
         "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
-        "Net Profit incl. Withdrawals ($)",
+        "Net Profit incl. Withdrawals ($)", *balance_cols,
     ]
     available = [c for c in cols if c in df.columns]
     out = df[available].copy()
@@ -370,7 +377,62 @@ def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
     for col in [
         "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
-        "Net Profit incl. Withdrawals ($)",
+        "Net Profit incl. Withdrawals ($)", *balance_cols,
+    ]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
+    return out
+
+
+def _apply_recession_ranked_combo_selection(select_key: str, lookup_key: str, ranking_name: str) -> None:
+    selected = st.session_state.get(select_key)
+    lookup = st.session_state.get(lookup_key) or {}
+    symbols = list(lookup.get(selected) or [])
+    if len(symbols) != 4:
+        return
+    st.session_state.portfolio_symbols = symbols
+    st.session_state.portfolio_symbol_picker = symbols
+    st.session_state.portfolio_period = "10Y"
+    st.session_state.portfolio_allocation_mode = "Equal split"
+    st.session_state.portfolio_include_ytd = False
+    st.session_state.portfolio_total_amount = float(COMBO_WITHDRAWAL_START)
+    st.session_state.portfolio_withdrawals_enabled = False
+    st.session_state.portfolio_monthly_withdrawals_enabled = False
+    st.session_state.combo_autoload_message = (
+        f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to $300,000 start, "
+        "10Y / Equal split, with no cash withdrawals so recession-resilience and growth stay isolated."
+    )
+
+
+def _recession_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame()
+    years = COMBO_RANK_YEARS_BY_PERIOD["10Y"]
+    identity_cols = []
+    for idx in range(1, 5):
+        identity_cols.extend([f"Stock {idx}", f"Sector {idx}", f"Name {idx}", f"Role {idx}"])
+    balance_cols = [f"{year} Balance After Withdrawal ($)" for year in sorted(years)]
+    cols = [
+        "Rank", "Combo", "Strategy", *identity_cols, *years,
+        "Worst Year", "Worst Year %", "Best Year", "Best Year %",
+        "Defense Recession Worst %", "Defense Recession Avg %",
+        "Defense Recession Positive Years", "Defense Recession Observations", "Recession Stress Years",
+        "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
+        "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
+        "Net Profit incl. Withdrawals ($)", *balance_cols,
+    ]
+    available = [c for c in cols if c in df.columns]
+    out = df[available].copy()
+    pct_cols = years + [
+        "Worst Year %", "Best Year %", "Defense Recession Worst %", "Defense Recession Avg %",
+    ]
+    for col in pct_cols:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
+    for col in [
+        "Starting Value ($)", "Annual Withdrawal ($)", "Total Withdrawn ($)",
+        "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
+        "Net Profit incl. Withdrawals ($)", *balance_cols,
     ]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
@@ -399,72 +461,129 @@ def _apply_monthly_withdrawal_ranked_combo_selection(select_key: str, lookup_key
 
 
 def _monthly_withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
+    """Show actual-monthly rankings with the same detail depth as the yearly withdrawal table."""
     if df is None or df.empty:
         return pd.DataFrame()
     df = df.copy()
+    years = COMBO_RANK_YEARS_BY_PERIOD["10Y"]
 
-    # v5.9.48 compatibility: enrich older actual-monthly Top 100 files that were
-    # generated before the Positive Months field existed. This lets the new table
-    # show the portfolio-level count immediately, without misusing annual returns.
-    if "Positive Months" not in df.columns:
+    # Backward compatibility: enrich older ranking files from the durable actual-monthly series.
+    needs_enrichment = (
+        "Positive Months" not in df.columns
+        or any(year not in df.columns for year in years)
+        or "Worst Year" not in df.columns
+        or "Best Year" not in df.columns
+        or any(f"Name {idx}" not in df.columns for idx in range(1, 5))
+    )
+    if needs_enrichment:
         symbols = []
-        for _, _row in df.iterrows():
-            for _idx in range(1, 5):
-                _sym = str(_row.get(f"Stock {_idx}") or "").strip().upper()
-                if _sym and _sym not in symbols:
-                    symbols.append(_sym)
-        _start_text = str(df.iloc[0].get("Monthly Data Start") or "").strip()
-        _end_text = str(df.iloc[0].get("Monthly Data End") or "").strip()
+        for _, row in df.iterrows():
+            for idx in range(1, 5):
+                sym = str(row.get(f"Stock {idx}") or "").strip().upper()
+                if sym and sym not in symbols:
+                    symbols.append(sym)
+        actual = cached_actual_monthly_returns(tuple(symbols), tuple(sorted(years))) if symbols else {"unavailable": True}
+        market_names = {}
         try:
-            _start_year = int(_start_text[:4])
-            _end_year = int(_end_text[:4])
-            _years = tuple(str(y) for y in range(_start_year, _end_year + 1))
+            for _, mrow in market.iterrows():
+                market_names[str(mrow.get("Symbol") or "").upper()] = str(mrow.get("Name") or "")
         except Exception:
-            _years = tuple(sorted(COMBO_RANK_YEARS_BY_PERIOD["10Y"]))
-        _actual = cached_actual_monthly_returns(tuple(symbols), _years) if symbols else {"unavailable": True}
-        if not _actual.get("unavailable"):
-            _month_returns = _actual.get("returns") or {}
-            _month_labels = list(_actual.get("months") or [])
-            _counts = []
-            for _, _row in df.iterrows():
-                _combo = [str(_row.get(f"Stock {_idx}") or "").strip().upper() for _idx in range(1, 5)]
-                _combo = [s for s in _combo if s]
-                _strategy = str(_row.get("Strategy") or "").lower()
-                _rebalance = _strategy.startswith("rebalanced")
-                _withdrawal = float(pd.to_numeric(pd.Series([_row.get("Monthly Withdrawal ($)")]), errors="coerce").fillna(COMBO_WITHDRAWAL_MONTHLY).iloc[0])
-                _balances = {s: COMBO_WITHDRAWAL_START / len(_combo) for s in _combo} if _combo else {}
-                _positive = 0
-                for _label in _month_labels:
-                    _start = sum(_balances.values())
-                    if _start <= 0:
+            market_names = {}
+        if not actual.get("unavailable"):
+            month_returns = actual.get("returns") or {}
+            month_labels = list(actual.get("months") or [])
+            for row_idx, row in df.iterrows():
+                combo = [str(row.get(f"Stock {idx}") or "").strip().upper() for idx in range(1, 5)]
+                combo = [sym for sym in combo if sym]
+                if len(combo) != 4:
+                    continue
+                for idx, sym in enumerate(combo, 1):
+                    if not str(row.get(f"Name {idx}") or "").strip():
+                        df.at[row_idx, f"Name {idx}"] = market_names.get(sym, sym)
+                rebalance = str(row.get("Strategy") or "").lower().startswith("rebalanced")
+                withdrawal_raw = pd.to_numeric(pd.Series([row.get("Monthly Withdrawal ($)")]), errors="coerce").iloc[0]
+                withdrawal = float(withdrawal_raw) if pd.notna(withdrawal_raw) else float(COMBO_WITHDRAWAL_MONTHLY)
+                start_raw = pd.to_numeric(pd.Series([row.get("Starting Value ($)")]), errors="coerce").iloc[0]
+                starting_value = float(start_raw) if pd.notna(start_raw) else float(COMBO_WITHDRAWAL_START)
+                balances = {sym: starting_value / 4.0 for sym in combo}
+                positive = 0
+                year_factor = {year: 1.0 for year in sorted(years)}
+                year_end = {}
+                funded = 0
+                for label in month_labels:
+                    year = label[:4]
+                    if year not in year_factor:
+                        continue
+                    start_balance = sum(balances.values())
+                    if start_balance <= 0:
                         break
-                    for _sym in list(_balances):
-                        _balances[_sym] *= 1.0 + float((_month_returns.get(_sym) or {}).get(_label, 0.0))
-                    _before = sum(_balances.values())
-                    if _before > _start:
-                        _positive += 1
-                    _ending = max(0.0, _before - min(_withdrawal, _before))
-                    if _before > 0:
-                        _scale = _ending / _before
-                        for _sym in _balances:
-                            _balances[_sym] *= _scale
-                    if _rebalance and _ending > 0 and _balances:
-                        _equal = _ending / len(_balances)
-                        for _sym in _balances:
-                            _balances[_sym] = _equal
-                _counts.append(int(_positive))
-            df["Positive Months"] = _counts
+                    missing = False
+                    for sym in balances:
+                        value = (month_returns.get(sym) or {}).get(label)
+                        if value is None or not np.isfinite(value):
+                            missing = True
+                            break
+                        balances[sym] *= 1.0 + float(value)
+                    if missing:
+                        break
+                    before = sum(balances.values())
+                    month_factor = before / start_balance if start_balance > 0 else 1.0
+                    year_factor[year] *= month_factor
+                    if month_factor > 1.0:
+                        positive += 1
+                    actual_withdrawal = min(withdrawal, before)
+                    ending = max(0.0, before - actual_withdrawal)
+                    scale = ending / before if before > 0 else 0.0
+                    for sym in balances:
+                        balances[sym] *= scale
+                    funded += 1
+                    if rebalance and ending > 0:
+                        equal = ending / 4.0
+                        for sym in balances:
+                            balances[sym] = equal
+                    if label.endswith("-12"):
+                        year_end[year] = ending
+                df.at[row_idx, "Positive Months"] = positive
+                df.at[row_idx, "Months Funded"] = funded
+                annual_values = []
+                for year in sorted(years):
+                    annual_pct = (year_factor[year] - 1.0) * 100.0
+                    df.at[row_idx, year] = annual_pct
+                    annual_values.append((year, annual_pct))
+                    if year in year_end:
+                        df.at[row_idx, f"{year} Ending Balance ($)"] = year_end[year]
+                if annual_values:
+                    worst_year, worst_value = min(annual_values, key=lambda item: item[1])
+                    best_year, best_value = max(annual_values, key=lambda item: item[1])
+                    df.at[row_idx, "Worst Year"] = worst_year
+                    df.at[row_idx, "Worst Year %"] = worst_value
+                    df.at[row_idx, "Best Year"] = best_year
+                    df.at[row_idx, "Best Year %"] = best_value
 
-    year_balance_cols = [f"{year} Ending Balance ($)" for year in range(2016, 2026)]
+    identity_cols = []
+    for idx in range(1, 5):
+        identity_cols.extend([f"Stock {idx}", f"Sector {idx}", f"Name {idx}"])
+    year_balance_cols = [f"{year} Ending Balance ($)" for year in sorted(years)]
     cols = [
-        "Rank", "Combo", "Strategy",
-        *year_balance_cols,
+        "Rank", "Combo", "Strategy", *identity_cols, *years,
+        "Worst Year", "Worst Year %", "Best Year", "Best Year %",
+        "Positive Months", "Months Funded",
         "Starting Value ($)", "Monthly Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
-        "Net Profit incl. Withdrawals ($)", "Positive Months", "Months Funded", "HWM Excluded",
+        "Net Profit incl. Withdrawals ($)", *year_balance_cols, "HWM Excluded",
     ]
     available = [c for c in cols if c in df.columns]
     out = df[available].copy()
+    if "Positive Months" in out.columns:
+        total = pd.to_numeric(out.get("Months Funded"), errors="coerce")
+        pos = pd.to_numeric(out["Positive Months"], errors="coerce")
+        out["Positive Months"] = [
+            f"{int(p)}/{int(t)}" if pd.notna(p) and pd.notna(t) and int(t) > 0 else "N/A"
+            for p, t in zip(pos, total)
+        ]
+    for col in years + ["Worst Year %", "Best Year %"]:
+        if col in out.columns:
+            out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
     for col in year_balance_cols + [
         "Starting Value ($)", "Monthly Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
@@ -861,31 +980,86 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 
 
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
-    """Upgrade any saved simulation to the current first-page instrument data contract."""
+    """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v11 - PDF version + positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v13 - 25Y annual returns + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
-    if market_df is None or market_df.empty:
-        upgraded["pdf_layout"] = required_layout
-        return upgraded
-    lookup_df = market_df.copy()
-    lookup_df["Symbol"] = lookup_df["Symbol"].astype(str).str.upper().str.strip()
-    lookup_df = lookup_df.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False)
-    for item in upgraded.get("instruments") or []:
-        sym = str(item.get("symbol") or "").upper().strip()
-        if sym not in lookup_df.index:
-            continue
-        row = lookup_df.loc[sym]
-        if isinstance(row, pd.DataFrame):
-            row = row.iloc[0]
-        item["name"] = str(row.get("Name") or item.get("name") or sym)
-        item["sector"] = str(row.get("Sector") or item.get("sector") or "")
-        item["analyst_rating"] = str(row.get("Analyst Rating") or item.get("analyst_rating") or "Not Rated")
-        for key, col in (("current_price", "Price"), ("price_target_low", "Price Target Low"), ("price_target_average", "Price Target Average"), ("price_target_high", "Price Target High")):
-            val = pd.to_numeric(pd.Series([row.get(col)]), errors="coerce").iloc[0]
-            if pd.notna(val):
-                item[key] = float(val)
+
+    # Repair old v5.9.48 records: the monthly schedules contained real return rows,
+    # but the result dictionaries did not persist positive_months/months_modeled.
+    for result_key, schedule_key in (
+        ("monthly_withdrawal_rebalanced", "monthly_withdrawal_rebalanced_schedule"),
+        ("monthly_withdrawal_not_rebalanced", "monthly_withdrawal_not_rebalanced_schedule"),
+    ):
+        result = dict(upgraded.get(result_key) or {})
+        schedule = [dict(x) for x in (upgraded.get(schedule_key) or result.get("schedule") or []) if isinstance(x, dict)]
+        if schedule:
+            positive = sum(1 for row in schedule if float(row.get("portfolio_return_pct") or 0.0) > 0.0)
+            result["positive_months"] = int(positive)
+            result["months_modeled"] = int(len(schedule))
+            result["schedule"] = schedule
+            upgraded[result_key] = result
+            upgraded[schedule_key] = schedule
+
+    instruments = list(upgraded.get("instruments") or [])
+    symbols = tuple(dict.fromkeys(str(item.get("symbol") or "").upper().strip() for item in instruments if str(item.get("symbol") or "").strip()))
+    if symbols:
+        # Prefer the exact years represented by a saved monthly schedule. Otherwise
+        # derive the requested completed-year horizon from the saved period.
+        schedule_years = []
+        for key in ("monthly_withdrawal_rebalanced_schedule", "monthly_withdrawal_not_rebalanced_schedule"):
+            for row in upgraded.get(key) or []:
+                year = str(row.get("year") or "").strip()
+                if year.isdigit() and year not in schedule_years:
+                    schedule_years.append(year)
+        if schedule_years:
+            monthly_years = tuple(sorted(schedule_years))
+        else:
+            period_text = str(upgraded.get("period") or "10Y").upper()
+            try:
+                year_count = max(1, min(25, int(period_text.replace("Y", ""))))
+            except Exception:
+                year_count = 10
+            monthly_years = tuple(YEAR_RETURN_COLS[:year_count])
+        try:
+            actual_payload = cached_actual_monthly_returns(symbols, monthly_years)
+        except Exception:
+            actual_payload = {"unavailable": True}
+        if not actual_payload.get("unavailable"):
+            for item in instruments:
+                sym = str(item.get("symbol") or "").upper().strip()
+                month_map = (actual_payload.get("returns") or {}).get(sym) or {}
+                values = [float(v) for v in month_map.values() if v is not None and np.isfinite(v)]
+                if values:
+                    item["positive_months"] = int(sum(1 for v in values if v > 0.0))
+                    item["available_months"] = int(len(values))
+
+    if market_df is not None and not market_df.empty:
+        lookup_df = market_df.copy()
+        lookup_df["Symbol"] = lookup_df["Symbol"].astype(str).str.upper().str.strip()
+        lookup_df = lookup_df.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False)
+        for item in instruments:
+            sym = str(item.get("symbol") or "").upper().strip()
+            if sym not in lookup_df.index:
+                continue
+            row = lookup_df.loc[sym]
+            if isinstance(row, pd.DataFrame):
+                row = row.iloc[0]
+            item["name"] = str(row.get("Name") or item.get("name") or sym)
+            item["sector"] = str(row.get("Sector") or item.get("sector") or "")
+            item["analyst_rating"] = str(row.get("Analyst Rating") or item.get("analyst_rating") or "Not Rated")
+            performance = dict(item.get("performance") or {})
+            for metric in PERF_COLS:
+                val = pd.to_numeric(pd.Series([row.get(metric)]), errors="coerce").iloc[0]
+                performance[metric] = float(val) if pd.notna(val) and np.isfinite(val) else None
+            item["performance"] = performance
+            for key, col in (("current_price", "Price"), ("price_target_low", "Price Target Low"), ("price_target_average", "Price Target Average"), ("price_target_high", "Price Target High")):
+                val = pd.to_numeric(pd.Series([row.get(col)]), errors="coerce").iloc[0]
+                if pd.notna(val):
+                    item[key] = float(val)
+
+    upgraded["instruments"] = instruments
     upgraded["pdf_layout"] = required_layout
     return upgraded
 
@@ -915,7 +1089,7 @@ def cached_single_metrics(symbol: str) -> dict:
     if hist is None or hist.empty:
         return {}
     perf = calculate_performance(hist)
-    annual_returns = calculate_calendar_year_returns(hist, years=20)
+    annual_returns = calculate_calendar_year_returns(hist, years=25)
     meta = default_meta.get(symbol, {})
     provider_meta = provider.get_metadata(symbol)
     quote_type = provider_meta.get("quote_type")
@@ -1382,7 +1556,7 @@ def apply_history_refresh(df: pd.DataFrame, histories: Dict[str, pd.DataFrame], 
             continue
         try:
             perf = calculate_performance(hist)
-            annual_returns = calculate_calendar_year_returns(hist, years=20)
+            annual_returns = calculate_calendar_year_returns(hist, years=25)
         except Exception:
             continue
         idx = out.index[mask][0]
@@ -1975,11 +2149,11 @@ with market_tab:
         unsafe_allow_html=True,
     )
 
-def _portfolio_common_calendar_years(market_df: pd.DataFrame, symbols: list[str], max_years: int = 20) -> list[str]:
+def _portfolio_common_calendar_years(market_df: pd.DataFrame, symbols: list[str], max_years: int = 25) -> list[str]:
     """Return completed calendar years for which every selected instrument has a valid saved return.
 
-    Years are returned newest-to-oldest and are capped to MarketScope's 20-year window. This lets a
-    requested 1Y-20Y horizon remain selectable even when one instrument listed later: the effective
+    Years are returned newest-to-oldest and are capped to MarketScope's 25-year window. This lets a
+    requested 1Y-25Y horizon remain selectable even when one instrument listed later: the effective
     simulation begins with the earliest year in the common-data window instead of failing.
     """
     if not symbols:
@@ -2009,10 +2183,10 @@ def _portfolio_common_calendar_years(market_df: pd.DataFrame, symbols: list[str]
 def _effective_portfolio_years(market_df: pd.DataFrame, symbols: list[str], period_choice: str) -> list[str]:
     """Newest-to-oldest common years used for the requested portfolio horizon."""
     try:
-        requested = max(1, min(20, int(str(period_choice).replace("Y", ""))))
+        requested = max(1, min(25, int(str(period_choice).replace("Y", ""))))
     except Exception:
         return []
-    return _portfolio_common_calendar_years(market_df, symbols, 20)[:requested]
+    return _portfolio_common_calendar_years(market_df, symbols, 25)[:requested]
 
 
 def _portfolio_horizon_projection(row: pd.Series, principal: float, period_choice: str, include_ytd: bool, calendar_years: list[str] | None = None) -> dict | None:
@@ -2038,7 +2212,7 @@ def _portfolio_horizon_projection(row: pd.Series, principal: float, period_choic
         years_requested = int(period_choice.replace("Y", ""))
     except Exception:
         return None
-    years_requested = max(1, min(20, years_requested))
+    years_requested = max(1, min(25, years_requested))
     requested_year_labels = (list(calendar_years) if calendar_years is not None else list(YEAR_RETURN_COLS[:years_requested]))[:years_requested]
     selected: list[tuple[str, float]] = []
     for year in requested_year_labels:
@@ -2104,9 +2278,9 @@ def _portfolio_annual_withdrawal_schedule(
         return {"unavailable": True, "reason": "A positive portfolio amount and at least one instrument are required."}
     period_choice = str(period_choice or "YTD")
     if period_choice == "YTD":
-        return {"unavailable": True, "reason": "Annual withdrawals require a completed-year horizon from 1Y through 20Y."}
+        return {"unavailable": True, "reason": "Annual withdrawals require a completed-year horizon from 1Y through 25Y."}
     try:
-        years_requested = max(1, min(20, int(period_choice.replace("Y", ""))))
+        years_requested = max(1, min(25, int(period_choice.replace("Y", ""))))
     except Exception:
         return {"unavailable": True, "reason": "Invalid portfolio period."}
 
@@ -2196,7 +2370,6 @@ def _portfolio_annual_withdrawal_schedule(
         })
 
     remaining = sum(balances.values())
-    positive_months = sum(1 for row in schedule if float(row.get("portfolio_return_pct") or 0.0) > 0.0)
     return {
         "unavailable": False,
         "annual_withdrawal_requested": withdrawal_requested,
@@ -2204,8 +2377,6 @@ def _portfolio_annual_withdrawal_schedule(
         "ending_balance": remaining,
         "depleted_year": depleted_year,
         "schedule": schedule,
-        "positive_months": int(positive_months),
-        "months_modeled": int(len(schedule)),
         "net_value_including_withdrawals": remaining + total_withdrawn,
         "net_profit_including_withdrawals": remaining + total_withdrawn - principal,
         "strategy": "Rebalanced annually" if rebalance_after_withdrawal else "Not rebalanced",
@@ -2241,9 +2412,9 @@ def _portfolio_monthly_withdrawal_schedule(
         return {"unavailable": True, "reason": "A positive portfolio amount and at least one instrument are required."}
     period_choice = str(period_choice or "YTD")
     if period_choice == "YTD":
-        return {"unavailable": True, "reason": "Monthly withdrawals require a completed-year horizon from 1Y through 20Y."}
+        return {"unavailable": True, "reason": "Monthly withdrawals require a completed-year horizon from 1Y through 25Y."}
     try:
-        years_requested = max(1, min(20, int(period_choice.replace("Y", ""))))
+        years_requested = max(1, min(25, int(period_choice.replace("Y", ""))))
     except Exception:
         return {"unavailable": True, "reason": "Invalid portfolio period."}
 
@@ -2324,6 +2495,10 @@ def _portfolio_monthly_withdrawal_schedule(
             break
 
     remaining = sum(balances.values())
+    positive_months = sum(
+        1 for row in schedule
+        if float(row.get("portfolio_return_pct") or 0.0) > 0.0
+    )
     return {
         "unavailable": False,
         "monthly_withdrawal_requested": withdrawal_requested,
@@ -2331,6 +2506,8 @@ def _portfolio_monthly_withdrawal_schedule(
         "ending_balance": remaining,
         "depleted_period": depleted_period,
         "schedule": schedule,
+        "positive_months": int(positive_months),
+        "months_modeled": int(len(schedule)),
         "net_value_including_withdrawals": remaining + total_withdrawn,
         "net_profit_including_withdrawals": remaining + total_withdrawn - principal,
         "strategy": "Rebalanced monthly" if rebalance_after_withdrawal else "Not rebalanced monthly",
@@ -2484,280 +2661,203 @@ with portfolio_tab:
         if valid_saved_portfolio != st.session_state.portfolio_symbols:
             st.session_state.portfolio_symbols = valid_saved_portfolio
 
-        # v5.9.44: Top 200 four-stock presets for both 5Y and 10Y horizons.
-        with st.expander("🏆 Top 4-Stock Combos (5Y, 10Y & Withdrawals) — tap to open", expanded=False):
+        # v5.9.51: ranking families stay hidden until their respective button is opened.
+        st.caption("Portfolio preset rankings are grouped below. Open only the ranking family you want to use.")
+        preset_row1 = st.columns(3)
+        preset_row2 = st.columns(2)
+
+        def _render_profit_worst_rankings(period_label: str, profit_file: Path, worst_file: Path) -> None:
             st.caption(
-                "Four stocks • four different sectors • equal 25% starting allocation • $100,000 normalized starting portfolio. "
-                "Best Profit ranks by ending value after compounding each holding over the selected period. "
-                "Best Worst Year ranks by the strongest minimum equal-weight annual portfolio return during that same period."
+                f"{period_label} • four stocks • four different sectors • equal 25% starting allocation • "
+                "$100,000 normalized starting portfolio."
             )
+            profit_rank = _load_ranked_combo_file(str(profit_file))
+            worst_rank = _load_ranked_combo_file(str(worst_file))
+            st.markdown(f"#### 💰 Top 200 — Best Profit ({period_label})")
+            if profit_rank.empty:
+                st.warning(f"{period_label} profit-generator ranking data is unavailable.")
+            else:
+                lookup_key = f"combo_{period_label.lower()}_profit_lookup"
+                picker_key = f"combo_{period_label.lower()}_profit_picker"
+                profit_lookup = {}
+                profit_options = [f"— Select a Top 200 {period_label} profit combo —"]
+                for _, combo_row in profit_rank.sort_values("Rank").iterrows():
+                    label = _ranked_combo_label(combo_row, "profit")
+                    profit_options.append(label)
+                    profit_lookup[label] = _ranked_combo_symbols(combo_row)
+                st.session_state[lookup_key] = profit_lookup
+                st.selectbox(
+                    f"{period_label} profit generator combination",
+                    options=profit_options, index=0, key=picker_key,
+                    on_change=_apply_ranked_combo_selection,
+                    args=(picker_key, lookup_key, f"{period_label} Top Profit Generator combo", period_label),
+                )
+            st.markdown(f"#### 🛡️ Top 200 — Best Worst Year ({period_label})")
+            if worst_rank.empty:
+                st.warning(f"{period_label} best-worst-year ranking data is unavailable.")
+            else:
+                lookup_key = f"combo_{period_label.lower()}_worst_lookup"
+                picker_key = f"combo_{period_label.lower()}_worst_picker"
+                worst_lookup = {}
+                worst_options = [f"— Select a Top 200 {period_label} best-worst-year combo —"]
+                for _, combo_row in worst_rank.sort_values("Rank").iterrows():
+                    label = _ranked_combo_label(combo_row, "worst")
+                    worst_options.append(label)
+                    worst_lookup[label] = _ranked_combo_symbols(combo_row)
+                st.session_state[lookup_key] = worst_lookup
+                st.selectbox(
+                    f"{period_label} best worst-year combination",
+                    options=worst_options, index=0, key=picker_key,
+                    on_change=_apply_ranked_combo_selection,
+                    args=(picker_key, lookup_key, f"{period_label} Best Worst-Year combo", period_label),
+                )
+            table_profit_tab, table_worst_tab = st.tabs([
+                f"💰 {period_label} Profit table", f"🛡️ {period_label} Best Worst-Year table",
+            ])
+            with table_profit_tab:
+                st.dataframe(_combo_rank_table(profit_rank, period_label), use_container_width=True, hide_index=True, height=500)
+            with table_worst_tab:
+                st.dataframe(_combo_rank_table(worst_rank, period_label), use_container_width=True, hide_index=True, height=500)
 
-            combo_sets = [
-                ("5Y", COMBO_5Y_PROFIT_FILE, COMBO_5Y_WORST_FILE),
-                ("10Y", COMBO_10Y_PROFIT_FILE, COMBO_10Y_WORST_FILE),
-            ]
+        with preset_row1[0]:
+            with st.popover("📈 5Y Combo Rankings", use_container_width=True):
+                _render_profit_worst_rankings("5Y", COMBO_5Y_PROFIT_FILE, COMBO_5Y_WORST_FILE)
 
-            for period_label, profit_file, worst_file in combo_sets:
-                st.markdown(f"### {period_label} Rankings")
-                profit_rank = _load_ranked_combo_file(str(profit_file))
-                worst_rank = _load_ranked_combo_file(str(worst_file))
-                rank_col1, rank_col2 = st.columns(2)
+        with preset_row1[1]:
+            with st.popover("📊 10Y Combo Rankings", use_container_width=True):
+                _render_profit_worst_rankings("10Y", COMBO_10Y_PROFIT_FILE, COMBO_10Y_WORST_FILE)
 
-                with rank_col1:
-                    st.markdown(f"#### 💰 Top 200 — Best Profit ({period_label})")
-                    if profit_rank.empty:
-                        st.warning(f"{period_label} profit-generator ranking data is unavailable.")
-                    else:
-                        lookup_key = f"combo_{period_label.lower()}_profit_lookup"
-                        picker_key = f"combo_{period_label.lower()}_profit_picker"
-                        profit_lookup = {}
-                        profit_options = [f"— Select a Top 200 {period_label} profit combo —"]
-                        for _, combo_row in profit_rank.sort_values("Rank").iterrows():
-                            label = _ranked_combo_label(combo_row, "profit")
-                            profit_options.append(label)
-                            profit_lookup[label] = _ranked_combo_symbols(combo_row)
-                        st.session_state[lookup_key] = profit_lookup
-                        st.selectbox(
-                            f"{period_label} profit generator combination",
-                            options=profit_options,
-                            index=0,
-                            key=picker_key,
-                            on_change=_apply_ranked_combo_selection,
-                            args=(picker_key, lookup_key, f"{period_label} Top Profit Generator combo", period_label),
-                            help=f"Selecting a combination automatically loads its four stocks into the simulator and sets {period_label} / Equal split.",
-                        )
-
-                with rank_col2:
-                    st.markdown(f"#### 🛡️ Top 200 — Best Worst Year ({period_label})")
-                    if worst_rank.empty:
-                        st.warning(f"{period_label} best-worst-year ranking data is unavailable.")
-                    else:
-                        lookup_key = f"combo_{period_label.lower()}_worst_lookup"
-                        picker_key = f"combo_{period_label.lower()}_worst_picker"
-                        worst_lookup = {}
-                        worst_options = [f"— Select a Top 200 {period_label} best-worst-year combo —"]
-                        for _, combo_row in worst_rank.sort_values("Rank").iterrows():
-                            label = _ranked_combo_label(combo_row, "worst")
-                            worst_options.append(label)
-                            worst_lookup[label] = _ranked_combo_symbols(combo_row)
-                        st.session_state[lookup_key] = worst_lookup
-                        st.selectbox(
-                            f"{period_label} best worst-year combination",
-                            options=worst_options,
-                            index=0,
-                            key=picker_key,
-                            on_change=_apply_ranked_combo_selection,
-                            args=(picker_key, lookup_key, f"{period_label} Best Worst-Year combo", period_label),
-                            help=f"Selecting a combination automatically loads its four stocks into the simulator and sets {period_label} / Equal split.",
-                        )
-
-                table_profit_tab, table_worst_tab = st.tabs([
-                    f"💰 {period_label} Profit Top 200 table",
-                    f"🛡️ {period_label} Best Worst-Year Top 200 table",
-                ])
-                with table_profit_tab:
-                    st.dataframe(
-                        _combo_rank_table(profit_rank, period_label),
-                        use_container_width=True,
-                        hide_index=True,
-                        height=520,
-                    )
-                    st.caption(
-                        f"Annual columns are equal-weight portfolio returns for the {period_label} completed-year window. "
-                        "Total Profit uses a $100,000 start ($25,000 per stock) with each stock compounded separately, matching the Portfolio Simulator."
-                    )
-                with table_worst_tab:
-                    st.dataframe(
-                        _combo_rank_table(worst_rank, period_label),
-                        use_container_width=True,
-                        hide_index=True,
-                        height=520,
-                    )
-                    years = COMBO_RANK_YEARS_BY_PERIOD[period_label]
-                    st.caption(
-                        f"Ranked by the highest minimum annual return across {years[0]}–{years[-1]}; "
-                        f"Total Profit is shown as a secondary outcome for the same {period_label} path."
-                    )
-
-            st.markdown("### 10Y Withdrawal Rankings · $300K Start / $85K per Year")
-            st.caption(
-                "Top 100 surviving four-stock portfolios for each withdrawal strategy. Every combo uses four different sectors, "
-                "starts with $300,000 at 25% per stock, takes the full $85,000 after each completed year from 2016 through 2025, "
-                "and is excluded if the account reaches $0 before completing all 10 withdrawals. Ranked by the remaining balance after the 10th withdrawal."
-            )
-            rebalance_rank = _load_ranked_combo_file(str(COMBO_10Y_REBALANCED_WITHDRAWAL_FILE))
-            not_rebalanced_rank = _load_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE))
-            withdrawal_col1, withdrawal_col2 = st.columns(2)
-
-            with withdrawal_col1:
-                st.markdown("#### 🔄 Top 100 — Rebalanced Annually")
+        with preset_row1[2]:
+            with st.popover("💵 10Y Yearly Withdrawal", use_container_width=True):
+                st.markdown("### $300K Start / $85K per Year")
+                st.caption(
+                    "Top 100 surviving four-stock portfolios, four different sectors, 2016–2025. "
+                    "Every table now exposes the full stock/sector/name, annual-return, worst/best-year, cash-flow, ending-balance, and yearly-balance fields."
+                )
+                rebalance_rank = _load_ranked_combo_file(str(COMBO_10Y_REBALANCED_WITHDRAWAL_FILE))
+                not_rebalanced_rank = _load_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE))
+                st.markdown("#### 🔄 Rebalanced Annually")
                 if rebalance_rank.empty:
                     st.warning("10Y rebalanced withdrawal ranking data is unavailable.")
                 else:
                     lookup_key = "combo_10y_withdrawal_rebalanced_lookup"
                     picker_key = "combo_10y_withdrawal_rebalanced_picker"
-                    reb_lookup = {}
-                    reb_options = ["— Select a Top 100 rebalanced withdrawal combo —"]
+                    lookup = {}
+                    options = ["— Select a Top 100 rebalanced withdrawal combo —"]
                     for _, combo_row in rebalance_rank.sort_values("Rank").iterrows():
                         label = _ranked_withdrawal_combo_label(combo_row, "Rebalanced")
-                        reb_options.append(label)
-                        reb_lookup[label] = _ranked_combo_symbols(combo_row)
-                    st.session_state[lookup_key] = reb_lookup
-                    st.selectbox(
-                        "10Y rebalanced withdrawal combination",
-                        options=reb_options,
-                        index=0,
-                        key=picker_key,
-                        on_change=_apply_withdrawal_ranked_combo_selection,
-                        args=(picker_key, lookup_key, "10Y Rebalanced Withdrawal combo"),
-                        help="Selecting a combo loads its four stocks and automatically sets $300,000 / 10Y / Equal split / $85,000 annual withdrawals.",
-                    )
-
-            with withdrawal_col2:
-                st.markdown("#### ↗ Top 100 — Not Rebalanced")
+                        options.append(label); lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox("10Y rebalanced withdrawal combination", options=options, index=0, key=picker_key,
+                                 on_change=_apply_withdrawal_ranked_combo_selection,
+                                 args=(picker_key, lookup_key, "10Y Rebalanced Withdrawal combo"))
+                st.markdown("#### ↗ Not Rebalanced")
                 if not_rebalanced_rank.empty:
                     st.warning("10Y not-rebalanced withdrawal ranking data is unavailable.")
                 else:
                     lookup_key = "combo_10y_withdrawal_not_rebalanced_lookup"
                     picker_key = "combo_10y_withdrawal_not_rebalanced_picker"
-                    nr_lookup = {}
-                    nr_options = ["— Select a Top 100 not-rebalanced withdrawal combo —"]
+                    lookup = {}; options = ["— Select a Top 100 not-rebalanced withdrawal combo —"]
                     for _, combo_row in not_rebalanced_rank.sort_values("Rank").iterrows():
                         label = _ranked_withdrawal_combo_label(combo_row, "Not Rebalanced")
-                        nr_options.append(label)
-                        nr_lookup[label] = _ranked_combo_symbols(combo_row)
-                    st.session_state[lookup_key] = nr_lookup
-                    st.selectbox(
-                        "10Y not-rebalanced withdrawal combination",
-                        options=nr_options,
-                        index=0,
-                        key=picker_key,
-                        on_change=_apply_withdrawal_ranked_combo_selection,
-                        args=(picker_key, lookup_key, "10Y Not-Rebalanced Withdrawal combo"),
-                        help="Selecting a combo loads its four stocks and automatically sets $300,000 / 10Y / Equal split / $85,000 annual withdrawals.",
-                    )
+                        options.append(label); lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox("10Y not-rebalanced withdrawal combination", options=options, index=0, key=picker_key,
+                                 on_change=_apply_withdrawal_ranked_combo_selection,
+                                 args=(picker_key, lookup_key, "10Y Not-Rebalanced Withdrawal combo"))
+                trb, tnr = st.tabs(["🔄 Rebalanced Top 100", "↗ Not Rebalanced Top 100"])
+                with trb:
+                    st.dataframe(_withdrawal_combo_rank_table(rebalance_rank), use_container_width=True, hide_index=True, height=520)
+                with tnr:
+                    st.dataframe(_withdrawal_combo_rank_table(not_rebalanced_rank), use_container_width=True, hide_index=True, height=520)
 
-            withdrawal_table_reb, withdrawal_table_nr = st.tabs([
-                "🔄 Rebalanced Top 100 table",
-                "↗ Not Rebalanced Top 100 table",
-            ])
-            with withdrawal_table_reb:
-                st.dataframe(
-                    _withdrawal_combo_rank_table(rebalance_rank),
-                    use_container_width=True,
-                    hide_index=True,
-                    height=520,
-                )
+        with preset_row2[0]:
+            with st.popover("🗓️ 10Y Actual-Monthly Withdrawal", use_container_width=True):
+                st.markdown("### $300K Start / $5K per Month · HWM Excluded")
                 st.caption(
-                    "Rebalanced annually: each stock receives its actual return for the year, the $85,000 withdrawal is taken, "
-                    "then the remaining balance is reset to 25% in each of the four stocks for the next year."
+                    "Actual adjusted month-end returns from Yahoo/yfinance daily history. All 120 withdrawals must be funded. "
+                    "Tables use the same detailed structure as the yearly withdrawal rankings, adapted for monthly cash flow and Positive Months."
                 )
-            with withdrawal_table_nr:
-                st.dataframe(
-                    _withdrawal_combo_rank_table(not_rebalanced_rank),
-                    use_container_width=True,
-                    hide_index=True,
-                    height=520,
-                )
-                st.caption(
-                    "Not rebalanced: each stock receives its actual return and the $85,000 withdrawal is taken proportionally; "
-                    "the naturally drifted weights are carried into the next year."
-                )
-
-            st.markdown("### 10Y Monthly Withdrawal Rankings · $300K Start / $5K per Month · HWM Excluded")
-            st.caption(
-                "Top 100 surviving four-stock portfolios for each monthly-withdrawal strategy. Every combo uses four different sectors, "
-                "starts with $300,000 at 25% per stock, excludes HWM, and funds the full $5,000 withdrawal every month for 120 months (2016–2025). "
-                "Each month uses the actual adjusted month-end return from Yahoo/yfinance daily market history. "
-                "No annual return is divided, averaged, or converted into 12 synthetic monthly returns."
-            )
-            monthly_rebalance_rank = _load_actual_monthly_ranked_combo_file(str(COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
-            monthly_not_rebalanced_rank = _load_actual_monthly_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
-            if not monthly_rebalance_rank.empty and not monthly_not_rebalanced_rank.empty:
-                st.success(
-                    "Actual monthly rankings loaded: $300,000 start • $5,000/month • 120 withdrawals • "
-                    "4 stocks / 4 sectors • HWM excluded • ranked by remaining balance after month 120."
-                )
-            else:
-                st.info(
-                    "Actual monthly rankings are still being generated by the MarketScope GitHub refresh. "
-                    "The app will not display the older annual-derived monthly rankings as substitutes."
-                )
-            monthly_withdrawal_col1, monthly_withdrawal_col2 = st.columns(2)
-
-            with monthly_withdrawal_col1:
-                st.markdown("#### 🔄 Top 100 — Rebalanced Monthly (Actual Returns)")
+                monthly_rebalance_rank = _load_actual_monthly_ranked_combo_file(str(COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
+                monthly_not_rebalanced_rank = _load_actual_monthly_ranked_combo_file(str(COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE))
+                st.markdown("#### 🔄 Rebalanced Monthly")
                 if monthly_rebalance_rank.empty:
-                    st.warning("Actual-monthly 10Y rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.48.")
+                    st.warning("Actual-monthly 10Y rebalanced ranking data is not available yet. Run the MarketScope refresh workflow.")
                 else:
                     lookup_key = "combo_10y_monthly_withdrawal_rebalanced_lookup"
                     picker_key = "combo_10y_monthly_withdrawal_rebalanced_picker"
-                    monthly_reb_lookup = {}
-                    monthly_reb_options = ["— Select a Top 100 monthly rebalanced combo —"]
+                    lookup = {}; options = ["— Select a Top 100 monthly rebalanced combo —"]
                     for _, combo_row in monthly_rebalance_rank.sort_values("Rank").iterrows():
                         label = _ranked_withdrawal_combo_label(combo_row, "Rebalanced")
-                        monthly_reb_options.append(label)
-                        monthly_reb_lookup[label] = _ranked_combo_symbols(combo_row)
-                    st.session_state[lookup_key] = monthly_reb_lookup
-                    st.selectbox(
-                        "10Y monthly rebalanced withdrawal combination — actual returns",
-                        options=monthly_reb_options,
-                        index=0,
-                        key=picker_key,
-                        on_change=_apply_monthly_withdrawal_ranked_combo_selection,
-                        args=(picker_key, lookup_key, "10Y Monthly Rebalanced Withdrawal combo"),
-                        help="Loads four different-sector stocks, excludes HWM, and sets $300,000 / 10Y / Equal split / $5,000 monthly withdrawals.",
-                    )
-
-            with monthly_withdrawal_col2:
-                st.markdown("#### ↗ Top 100 — Not Rebalanced Monthly (Actual Returns)")
+                        options.append(label); lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox("10Y monthly rebalanced combination — actual returns", options=options, index=0, key=picker_key,
+                                 on_change=_apply_monthly_withdrawal_ranked_combo_selection,
+                                 args=(picker_key, lookup_key, "10Y Monthly Rebalanced Withdrawal combo"))
+                st.markdown("#### ↗ Not Rebalanced Monthly")
                 if monthly_not_rebalanced_rank.empty:
-                    st.warning("Actual-monthly 10Y not-rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.48.")
+                    st.warning("Actual-monthly 10Y not-rebalanced ranking data is not available yet. Run the MarketScope refresh workflow.")
                 else:
                     lookup_key = "combo_10y_monthly_withdrawal_not_rebalanced_lookup"
                     picker_key = "combo_10y_monthly_withdrawal_not_rebalanced_picker"
-                    monthly_nr_lookup = {}
-                    monthly_nr_options = ["— Select a Top 100 monthly not-rebalanced combo —"]
+                    lookup = {}; options = ["— Select a Top 100 monthly not-rebalanced combo —"]
                     for _, combo_row in monthly_not_rebalanced_rank.sort_values("Rank").iterrows():
                         label = _ranked_withdrawal_combo_label(combo_row, "Not Rebalanced")
-                        monthly_nr_options.append(label)
-                        monthly_nr_lookup[label] = _ranked_combo_symbols(combo_row)
-                    st.session_state[lookup_key] = monthly_nr_lookup
-                    st.selectbox(
-                        "10Y monthly not-rebalanced withdrawal combination — actual returns",
-                        options=monthly_nr_options,
-                        index=0,
-                        key=picker_key,
-                        on_change=_apply_monthly_withdrawal_ranked_combo_selection,
-                        args=(picker_key, lookup_key, "10Y Monthly Not-Rebalanced Withdrawal combo"),
-                        help="Loads four different-sector stocks, excludes HWM, and sets $300,000 / 10Y / Equal split / $5,000 monthly withdrawals.",
-                    )
+                        options.append(label); lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox("10Y monthly not-rebalanced combination — actual returns", options=options, index=0, key=picker_key,
+                                 on_change=_apply_monthly_withdrawal_ranked_combo_selection,
+                                 args=(picker_key, lookup_key, "10Y Monthly Not-Rebalanced Withdrawal combo"))
+                mrb_tab, mnr_tab = st.tabs(["🔄 Monthly Rebalanced Top 100", "↗ Monthly Not Rebalanced Top 100"])
+                with mrb_tab:
+                    st.dataframe(_monthly_withdrawal_combo_rank_table(monthly_rebalance_rank), use_container_width=True, hide_index=True, height=520)
+                with mnr_tab:
+                    st.dataframe(_monthly_withdrawal_combo_rank_table(monthly_not_rebalanced_rank), use_container_width=True, hide_index=True, height=520)
 
-            monthly_table_reb, monthly_table_nr = st.tabs([
-                "🔄 Monthly Rebalanced Top 100 table",
-                "↗ Monthly Not Rebalanced Top 100 table",
-            ])
-            with monthly_table_reb:
-                st.dataframe(
-                    _monthly_withdrawal_combo_rank_table(monthly_rebalance_rank),
-                    use_container_width=True, hide_index=True, height=520,
-                )
+        with preset_row2[1]:
+            with st.popover("🛡️ Recession-Balanced Top 100", use_container_width=True):
+                st.markdown("### 2 Profit Engines + 2 Recession-Defense Stocks")
                 st.caption(
-                    "Rebalanced monthly: actual adjusted month-end stock returns are applied, $5,000 is withdrawn at month-end, "
-                    "then the remaining balance is restored to 25% per stock. HWM is excluded from all 100 combinations."
+                    "Exactly four stocks from four different sectors. Two are selected from the strongest 2016–2025 profit engines; "
+                    "two are selected for resilience in official NBER recession stress years represented by the annual data. "
+                    "NBER periods: Mar–Nov 2001, Dec 2007–Jun 2009, and Feb–Apr 2020. Rankings use a $300,000 equal-weight start and no withdrawals to isolate growth and recession behavior."
                 )
-            with monthly_table_nr:
-                st.dataframe(
-                    _monthly_withdrawal_combo_rank_table(monthly_not_rebalanced_rank),
-                    use_container_width=True, hide_index=True, height=520,
-                )
+                recession_rb = _load_ranked_combo_file(str(COMBO_RECESSION_REBALANCED_FILE))
+                recession_nr = _load_ranked_combo_file(str(COMBO_RECESSION_NOT_REBALANCED_FILE))
+                st.markdown("#### 🔄 Top 100 — Rebalanced Annually")
+                if recession_rb.empty:
+                    st.warning("Recession-balanced rebalanced ranking data is unavailable until the refresh/ranking job completes.")
+                else:
+                    lookup_key = "combo_recession_rebalanced_lookup"; picker_key = "combo_recession_rebalanced_picker"
+                    lookup = {}; options = ["— Select a Top 100 recession-balanced rebalanced combo —"]
+                    for _, combo_row in recession_rb.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Rebalanced")
+                        options.append(label); lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox("Recession-balanced rebalanced combination", options=options, index=0, key=picker_key,
+                                 on_change=_apply_recession_ranked_combo_selection,
+                                 args=(picker_key, lookup_key, "Recession-Balanced Rebalanced combo"))
+                st.markdown("#### ↗ Top 100 — Not Rebalanced")
+                if recession_nr.empty:
+                    st.warning("Recession-balanced not-rebalanced ranking data is unavailable until the refresh/ranking job completes.")
+                else:
+                    lookup_key = "combo_recession_not_rebalanced_lookup"; picker_key = "combo_recession_not_rebalanced_picker"
+                    lookup = {}; options = ["— Select a Top 100 recession-balanced not-rebalanced combo —"]
+                    for _, combo_row in recession_nr.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Not Rebalanced")
+                        options.append(label); lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox("Recession-balanced not-rebalanced combination", options=options, index=0, key=picker_key,
+                                 on_change=_apply_recession_ranked_combo_selection,
+                                 args=(picker_key, lookup_key, "Recession-Balanced Not-Rebalanced combo"))
+                rbt, nrt = st.tabs(["🔄 Rebalanced Top 100", "↗ Not Rebalanced Top 100"])
+                with rbt:
+                    st.dataframe(_recession_combo_rank_table(recession_rb), use_container_width=True, hide_index=True, height=520)
+                with nrt:
+                    st.dataframe(_recession_combo_rank_table(recession_nr), use_container_width=True, hide_index=True, height=520)
                 st.caption(
-                    "Not rebalanced monthly: actual adjusted month-end stock returns are applied and the $5,000 withdrawal is taken proportionally; "
-                    "the naturally drifted weights continue into the next month. HWM is excluded from all 100 combinations."
+                    "Recession Defense is a historical resilience screen, not a guarantee. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
                 )
-
-            if st.session_state.combo_autoload_message:
-                st.success(st.session_state.combo_autoload_message)
 
         portfolio_total = st.number_input(
             "Total portfolio amount ($)",
@@ -2784,13 +2884,13 @@ with portfolio_tab:
         )
         st.session_state.portfolio_symbols = list(selected_portfolio_symbols)
 
-        # v5.9.32 - keep every 1Y-20Y choice available. If a selected instrument did not exist
+        # v5.9.32 - keep every 1Y-25Y choice available. If a selected instrument did not exist
         # for the full requested span, begin at the first completed year shared by all selections.
-        portfolio_period_options = ["YTD", *[f"{i}Y" for i in range(1, 21)]]
+        portfolio_period_options = ["YTD", *[f"{i}Y" for i in range(1, 26)]]
         _saved_period = str(st.session_state.get("portfolio_period") or "YTD")
         if _saved_period not in portfolio_period_options:
             st.session_state["portfolio_period"] = "YTD"
-        common_calendar_years = _portfolio_common_calendar_years(market, list(selected_portfolio_symbols), 20)
+        common_calendar_years = _portfolio_common_calendar_years(market, list(selected_portfolio_symbols), 25)
 
         port_controls = st.columns([1.7, 1.35, 1.35, 2.4])
         with port_controls[0]:
@@ -2826,7 +2926,7 @@ with portfolio_tab:
                 value=False,
                 key="portfolio_include_ytd",
                 disabled=str(portfolio_period or "YTD") == "YTD",
-                help="For 1Y–20Y only, optionally apply the current YTD return after the completed-year history.",
+                help="For 1Y–25Y only, optionally apply the current YTD return after the completed-year history.",
             )
         with port_controls[3]:
             st.caption(
@@ -2963,7 +3063,7 @@ with portfolio_tab:
                 if unresolved_amount > 0:
                     st.warning(
                         f"${unresolved_amount:,.2f} of the starting allocation could not be simulated because no common return data was available. "
-                        "MarketScope otherwise shortens the requested 1Y–20Y horizon automatically to the years shared by every selected instrument."
+                        "MarketScope otherwise shortens the requested 1Y–25Y horizon automatically to the years shared by every selected instrument."
                     )
 
                 if portfolio_results:
@@ -3081,7 +3181,7 @@ with portfolio_tab:
                             if result.get("depleted_year"):
                                 st.error(f"{label} portfolio is depleted during {result.get('depleted_year')} under this withdrawal amount; later withdrawals cannot be funded.")
 
-                # v5.9.48 - monthly withdrawal mode uses actual adjusted month-to-month
+                # v5.9.50 - monthly withdrawal mode uses actual adjusted month-to-month
                 # returns from durable monthly history, with an on-demand Yahoo daily-history fallback.
                 if portfolio_monthly_withdrawals_enabled and portfolio_monthly_withdrawal > 0 and unresolved_amount <= 0.005:
                     actual_monthly_payload = cached_actual_monthly_returns(
@@ -3120,7 +3220,7 @@ with portfolio_tab:
                         if r.get("unavailable")
                     ]
                     if unavailable:
-                        st.warning(f"Monthly withdrawal schedule unavailable: {unavailable[0].get('reason', 'required annual return data is unavailable')}")
+                        st.warning(f"Monthly withdrawal schedule unavailable: {unavailable[0].get('reason', 'required actual monthly return data is unavailable')}")
                     else:
                         st.markdown("<div class='portfolio-analytics-title'>MONTHLY WITHDRAWAL — REBALANCED VS NOT REBALANCED</div>", unsafe_allow_html=True)
                         st.caption(
@@ -3233,7 +3333,7 @@ with portfolio_tab:
                         st.markdown("<div class='portfolio-analytics-title'>PORTFOLIO INFORMATION & PERFORMANCE TABLE</div>", unsafe_allow_html=True)
                         st.caption(
                             "10-year CAGR is calculated from the 10 completed calendar-year returns when all 10 are available. "
-                            "Positive months counts actual adjusted month-end returns above 0% within the active completed-year simulation window (up to 120 months). "
+                            "Positive months counts actual adjusted month-end returns above 0% within the active completed-year simulation window (up to the actual months available for the selected horizon). "
                             "Regular yield is a trailing Yahoo dividend/distribution yield estimate. Est. annual dividend = allocated dollars × regular yield; it is not a forecast."
                         )
                         portfolio_analytics_df = _portfolio_analytics_dataframe(portfolio_analytics)
@@ -3359,6 +3459,8 @@ with portfolio_tab:
                     "cagr_10y_pct": analytics.get("cagr_10y_pct"),
                     "positive_years": int(analytics.get("positive_years") or 0),
                     "available_years": int(analytics.get("available_years") or 0),
+                    "positive_months": (int(analytics.get("positive_months")) if analytics.get("positive_months") is not None else None),
+                    "available_months": (int(analytics.get("available_months")) if analytics.get("available_months") is not None else None),
                     "worst_year": analytics.get("worst_year"),
                     "worst_year_pct": analytics.get("worst_year_pct"),
                     "best_year": analytics.get("best_year"),
@@ -3385,6 +3487,11 @@ with portfolio_tab:
                 "total_return": float(total_return),
                 "instrument_count": len(saved_instruments),
                 "instruments": saved_instruments,
+                "effective_calendar_years": list(effective_portfolio_years or []),
+                "monthly_positive_months_rebalanced": int(portfolio_monthly_withdrawal_rebalanced_result.get("positive_months") or 0) if portfolio_monthly_withdrawals_enabled else None,
+                "monthly_positive_months_not_rebalanced": int(portfolio_monthly_withdrawal_not_rebalanced_result.get("positive_months") or 0) if portfolio_monthly_withdrawals_enabled else None,
+                "monthly_months_modeled_rebalanced": int(portfolio_monthly_withdrawal_rebalanced_result.get("months_modeled") or 0) if portfolio_monthly_withdrawals_enabled else None,
+                "monthly_months_modeled_not_rebalanced": int(portfolio_monthly_withdrawal_not_rebalanced_result.get("months_modeled") or 0) if portfolio_monthly_withdrawals_enabled else None,
                 "annual_withdrawals_enabled": bool(portfolio_withdrawals_enabled),
                 "annual_withdrawal_amount": float(portfolio_annual_withdrawal or 0) if portfolio_withdrawals_enabled else 0.0,
                 # Legacy fields intentionally retain the not-rebalanced path for backward compatibility.
@@ -3409,7 +3516,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v11 - PDF version + positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v13 - 25Y annual returns + repaired positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -3548,11 +3655,11 @@ with market_tab:
     with sim_cols[1]:
         investment_period_choice = st.segmented_control(
             "Investment period",
-            ["YTD", *[f"{i}Y" for i in range(1, 21)]],
-            default=(_query_scalar_early("sim_period", "10Y") if _query_scalar_early("sim_period", "10Y") in ["YTD", *[f"{i}Y" for i in range(1, 21)]] else "10Y"),
+            ["YTD", *[f"{i}Y" for i in range(1, 26)]],
+            default=(_query_scalar_early("sim_period", "10Y") if _query_scalar_early("sim_period", "10Y") in ["YTD", *[f"{i}Y" for i in range(1, 26)]] else "10Y"),
             key="investment_period_choice",
             format_func=timeframe_display_label,
-            help="Choose YTD only, or compound 1–20 of the most recent completed calendar years.",
+            help="Choose YTD only, or compound 1–25 of the most recent completed calendar years.",
         )
         investment_period_choice = str(investment_period_choice or "10Y")
         investment_is_ytd = investment_period_choice == "YTD"
@@ -3563,12 +3670,12 @@ with market_tab:
             value=_query_scalar_early("include_ytd", "1").lower() in {"1", "true", "yes"},
             key="include_current_ytd",
             disabled=investment_is_ytd,
-            help="For 1Y–20Y selections, apply the current YTD return after the completed calendar years. YTD-only always uses YTD by itself.",
+            help="For 1Y–25Y selections, apply the current YTD return after the completed calendar years. YTD-only always uses YTD by itself.",
         )
         include_current_ytd = True if investment_is_ytd else bool(include_current_ytd_toggle)
     with sim_cols[3]:
         st.caption(
-            "Investment years: choose YTD for a current-year-only profit calculation, or 1–20 completed calendar years for historical compounding. "
+            "Investment years: choose YTD for a current-year-only profit calculation, or 1–25 completed calendar years for historical compounding. "
             "You can also tap any return period/year inside an individual card to calculate profit for that exact period using this dollar amount."
         )
 
@@ -3590,7 +3697,7 @@ with market_tab:
 
         st.markdown(
             "<div class='navigator-title'><span>MARKET NAVIGATOR</span>"
-            "<small>Every card shows short-horizon + 20 calendar-year returns • tap News for catalysts or Open for yearly charts</small></div>",
+            "<small>Every card shows short-horizon + 25 calendar-year returns • tap News for catalysts or Open for yearly charts</small></div>",
             unsafe_allow_html=True,
         )
 
@@ -3642,7 +3749,7 @@ with market_tab:
                 if pd.isna(value) or not np.isfinite(value):
                     break
                 newest_to_oldest.append((year, float(value)))
-            years_requested = max(1, min(20, int(years_requested)))
+            years_requested = max(1, min(25, int(years_requested)))
             if len(newest_to_oldest) < years_requested:
                 return None
             newest_to_oldest = newest_to_oldest[:years_requested]
@@ -4128,7 +4235,7 @@ with market_tab:
                 if pd.isna(value) or not np.isfinite(value):
                     break
                 newest_to_oldest.append((year, float(value)))
-            years_requested = max(1, min(20, int(years_requested)))
+            years_requested = max(1, min(25, int(years_requested)))
             if len(newest_to_oldest) < years_requested:
                 return {"insufficient": True, "available_years": len(newest_to_oldest), "requested_years": years_requested}
             newest_to_oldest = newest_to_oldest[:years_requested]
@@ -4440,13 +4547,13 @@ with market_tab:
 
             st.markdown("#### Year-by-year historical chart")
             current_year = int(now_et().year)
-            chart_year_options = [str(current_year - offset) for offset in range(0, 21)]
+            chart_year_options = [str(current_year - offset) for offset in range(0, 26)]
             chart_year = st.segmented_control(
                 "Chart year",
                 chart_year_options,
                 default=str(current_year),
                 key=f"chart_year_{selected}",
-                help="Choose the current year or any of the prior 20 calendar years. The graph and summary metrics update to that year only.",
+                help="Choose the current year or any of the prior 25 calendar years. The graph and summary metrics update to that year only.",
             )
             selected_chart_year = int(chart_year or current_year)
             with st.spinner(f"Loading {selected} history for {selected_chart_year}..."):
@@ -4499,7 +4606,7 @@ with market_tab:
                     height=1,
                 )
         else:
-            st.info("Choose an instrument card to open its full short-horizon and 20-calendar-year performance view.")
+            st.info("Choose an instrument card to open its full short-horizon and 25-calendar-year performance view.")
 
 
 
@@ -4899,7 +5006,7 @@ with compare_tab:
                 current_year = int(now_et().year)
                 compare_chart_year = st.segmented_control(
                     "Comparison chart year",
-                    [str(current_year - offset) for offset in range(0, 21)],
+                    [str(current_year - offset) for offset in range(0, 26)],
                     default=str(current_year),
                     key=f"compare_chart_year_{comparison_detail_symbol}",
                 )
@@ -5101,7 +5208,7 @@ with sector_tab:
 
             st.markdown(f"#### {drill_sector} · Top Performers")
             st.caption("Tap a timeframe below to re-rank stocks and recalculate Total Profit / Total Profit %. The table shows short-period returns plus each completed calendar year as a standalone annual return (not compounded).")
-            timeframe_options = ["1D", "1M", "3M", "6M", "YTD", *[f"{i}Y" for i in range(1, 21)]]
+            timeframe_options = ["1D", "1M", "3M", "6M", "YTD", *[f"{i}Y" for i in range(1, 26)]]
             tf_key = f"sector_profit_timeframe_{key_suffix}"
             default_tf = str(st.session_state.get(tf_key) or sector_sort_period or "YTD")
             if default_tf not in timeframe_options:
@@ -5141,7 +5248,7 @@ with sector_tab:
                     return numeric.reindex(frame.index).astype("float64")
                 return pd.Series(float(numeric) if pd.notna(numeric) else np.nan, index=frame.index, dtype="float64")
 
-            # v5.9.35: sector drill-down periods 1Y-20Y are derived cumulative returns,
+            # v5.9.35: sector drill-down periods 1Y-25Y are derived cumulative returns,
             # not literal snapshot columns. The source snapshot stores completed calendar-year
             # returns (for example 2025, 2024, ...), so trying to read a literal "6Y" column
             # previously produced NaN/None for every stock. Compound the latest N completed
@@ -5152,7 +5259,7 @@ with sector_tab:
                 if timeframe in {"1D", "1M", "3M", "6M", "YTD"}:
                     return _sector_numeric_series(frame, timeframe)
                 if timeframe.endswith("Y") and timeframe[:-1].isdigit():
-                    years = max(1, min(20, int(timeframe[:-1])))
+                    years = max(1, min(25, int(timeframe[:-1])))
                     annual_cols = list(YEAR_RETURN_COLS[:years])
                     if len(annual_cols) < years:
                         return pd.Series(np.nan, index=frame.index, dtype="float64")
@@ -5174,13 +5281,13 @@ with sector_tab:
             drill_table = drill.copy()
             drill_table["Logo"] = drill_table["Symbol"].astype(str).str.upper().map(lambda sym: drill_logo_urls.get(sym, ""))
 
-            # v5.9.35: keep the profit/ranking selector on 1D/1M/3M/6M/YTD + 1Y-20Y,
+            # v5.9.35: keep the profit/ranking selector on 1D/1M/3M/6M/YTD + 1Y-25Y,
             # but show true NON-COMPOUNDED calendar-year returns in the table. This avoids
             # presenting 2Y/3Y/... cells as if they were individual annual returns. The annual
             # columns are the snapshot's completed years (2025, 2024, ...), each representing
             # that single calendar year's actual return for the stock.
             short_return_cols = ["1D", "1M", "3M", "6M", "YTD"]
-            annual_return_cols = list(YEAR_RETURN_COLS[:20])
+            annual_return_cols = list(YEAR_RETURN_COLS[:25])
             for timeframe in short_return_cols:
                 drill_table[timeframe] = _sector_numeric_series(drill_table, timeframe)
             for year_col in annual_return_cols:
@@ -5294,14 +5401,14 @@ with alerts_tab:
     - **ETF analyst rating:** Nasdaq's public ETF screener does not expose the same stock-style analyst consensus. MarketScope shows **Not Rated** unless the Nasdaq ETF response itself provides a genuine analyst/recommendation field; it does not relabel a fund score or momentum signal as analyst consensus.
     - **Rating colors:** Strong Buy/Buy = green; Hold = yellow; Sell/Strong Sell = red; Not Rated = gray.
     - **Returns:** Yahoo/yfinance adjusted daily market history. 1D/1M/3M/6M/YTD are point-to-point adjusted returns. The twenty year-labeled fields are **actual completed calendar-year returns**, calculated from the adjusted close at the end of the prior year to the adjusted close at the end of that year. They are not CAGR. Stocks do not have NAV. ETF NAV is not shown in the cards; ETF returns use adjusted market history.
-    - **Investment simulator:** choose an investment amount and **YTD or 1–20 completed years**. YTD calculates profit from the current saved YTD return only. The 1Y–20Y choices remain available at all times; when a selected instrument did not exist for the full requested span, MarketScope automatically starts at the first completed year shared by every selected instrument and uses up to the requested number of common years. The optional current-YTD toggle can then extend that result through today. Every 1D/1M/3M/6M/YTD/calendar-year tile inside a card is also clickable and shows the dollar ending value and profit for that exact return period.
+    - **Investment simulator:** choose an investment amount and **YTD or 1–25 completed years**. YTD calculates profit from the current saved YTD return only. The 1Y–25Y choices remain available at all times; when a selected instrument did not exist for the full requested span, MarketScope automatically starts at the first completed year shared by every selected instrument and uses up to the requested number of common years. The optional current-YTD toggle can then extend that result through today. Every 1D/1M/3M/6M/YTD/calendar-year tile inside a card is also clickable and shows the dollar ending value and profit for that exact return period.
     - **Card / Table tabs:** Card View preserves the interactive futuristic cards. Table View shows all currently filtered instruments in one dense table with all current performance, rating, target, signal and selected investment-simulation fields. You can use the explicit table sort controls or click any column header to sort interactively.
     - **Unlimited Stock & ETF Comparison:** use the single searchable **Stocks & ETFs to compare** selector in the Comparison tab to add or remove instruments. There is no selection cap. Once selected, MarketScope retrieves the instrument logo from Yahoo/company metadata when available and shows it on Comparison Cards and in the Comparison Table. Cards paginate 12 at a time and now mirror Market Navigator Card View: 2-year mini chart, clickable return/profit tiles, investment simulation, analyst targets, rating/signal badges, News, ETF Holdings, and full detail/live/year charts. Comparison Table shows the full selected set with all current performance periods, ratings, available stock targets, signals and selected investment-simulation results.
-    - **Portfolio split simulator:** enter a total amount (default $200,000), select multiple tracked stocks/ETFs, choose equal split or custom percentages, and select YTD or a 1Y–20Y historical horizon. MarketScope calculates each allocation independently, then totals the simulated ending value and profit. Pre-IPO/pre-inception history is never fabricated; the simulation begins at the first completed year common to every selected instrument. Outside the optional Yearly/Monthly withdrawal modes, no deposits, withdrawals, taxes, fees, or future returns are assumed. Monthly withdrawal mode uses actual adjusted month-end returns calculated from historical Yahoo/yfinance market prices; annual returns are never divided into synthetic monthly rates.
+    - **Portfolio split simulator:** enter a total amount (default $200,000), select multiple tracked stocks/ETFs, choose equal split or custom percentages, and select YTD or a 1Y–25Y historical horizon. MarketScope calculates each allocation independently, then totals the simulated ending value and profit. Pre-IPO/pre-inception history is never fabricated; the simulation begins at the first completed year common to every selected instrument. Outside the optional Yearly/Monthly withdrawal modes, no deposits, withdrawals, taxes, fees, or future returns are assumed. Monthly withdrawal mode uses actual adjusted month-end returns calculated from historical Yahoo/yfinance market prices; annual returns are never divided into synthetic monthly rates.
     - **News Impact:** the News button performs an on-demand Yahoo Finance news search for that symbol and shows up to three recent (7-day) headlines only when rule-based fundamental language produces a clear positive or negative directional read. Green ▲ means a positive fundamental catalyst; red ▼ means a negative fundamental catalyst. This is context, not a prediction or guarantee. Neutral/ambiguous stories are not forced into an UP/DOWN label.
     - **Live chart:** opening a card loads a Yahoo Finance/yfinance intraday chart for that one instrument and refreshes the chart about every 60 seconds while it remains open. Yahoo/exchange delays can apply, so it is near-real-time rather than an exchange-direct tick feed.
     - **Analyst price targets:** stock cards show Yahoo analyst **Low / Average / High** target prices when available. ETFs remain blank because stock-style analyst price-target ranges are not consistently available for funds. These are analyst estimates, not guaranteed outcomes.
-    - **Year chart:** below the live chart, opening a card lets you choose the current year or any of the prior 20 calendar years. The plotted adjusted daily closes and the chart summary update to the selected year only.
+    - **Year chart:** below the live chart, opening a card lets you choose the current year or any of the prior 25 calendar years. The plotted adjusted daily closes and the chart summary update to the selected year only.
     - **Persistent data:** the daily GitHub Action commits `data/default_universe.csv`, `data/market_snapshot.csv`, and `data/snapshot_metadata.json`. Render serves the local snapshot immediately; GitHub is the durable source of truth.
     - **Manual persistence:** configure the Render secret `MARKETSCOPE_GITHUB_TOKEN` (fine-grained token, Contents read/write on this repository) so manual refreshes and manually added symbols are committed to the same persistent snapshot.
     - **Signals:** Short Buy is a rule-based technical signal using SMA20/SMA50, MACD, RSI and 1M/3M momentum. Long Buy uses long-trend technical rules plus Nasdaq Buy/Strong Buy consensus for stocks; ETFs use technical criteria because stock-style analyst consensus is generally unavailable. A Nasdaq Strong Buy is treated as a fundamental/consensus buy signal for stocks.

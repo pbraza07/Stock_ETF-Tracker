@@ -1,0 +1,11 @@
+{
+  "method": "Historical recession-defense screen using annual MarketScope adjusted returns",
+  "official_recession_source": "https://www.nber.org/research/data/us-business-cycle-expansions-and-contractions",
+  "official_periods": [
+    "March-November 2001",
+    "December 2007-June 2009",
+    "February-April 2020"
+  ],
+  "annual_stress_years": [2001, 2008, 2009, 2020],
+  "notes": "Annual stress years are used only when a stock has a genuine annual return for that year. This is a historical resilience screen, not a guarantee of future recession performance."
+}

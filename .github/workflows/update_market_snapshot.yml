@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.47)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.51)
 # Preserves the validated max-history refresh contract introduced in (v5.9.5).
 
 on:
@@ -16,6 +16,8 @@ on:
       - 'data/monthly_returns_10y.csv'
       - 'data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
       - 'data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
+      - 'data/top100_recession_balanced_rebalanced_10y.csv'
+      - 'data/top100_recession_balanced_not_rebalanced_10y.csv'
   schedule:
     - cron: '0 18 * * *'
       timezone: 'America/New_York'
@@ -57,11 +59,14 @@ jobs:
       - name: Build actual 10Y monthly withdrawal rankings
         run: python scripts/build_actual_monthly_rankings.py
 
+      - name: Build recession-balanced 10Y rankings
+        run: python scripts/build_recession_rankings.py
+
       - name: Commit refreshed persistent data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/default_universe.csv data/market_snapshot.csv data/snapshot_metadata.json data/universe_metadata.json data/monthly_returns_10y.csv data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv
+          git add data/default_universe.csv data/market_snapshot.csv data/snapshot_metadata.json data/universe_metadata.json data/monthly_returns_10y.csv data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv data/top100_recession_balanced_rebalanced_10y.csv data/top100_recession_balanced_not_rebalanced_10y.csv
           if git diff --cached --quiet; then
             echo "No universe/snapshot changes to commit."
           else

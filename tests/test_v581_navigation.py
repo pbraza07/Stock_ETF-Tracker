@@ -33,7 +33,7 @@ def test_open_instrument_loads_chart_and_scrolls_once():
 def test_mobile_year_order_is_explicit_and_responsive():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     css = (ROOT / "styles.css").read_text(encoding="utf-8")
-    assert 'chart_year_options = [str(current_year - offset) for offset in range(0, 21)]' in app
+    assert 'chart_year_options = [str(current_year - offset) for offset in range(0, 26)]' in app
     assert 'def _detail_performance_html' in app
     assert 'detail-performance-grid' in css
     assert 'grid-template-columns: repeat(2' in css

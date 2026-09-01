@@ -97,6 +97,7 @@ def _evaluate_chunk(combo_idx: np.ndarray, factors: np.ndarray) -> tuple[np.ndar
 
 def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months: list[str], rebalance: bool) -> dict:
     year_end: dict[str, float] = {}
+    year_return_factor: dict[str, float] = {}
     total_withdrawn = 0.0
     months_funded = 0
     positive_months = 0
@@ -105,6 +106,7 @@ def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months:
         balance = STARTING_VALUE
         for month_idx, label in enumerate(months):
             monthly_factor = float(factors[list(combo), month_idx].mean())
+            year_return_factor[label[:4]] = year_return_factor.get(label[:4], 1.0) * monthly_factor
             if monthly_factor > 1.0:
                 positive_months += 1
             before = balance * monthly_factor
@@ -123,6 +125,8 @@ def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months:
             starting_balance = float(holdings.sum())
             holdings *= factors[list(combo), month_idx]
             before = float(holdings.sum())
+            monthly_factor = (before / starting_balance) if starting_balance > 0 else 1.0
+            year_return_factor[label[:4]] = year_return_factor.get(label[:4], 1.0) * monthly_factor
             if starting_balance > 0 and before > starting_balance:
                 positive_months += 1
             if before < MONTHLY_WITHDRAWAL:
@@ -145,6 +149,7 @@ def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months:
         "total_withdrawn": float(total_withdrawn),
         "months_funded": int(months_funded),
         "positive_months": int(positive_months),
+        "annual_returns": {year: (factor - 1.0) * 100.0 for year, factor in year_return_factor.items()},
     }
 
 
@@ -161,15 +166,29 @@ def _build_output(
         sim = _simulate_one(combo, factors, months, rebalance)
         stocks = [str(frame.iloc[i]["Symbol"]) for i in combo]
         sectors = [str(frame.iloc[i]["Sector"]) for i in combo]
+        names = [str(frame.iloc[i].get("Name") or stocks[pos]) for pos, i in enumerate(combo)]
         row = {
             "Rank": rank,
             "Combo": " + ".join(stocks),
             "Strategy": strategy,
         }
-        for pos, (stock, sector) in enumerate(zip(stocks, sectors), start=1):
+        for pos, (stock, sector, name) in enumerate(zip(stocks, sectors, names), start=1):
             row[f"Stock {pos}"] = stock
             row[f"Sector {pos}"] = sector
-        for year in sorted({m[:4] for m in months}):
+            row[f"Name {pos}"] = name
+        year_list = sorted({m[:4] for m in months})
+        for year in reversed(year_list):
+            row[year] = sim["annual_returns"].get(year, np.nan)
+        annual_values = [(year, sim["annual_returns"].get(year)) for year in year_list]
+        annual_values = [(year, value) for year, value in annual_values if value is not None and np.isfinite(value)]
+        if annual_values:
+            worst_year, worst_value = min(annual_values, key=lambda item: item[1])
+            best_year, best_value = max(annual_values, key=lambda item: item[1])
+            row["Worst Year"] = worst_year
+            row["Worst Year %"] = worst_value
+            row["Best Year"] = best_year
+            row["Best Year %"] = best_value
+        for year in year_list:
             row[f"{year} Ending Balance ($)"] = sim["year_end"].get(year, np.nan)
         row.update({
             "Starting Value ($)": STARTING_VALUE,
@@ -204,7 +223,7 @@ def main() -> None:
     numeric = raw[months].apply(pd.to_numeric, errors="coerce")
     mask &= numeric.notna().all(axis=1)
     mask &= np.isfinite(numeric.to_numpy(dtype="float64", na_value=np.nan)).all(axis=1)
-    eligible = raw.loc[mask, ["Symbol", "Sector", *months]].copy().reset_index(drop=True)
+    eligible = raw.loc[mask, ["Symbol", "Name", "Sector", *months]].copy().reset_index(drop=True)
     returns = eligible[months].apply(pd.to_numeric, errors="coerce").to_numpy(dtype="float64") / 100.0
     factors = 1.0 + returns
     valid_factor = np.isfinite(factors).all(axis=1) & (factors > 0).all(axis=1)

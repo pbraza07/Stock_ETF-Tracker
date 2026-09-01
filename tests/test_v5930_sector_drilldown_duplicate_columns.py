@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 def test_v5932_release():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.48"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.51"
 
 def test_sector_drilldown_columns_are_unique():
     assert "drill_cols = list(dict.fromkeys([" in APP

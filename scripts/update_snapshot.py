@@ -30,7 +30,7 @@ MONTHLY_OUT = BASE_DIR / "data" / "monthly_returns_10y.csv"
 HISTORY_PERIOD = os.getenv("MARKETSCOPE_HISTORY_PERIOD", "max")
 BATCH_SIZE = max(10, int(os.getenv("MARKETSCOPE_BATCH_SIZE", "80")))
 PAUSE_SECONDS = float(os.getenv("MARKETSCOPE_BATCH_PAUSE", "0.35"))
-YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=20)
+YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)
 MONTHLY_RANK_YEARS = completed_year_labels(as_of=now_et(), years=10)
 MONTHLY_START_YEAR = min(int(y) for y in MONTHLY_RANK_YEARS)
 MONTHLY_END_YEAR = max(int(y) for y in MONTHLY_RANK_YEARS)
@@ -202,7 +202,7 @@ def main() -> None:
                 continue
 
             perf = calculate_performance(hist)
-            annual_returns = calculate_calendar_year_returns(hist, years=20)
+            annual_returns = calculate_calendar_year_returns(hist, years=25)
             monthly_returns = calculate_monthly_returns(hist, MONTHLY_START_YEAR, MONTHLY_END_YEAR)
             monthly_rows[symbol] = {
                 "Symbol": symbol,

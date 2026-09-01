@@ -5,14 +5,15 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_text(encoding="utf-8")
 
 def test_version_5947():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.48"
-    assert "v5.9.48" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.51"
+    assert "v5.9.51" in APP
 
 def test_monthly_dropdowns_explicitly_use_actual_return_rankings():
-    assert "Top 100 — Rebalanced Monthly (Actual Returns)" in APP
-    assert "Top 100 — Not Rebalanced Monthly (Actual Returns)" in APP
+    assert 'st.popover("🗓️ 10Y Actual-Monthly Withdrawal"' in APP
+    assert "Rebalanced Monthly" in APP
+    assert "Not Rebalanced Monthly" in APP
     assert "_load_actual_monthly_ranked_combo_file" in APP
-    assert "annual-derived monthly rankings as substitutes" in APP
+    assert "Actual adjusted month-end returns from Yahoo/yfinance daily history" in APP
 
 def test_monthly_assumptions_remain_300k_5k_10y_and_hwm_excluded():
     assert "COMBO_WITHDRAWAL_START = 300_000.0" in APP

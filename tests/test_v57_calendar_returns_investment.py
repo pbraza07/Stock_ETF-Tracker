@@ -43,7 +43,7 @@ def test_app_has_dollar_investment_simulator_and_year_sorting():
 def test_snapshot_uses_max_history_and_dynamic_year_columns():
     script = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
     assert 'MARKETSCOPE_HISTORY_PERIOD", "max"' in script
-    assert 'YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=20)' in script
+    assert 'YEAR_RETURN_COLS = completed_year_labels(as_of=now_et(), years=25)' in script
     assert '**{year: as_percent(annual_returns.get(year)) for year in YEAR_RETURN_COLS}' in script
 
 

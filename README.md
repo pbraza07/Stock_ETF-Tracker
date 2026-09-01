@@ -1,3 +1,11 @@
+# MarketScope v5.9.51 — Compact Ranking Buttons + Recession-Balanced Portfolios
+
+Portfolio Simulator ranking families are now hidden behind separate buttons. A new Recession-Balanced Top 100 provides Rebalanced and Not-Rebalanced four-stock portfolios with two Profit Engine stocks and two historically Recession-Defense stocks, all from different sectors. Detailed Rebalanced/Not-Rebalanced tables now use the same full-field contract as the 10Y $300K / $85K yearly-withdrawal ranking.
+
+# MarketScope v5.9.50 - 25-Year Annual Return Coverage
+
+MarketScope now supports **25 completed calendar years of annual-return history app-wide**. In 2026 that means 2025 through 2001 where genuine adjusted-price history exists. Investment/portfolio/sector horizon controls now run from **1Y through 25Y**, while the existing 5Y/10Y ranked-combination products retain their intended ranking windows.
+
 ## MarketScope v5.9.40
 
 Portfolio Simulator PDFs include Rebalanced vs Not-Rebalanced annual withdrawal results, side-by-side yearly balances, and detailed schedules for both strategies.
@@ -241,3 +249,7 @@ Portfolio Simulator supports separate Yearly withdrawal and Monthly withdrawal m
 ## v5.9.48 - PDF version + Positive Months
 
 Portfolio Simulator PDFs now show the active MarketScope version on page 1. Portfolio Simulator tables also show positive-month counts calculated from actual adjusted month-end returns. Monthly Top 100 ranking files persist `Positive Months` after the next scheduled refresh, while older actual-monthly ranking files are enriched on display for compatibility.
+
+## v5.9.49 - Positive Months repair
+
+Portfolio Simulator monthly withdrawal results now persist the actual portfolio positive-month count instead of allowing a missing field to display as zero. Monthly Top 100 tables show Positive Months prominently as `count/months funded`, and Portfolio Simulator PDFs show positive-month counts on page 1, on the monthly strategy-comparison page, and in the instrument analytics table. Existing v5.9.48 saved monthly schedules are repaired during PDF rebuild.

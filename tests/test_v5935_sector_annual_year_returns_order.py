@@ -5,15 +5,15 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_v5935_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.48"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.51"
 
 
-def test_profit_timeframe_options_are_strict_numeric_1_to_20():
-    assert 'timeframe_options = ["1D", "1M", "3M", "6M", "YTD", *[f"{i}Y" for i in range(1, 21)]]' in APP
+def test_profit_timeframe_options_are_strict_numeric_1_to_25():
+    assert 'timeframe_options = ["1D", "1M", "3M", "6M", "YTD", *[f"{i}Y" for i in range(1, 26)]]' in APP
 
 
 def test_table_displays_calendar_year_returns_as_individual_annual_returns():
-    assert 'annual_return_cols = list(YEAR_RETURN_COLS[:20])' in APP
+    assert 'annual_return_cols = list(YEAR_RETURN_COLS[:25])' in APP
     assert 'drill_table[year_col] = _sector_numeric_series(drill_table, year_col)' in APP
     assert 'column_order=drill_cols' in APP
 
