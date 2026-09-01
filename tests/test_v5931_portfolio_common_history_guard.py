@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 def test_version_5932():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.47"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.48"
 
 def test_portfolio_keeps_1_to_20_year_choices_and_uses_common_start():
     assert 'portfolio_period_options = ["YTD", *[f"{i}Y" for i in range(1, 21)]]' in APP

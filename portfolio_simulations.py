@@ -277,6 +277,13 @@ def _combined_portfolio_metrics(record: dict) -> dict:
     }
 
 
+def _marketscope_version() -> str:
+    try:
+        return (Path(__file__).resolve().parent / "VERSION.txt").read_text(encoding="utf-8").strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+
 def build_portfolio_simulation_pdf(record: dict) -> bytes:
     """Build the MarketScope saved portfolio PDF with a legible combined first page."""
     buf = BytesIO()
@@ -331,6 +338,10 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     c.setFillColor(accent)
     c.setFont("Helvetica-Bold", 20)
     c.drawCentredString(lwidth / 2, lheight - 36, "PORTFOLIO SPLIT SIMULATOR")
+    pdf_version = str(record.get("app_version") or _marketscope_version())
+    c.setFillColor(muted)
+    c.setFont("Helvetica-Bold", 7.2)
+    c.drawRightString(lwidth - 26, lheight - 36, f"MarketScope v{pdf_version}")
     c.setFillColor(muted)
     c.setFont("Helvetica", 8.5)
     meta = (
@@ -1011,7 +1022,12 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
 
         c.setFillColor(muted)
         c.setFont("Helvetica", 6.4)
-        c.drawString(24, 35, f"Total withdrawn - Rebalanced: {_money(mrb_total)} | Not rebalanced: {_money(mnr_total)} | Full monthly schedules follow.")
+        mrb_positive = int(_withdrawal_metric(mrb_result, "positive_months", sum(1 for row in mrb_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
+        mnr_positive = int(_withdrawal_metric(mnr_result, "positive_months", sum(1 for row in mnr_schedule if float(row.get("portfolio_return_pct") or 0) > 0)) or 0)
+        c.drawString(
+            24, 35,
+            f"Positive months - Rebalanced: {mrb_positive}/{len(mrb_schedule)} | Not rebalanced: {mnr_positive}/{len(mnr_schedule)} | Total withdrawn: {_money(mrb_total)} / {_money(mnr_total)}"
+        )
         draw_footer(
             lwidth,
             page_no,

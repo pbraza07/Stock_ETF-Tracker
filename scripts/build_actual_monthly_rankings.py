@@ -99,11 +99,15 @@ def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months:
     year_end: dict[str, float] = {}
     total_withdrawn = 0.0
     months_funded = 0
+    positive_months = 0
 
     if rebalance:
         balance = STARTING_VALUE
         for month_idx, label in enumerate(months):
-            before = balance * float(factors[list(combo), month_idx].mean())
+            monthly_factor = float(factors[list(combo), month_idx].mean())
+            if monthly_factor > 1.0:
+                positive_months += 1
+            before = balance * monthly_factor
             if before < MONTHLY_WITHDRAWAL:
                 balance = max(0.0, before)
                 break
@@ -116,8 +120,11 @@ def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months:
     else:
         holdings = np.full(4, STARTING_VALUE / 4.0, dtype="float64")
         for month_idx, label in enumerate(months):
+            starting_balance = float(holdings.sum())
             holdings *= factors[list(combo), month_idx]
             before = float(holdings.sum())
+            if starting_balance > 0 and before > starting_balance:
+                positive_months += 1
             if before < MONTHLY_WITHDRAWAL:
                 remaining = max(0.0, before)
                 holdings[:] = 0.0
@@ -137,6 +144,7 @@ def _simulate_one(combo: tuple[int, int, int, int], factors: np.ndarray, months:
         "remaining": float(remaining),
         "total_withdrawn": float(total_withdrawn),
         "months_funded": int(months_funded),
+        "positive_months": int(positive_months),
     }
 
 
@@ -170,6 +178,7 @@ def _build_output(
             "Remaining Balance ($)": sim["remaining"],
             "Net Value incl. Withdrawals ($)": sim["remaining"] + sim["total_withdrawn"],
             "Net Profit incl. Withdrawals ($)": sim["remaining"] + sim["total_withdrawn"] - STARTING_VALUE,
+            "Positive Months": sim["positive_months"],
             "Months Funded": sim["months_funded"],
             "HWM Excluded": True,
             "Monthly Return Method": METHOD,

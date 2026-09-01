@@ -48,6 +48,14 @@ from providers.nasdaq import NasdaqScreenerProvider
 from universe import is_render_runtime, load_default_universe
 
 BASE_DIR = Path(__file__).resolve().parent
+
+def _marketscope_version() -> str:
+    try:
+        return (BASE_DIR / "VERSION.txt").read_text(encoding="utf-8").strip() or "unknown"
+    except Exception:
+        return "unknown"
+
+MARKETSCOPE_VERSION = _marketscope_version()
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -96,7 +104,7 @@ PRICE_TARGET_COLS = ["Price Target Low", "Price Target Average", "Price Target H
 RATINGS = ["Strong Buy", "Buy", "Hold", "Sell", "Strong Sell", "Not Rated"]
 MIN_STOCK_MARKET_CAP = 100_000_000_000.0
 
-# v5.9.47: four-stock / four-sector rankings; monthly withdrawal rankings require actual month-end history.
+# v5.9.48: four-stock / four-sector rankings; monthly withdrawal rankings require actual month-end history.
 COMBO_5Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_5y.csv"
 COMBO_5Y_WORST_FILE = BASE_DIR / "data" / "top200_best_worst_year_5y.csv"
 COMBO_10Y_PROFIT_FILE = BASE_DIR / "data" / "top200_profit_generators_10y.csv"
@@ -393,13 +401,67 @@ def _apply_monthly_withdrawal_ranked_combo_selection(select_key: str, lookup_key
 def _monthly_withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty:
         return pd.DataFrame()
+    df = df.copy()
+
+    # v5.9.48 compatibility: enrich older actual-monthly Top 100 files that were
+    # generated before the Positive Months field existed. This lets the new table
+    # show the portfolio-level count immediately, without misusing annual returns.
+    if "Positive Months" not in df.columns:
+        symbols = []
+        for _, _row in df.iterrows():
+            for _idx in range(1, 5):
+                _sym = str(_row.get(f"Stock {_idx}") or "").strip().upper()
+                if _sym and _sym not in symbols:
+                    symbols.append(_sym)
+        _start_text = str(df.iloc[0].get("Monthly Data Start") or "").strip()
+        _end_text = str(df.iloc[0].get("Monthly Data End") or "").strip()
+        try:
+            _start_year = int(_start_text[:4])
+            _end_year = int(_end_text[:4])
+            _years = tuple(str(y) for y in range(_start_year, _end_year + 1))
+        except Exception:
+            _years = tuple(sorted(COMBO_RANK_YEARS_BY_PERIOD["10Y"]))
+        _actual = cached_actual_monthly_returns(tuple(symbols), _years) if symbols else {"unavailable": True}
+        if not _actual.get("unavailable"):
+            _month_returns = _actual.get("returns") or {}
+            _month_labels = list(_actual.get("months") or [])
+            _counts = []
+            for _, _row in df.iterrows():
+                _combo = [str(_row.get(f"Stock {_idx}") or "").strip().upper() for _idx in range(1, 5)]
+                _combo = [s for s in _combo if s]
+                _strategy = str(_row.get("Strategy") or "").lower()
+                _rebalance = _strategy.startswith("rebalanced")
+                _withdrawal = float(pd.to_numeric(pd.Series([_row.get("Monthly Withdrawal ($)")]), errors="coerce").fillna(COMBO_WITHDRAWAL_MONTHLY).iloc[0])
+                _balances = {s: COMBO_WITHDRAWAL_START / len(_combo) for s in _combo} if _combo else {}
+                _positive = 0
+                for _label in _month_labels:
+                    _start = sum(_balances.values())
+                    if _start <= 0:
+                        break
+                    for _sym in list(_balances):
+                        _balances[_sym] *= 1.0 + float((_month_returns.get(_sym) or {}).get(_label, 0.0))
+                    _before = sum(_balances.values())
+                    if _before > _start:
+                        _positive += 1
+                    _ending = max(0.0, _before - min(_withdrawal, _before))
+                    if _before > 0:
+                        _scale = _ending / _before
+                        for _sym in _balances:
+                            _balances[_sym] *= _scale
+                    if _rebalance and _ending > 0 and _balances:
+                        _equal = _ending / len(_balances)
+                        for _sym in _balances:
+                            _balances[_sym] = _equal
+                _counts.append(int(_positive))
+            df["Positive Months"] = _counts
+
     year_balance_cols = [f"{year} Ending Balance ($)" for year in range(2016, 2026)]
     cols = [
         "Rank", "Combo", "Strategy",
         *year_balance_cols,
         "Starting Value ($)", "Monthly Withdrawal ($)", "Total Withdrawn ($)",
         "Remaining Balance ($)", "Net Value incl. Withdrawals ($)",
-        "Net Profit incl. Withdrawals ($)", "Months Funded", "HWM Excluded",
+        "Net Profit incl. Withdrawals ($)", "Positive Months", "Months Funded", "HWM Excluded",
     ]
     available = [c for c in cols if c in df.columns]
     out = df[available].copy()
@@ -801,8 +863,9 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current first-page instrument data contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v10 - actual monthly returns + monthly/yearly rebalanced/not-rebalanced withdrawal results + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v11 - PDF version + positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
+    upgraded["app_version"] = MARKETSCOPE_VERSION
     if market_df is None or market_df.empty:
         upgraded["pdf_layout"] = required_layout
         return upgraded
@@ -1468,7 +1531,7 @@ def apply_dynamic_filters(df: pd.DataFrame, display_cols: List[str]) -> pd.DataF
 
 
 st.markdown(
-    """
+    f"""
 <div class="hero">
   <div class="marketscope-brand-row">
     <div class="marketscope-logo" aria-label="MarketScope logo">
@@ -1479,7 +1542,7 @@ st.markdown(
     </div>
     <div class="marketscope-brand-copy">
       <h1>MarketScope</h1>
-      <div class="marketscope-version">v5.9.47</div>
+      <div class="marketscope-version">v{MARKETSCOPE_VERSION}</div>
     </div>
   </div>
   <p>Nasdaq stocks > $100B + ETFs • actual calendar-year returns • analyst consensus • persistent cloud snapshot</p>
@@ -2133,6 +2196,7 @@ def _portfolio_annual_withdrawal_schedule(
         })
 
     remaining = sum(balances.values())
+    positive_months = sum(1 for row in schedule if float(row.get("portfolio_return_pct") or 0.0) > 0.0)
     return {
         "unavailable": False,
         "annual_withdrawal_requested": withdrawal_requested,
@@ -2140,6 +2204,8 @@ def _portfolio_annual_withdrawal_schedule(
         "ending_balance": remaining,
         "depleted_year": depleted_year,
         "schedule": schedule,
+        "positive_months": int(positive_months),
+        "months_modeled": int(len(schedule)),
         "net_value_including_withdrawals": remaining + total_withdrawn,
         "net_profit_including_withdrawals": remaining + total_withdrawn - principal,
         "strategy": "Rebalanced annually" if rebalance_after_withdrawal else "Not rebalanced",
@@ -2312,7 +2378,7 @@ def _ten_year_stats(row: pd.Series) -> dict:
     }
 
 
-def _portfolio_analytics_payload(meta_row: pd.Series, result: dict, income_metrics: dict) -> dict:
+def _portfolio_analytics_payload(meta_row: pd.Series, result: dict, income_metrics: dict, monthly_stats: dict | None = None) -> dict:
     stats = _ten_year_stats(meta_row)
     allocated = float(result.get("allocated") or 0.0)
     yield_pct = _finite_number((income_metrics or {}).get("regular_yield_pct"))
@@ -2329,6 +2395,8 @@ def _portfolio_analytics_payload(meta_row: pd.Series, result: dict, income_metri
         "cagr_10y_pct": stats.get("cagr_10y_pct"),
         "positive_years": int(stats.get("positive_years") or 0),
         "available_years": int(stats.get("available_years") or 0),
+        "positive_months": (monthly_stats or {}).get("positive_months"),
+        "available_months": (monthly_stats or {}).get("available_months"),
         "worst_year": stats.get("worst_year"),
         "worst_year_pct": stats.get("worst_year_pct"),
         "best_year": stats.get("best_year"),
@@ -2361,6 +2429,10 @@ def _portfolio_analytics_dataframe(payloads: list[dict]) -> pd.DataFrame:
             "Allocation": f"{float(item.get('allocation_pct') or 0):.2f}% / ${float(item.get('allocation_dollars') or 0):,.2f}",
             "10-year CAGR": f"{float(cagr):+.2f}%" if cagr is not None else "—",
             "Positive years": f"{int(item.get('positive_years') or 0)}/{int(item.get('available_years') or 0)}",
+            "Positive months": (
+                f"{int(item.get('positive_months'))}/{int(item.get('available_months'))}"
+                if item.get("positive_months") is not None and item.get("available_months") is not None else "—"
+            ),
             "Worst year and %": worst,
             "Best year and %": best,
             "Regular yield": f"{float(yld):.2f}%" if yld is not None else "—",
@@ -2616,7 +2688,7 @@ with portfolio_tab:
             with monthly_withdrawal_col1:
                 st.markdown("#### 🔄 Top 100 — Rebalanced Monthly (Actual Returns)")
                 if monthly_rebalance_rank.empty:
-                    st.warning("Actual-monthly 10Y rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.47.")
+                    st.warning("Actual-monthly 10Y rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.48.")
                 else:
                     lookup_key = "combo_10y_monthly_withdrawal_rebalanced_lookup"
                     picker_key = "combo_10y_monthly_withdrawal_rebalanced_picker"
@@ -2640,7 +2712,7 @@ with portfolio_tab:
             with monthly_withdrawal_col2:
                 st.markdown("#### ↗ Top 100 — Not Rebalanced Monthly (Actual Returns)")
                 if monthly_not_rebalanced_rank.empty:
-                    st.warning("Actual-monthly 10Y not-rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.47.")
+                    st.warning("Actual-monthly 10Y not-rebalanced ranking data is not available yet. Run the MarketScope refresh workflow once after deploying v5.9.48.")
                 else:
                     lookup_key = "combo_10y_monthly_withdrawal_not_rebalanced_lookup"
                     picker_key = "combo_10y_monthly_withdrawal_not_rebalanced_picker"
@@ -3009,7 +3081,7 @@ with portfolio_tab:
                             if result.get("depleted_year"):
                                 st.error(f"{label} portfolio is depleted during {result.get('depleted_year')} under this withdrawal amount; later withdrawals cannot be funded.")
 
-                # v5.9.47 - monthly withdrawal mode uses actual adjusted month-to-month
+                # v5.9.48 - monthly withdrawal mode uses actual adjusted month-to-month
                 # returns from durable monthly history, with an on-demand Yahoo daily-history fallback.
                 if portfolio_monthly_withdrawals_enabled and portfolio_monthly_withdrawal > 0 and unresolved_amount <= 0.005:
                     actual_monthly_payload = cached_actual_monthly_returns(
@@ -3057,11 +3129,16 @@ with portfolio_tab:
                         )
                         rb_end = float(portfolio_monthly_withdrawal_rebalanced_result.get("ending_balance") or 0)
                         nr_end = float(portfolio_monthly_withdrawal_not_rebalanced_result.get("ending_balance") or 0)
-                        mc1, mc2, mc3, mc4 = st.columns(4)
+                        rb_positive = int(portfolio_monthly_withdrawal_rebalanced_result.get("positive_months") or 0)
+                        nr_positive = int(portfolio_monthly_withdrawal_not_rebalanced_result.get("positive_months") or 0)
+                        rb_months = int(portfolio_monthly_withdrawal_rebalanced_result.get("months_modeled") or 0)
+                        nr_months = int(portfolio_monthly_withdrawal_not_rebalanced_result.get("months_modeled") or 0)
+                        mc1, mc2, mc3, mc4, mc5 = st.columns(5)
                         mc1.metric("Monthly withdrawal", f"${float(portfolio_monthly_withdrawal):,.2f}")
                         mc2.metric("Rebalanced remaining", f"${rb_end:,.2f}")
                         mc3.metric("Not rebalanced remaining", f"${nr_end:,.2f}")
                         mc4.metric("Rebalance difference", f"${(rb_end - nr_end):+,.2f}")
+                        mc5.metric("Positive months", f"RB {rb_positive}/{rb_months} • NR {nr_positive}/{nr_months}")
 
                         def _monthly_withdrawal_table_rows(result: dict) -> list[dict]:
                             rows = []
@@ -3115,6 +3192,20 @@ with portfolio_tab:
                 # v5.9.6 - populate the portfolio analytics table immediately after the simulation runs.
                 if portfolio_results:
                     portfolio_income_metrics = cached_income_metrics(tuple(str(s).upper() for s in selected_portfolio_symbols))
+                    analytics_monthly_stats: dict[str, dict] = {}
+                    analytics_years = tuple(str(y) for y in (effective_portfolio_years or [])[:10])
+                    if analytics_years:
+                        analytics_monthly_payload = cached_actual_monthly_returns(
+                            tuple(str(s).upper() for s in selected_portfolio_symbols),
+                            analytics_years,
+                        )
+                        if not analytics_monthly_payload.get("unavailable"):
+                            for _sym, _month_map in (analytics_monthly_payload.get("returns") or {}).items():
+                                _values = [float(v) for v in _month_map.values() if v is not None and np.isfinite(v)]
+                                analytics_monthly_stats[str(_sym).upper()] = {
+                                    "positive_months": sum(1 for v in _values if v > 0.0),
+                                    "available_months": len(_values),
+                                }
                     market_lookup_for_analytics = market.set_index(market["Symbol"].astype(str).str.upper(), drop=False)
                     portfolio_analytics = []
                     result_lookup = {str(item.get("symbol") or "").upper(): item for item in portfolio_results}
@@ -3130,13 +3221,19 @@ with portfolio_tab:
                             "allocated": float(portfolio_total) * float(portfolio_weights.get(sym, 0.0)) / 100.0,
                         }
                         portfolio_analytics.append(
-                            _portfolio_analytics_payload(meta_row, result, portfolio_income_metrics.get(sym, {}))
+                            _portfolio_analytics_payload(
+                                meta_row,
+                                result,
+                                portfolio_income_metrics.get(sym, {}),
+                                analytics_monthly_stats.get(str(sym).upper(), {}),
+                            )
                         )
 
                     if portfolio_analytics:
                         st.markdown("<div class='portfolio-analytics-title'>PORTFOLIO INFORMATION & PERFORMANCE TABLE</div>", unsafe_allow_html=True)
                         st.caption(
                             "10-year CAGR is calculated from the 10 completed calendar-year returns when all 10 are available. "
+                            "Positive months counts actual adjusted month-end returns above 0% within the active completed-year simulation window (up to 120 months). "
                             "Regular yield is a trailing Yahoo dividend/distribution yield estimate. Est. annual dividend = allocated dollars × regular yield; it is not a forecast."
                         )
                         portfolio_analytics_df = _portfolio_analytics_dataframe(portfolio_analytics)
@@ -3311,7 +3408,8 @@ with portfolio_tab:
                 "monthly_withdrawal_not_rebalanced_schedule": list(portfolio_monthly_withdrawal_not_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v10 - actual monthly returns + monthly/yearly rebalanced/not-rebalanced withdrawal results + required instrument market data on page 1",
+                "app_version": MARKETSCOPE_VERSION,
+                "pdf_layout": "MarketScope Portfolio Split Simulator v11 - PDF version + positive months + actual monthly/yearly withdrawal results + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

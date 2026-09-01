@@ -237,3 +237,7 @@ Comparison cards now mirror Market Navigator Card View functionality while prese
 
 ### v5.9.46 monthly portfolio income simulation
 Portfolio Simulator supports separate Yearly withdrawal and Monthly withdrawal modes. The monthly mode can load Top 100 four-stock, four-sector presets for a $300,000 start and $5,000 monthly cash flow over the 2016-2025 completed-year window, with HWM excluded. Every modeled month uses the actual adjusted month-end return calculated from Yahoo/yfinance daily market history. Saved PDFs include all monthly rows for both rebalanced and non-rebalanced paths.
+
+## v5.9.48 - PDF version + Positive Months
+
+Portfolio Simulator PDFs now show the active MarketScope version on page 1. Portfolio Simulator tables also show positive-month counts calculated from actual adjusted month-end returns. Monthly Top 100 ranking files persist `Positive Months` after the next scheduled refresh, while older actual-monthly ranking files are enriched on display for compatibility.
