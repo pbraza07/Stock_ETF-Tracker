@@ -21,4 +21,4 @@ def test_universe_tracks_analyst_rating_transitions():
     assert 'rating_change_preview' in APP
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.61"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.62"

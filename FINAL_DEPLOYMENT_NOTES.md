@@ -1,3 +1,7 @@
+# v5.9.62 deployment note
+
+Deploy over the existing repository. This is a UI/layout release; no market-data migration is required and live saved Portfolio Simulation JSON/PDF state remains protected. Rebuilt PDFs carry the v21/v5.9.62 layout marker on page 1.
+
 # v5.9.61 deployment note
 
 Deploy this release over the existing repository; do not delete live saved Portfolio Simulation JSON/PDF state.

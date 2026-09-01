@@ -66,7 +66,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
-# v5.9.61: monthly-withdrawal PDF yearly cash-flow reconciliation.
+# v5.9.62: monthly-withdrawal PDF yearly cash-flow reconciliation.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -1197,7 +1197,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v21 - v5.9.62 responsive yearly-withdrawal + compact simulator KPI layout + dynamic annual history + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2691,9 +2691,20 @@ def _portfolio_annual_withdrawal_schedule(
         })
 
     remaining = sum(balances.values())
+    completed_withdrawal_rows = [
+        row for row in schedule
+        if str(row.get("year") or "").strip().lower() != "ytd (partial)"
+    ]
+    withdrawals_funded = sum(
+        1
+        for row in completed_withdrawal_rows
+        if float(row.get("withdrawal") or 0.0) >= withdrawal_requested - 0.005
+    )
     return {
         "unavailable": False,
         "annual_withdrawal_requested": withdrawal_requested,
+        "withdrawals_targeted": len(selected_years),
+        "withdrawals_funded": withdrawals_funded,
         "total_withdrawn": total_withdrawn,
         "ending_balance": remaining,
         "depleted_year": depleted_year,
@@ -2953,6 +2964,98 @@ def _monthly_withdrawal_kpi_grid(
         '<div class="positive-month-lines">'
         f'<b><em>RB</em> {int(rb_positive)}/{int(rb_months)}</b>'
         f'<b><em>NR</em> {int(nr_positive)}/{int(nr_months)}</b>'
+        '</div>'
+        '</div>'
+    )
+    return '<div class="monthly-withdrawal-kpi-grid">' + "".join(html) + "</div>"
+
+
+def _portfolio_summary_kpi_grid(
+    invested: float,
+    ending_value: float,
+    profit_loss: float,
+    return_pct: float,
+) -> str:
+    """Compact responsive simulator totals using the same cards as Monthly Withdrawal."""
+    cards = [
+        ("Portfolio invested", f"${float(invested):,.2f}", ""),
+        ("Calculated ending value", f"${float(ending_value):,.2f}", "accent"),
+        (
+            "Calculated profit / loss",
+            f"${float(profit_loss):+,.2f}",
+            "positive" if float(profit_loss) >= 0 else "negative",
+        ),
+        (
+            "Calculated return",
+            f"{float(return_pct):+.2f}%",
+            "positive" if float(return_pct) >= 0 else "negative",
+        ),
+    ]
+    html = []
+    for label, value, css_class in cards:
+        html.append(
+            '<div class="monthly-withdrawal-kpi-card portfolio-summary-kpi-card">'
+            f'<span>{escape(label)}</span>'
+            f'<b class="{css_class}">{escape(value)}</b>'
+            '</div>'
+        )
+    return (
+        '<div class="monthly-withdrawal-kpi-grid portfolio-summary-kpi-grid">'
+        + "".join(html)
+        + "</div>"
+    )
+
+
+def _annual_withdrawal_funding_counts(result: dict, requested: float) -> tuple[int, int]:
+    """Return full yearly withdrawals funded / completed-year withdrawals targeted."""
+    rows = [
+        row for row in (result.get("schedule") or [])
+        if str(row.get("year") or "").strip().lower() != "ytd (partial)"
+    ]
+    target = int(result.get("withdrawals_targeted") or len(rows))
+    stored_funded = result.get("withdrawals_funded")
+    if stored_funded is not None:
+        funded = int(stored_funded)
+    else:
+        funded = sum(
+            1
+            for row in rows
+            if float(row.get("withdrawal") or 0.0) >= max(0.0, float(requested)) - 0.005
+        )
+    return funded, target
+
+
+def _annual_withdrawal_kpi_grid(
+    annual_withdrawal: float,
+    rb_end: float,
+    nr_end: float,
+    rb_funded: int,
+    rb_target: int,
+    nr_funded: int,
+    nr_target: int,
+) -> str:
+    """Yearly Withdrawal summary with the exact same five-card visual system as monthly."""
+    diff = float(rb_end) - float(nr_end)
+    cards = [
+        ("Annual withdrawal", f"${float(annual_withdrawal):,.2f}", ""),
+        ("Rebalanced remaining", f"${float(rb_end):,.2f}", "accent"),
+        ("Not rebalanced remaining", f"${float(nr_end):,.2f}", "accent"),
+        ("Rebalance difference", f"${diff:+,.2f}", "positive" if diff >= 0 else "negative"),
+    ]
+    html = []
+    for label, value, css_class in cards:
+        html.append(
+            '<div class="monthly-withdrawal-kpi-card">'
+            f'<span>{escape(label)}</span>'
+            f'<b class="{css_class}">{escape(value)}</b>'
+            '</div>'
+        )
+    html.append(
+        '<div class="monthly-withdrawal-kpi-card monthly-positive-months-card annual-funded-card">'
+        '<span>Withdrawals funded</span>'
+        '<div class="positive-month-lines">'
+        f'<b><em>RB</em> {int(rb_funded)}/{int(rb_target)}</b>'
+        f'<b><em>NR</em> {int(nr_funded)}/{int(nr_target)}</b>'
         '</div>'
         '</div>'
     )
@@ -3521,11 +3624,15 @@ with portfolio_tab:
                 total_start_calculated = sum(float(r["allocated"]) for r in calculated)
                 total_profit = total_ending - total_start_calculated
                 total_return = ((total_ending / total_start_calculated) - 1.0) * 100.0 if total_start_calculated > 0 else 0.0
-                pc1, pc2, pc3, pc4 = st.columns(4)
-                pc1.metric("Portfolio invested", f"${portfolio_total:,.2f}")
-                pc2.metric("Calculated ending value", f"${total_ending:,.2f}")
-                pc3.metric("Calculated profit / loss", f"${total_profit:+,.2f}")
-                pc4.metric("Calculated return", f"{total_return:+.2f}%")
+                st.markdown(
+                    _portfolio_summary_kpi_grid(
+                        float(portfolio_total),
+                        total_ending,
+                        total_profit,
+                        total_return,
+                    ),
+                    unsafe_allow_html=True,
+                )
                 if unresolved_amount > 0:
                     st.warning(
                         f"${unresolved_amount:,.2f} of the starting allocation could not be simulated because no common return data was available. "
@@ -3592,11 +3699,26 @@ with portfolio_tab:
                         )
                         rb_end = float(portfolio_withdrawal_rebalanced_result.get("ending_balance") or 0)
                         nr_end = float(portfolio_withdrawal_not_rebalanced_result.get("ending_balance") or 0)
-                        wc1, wc2, wc3, wc4 = st.columns(4)
-                        wc1.metric("Annual withdrawal", f"${float(portfolio_annual_withdrawal):,.2f}")
-                        wc2.metric("Rebalanced remaining", f"${rb_end:,.2f}")
-                        wc3.metric("Not rebalanced remaining", f"${nr_end:,.2f}")
-                        wc4.metric("Rebalance difference", f"${(rb_end - nr_end):+,.2f}")
+                        rb_funded, rb_target = _annual_withdrawal_funding_counts(
+                            portfolio_withdrawal_rebalanced_result,
+                            float(portfolio_annual_withdrawal),
+                        )
+                        nr_funded, nr_target = _annual_withdrawal_funding_counts(
+                            portfolio_withdrawal_not_rebalanced_result,
+                            float(portfolio_annual_withdrawal),
+                        )
+                        st.markdown(
+                            _annual_withdrawal_kpi_grid(
+                                float(portfolio_annual_withdrawal),
+                                rb_end,
+                                nr_end,
+                                rb_funded,
+                                rb_target,
+                                nr_funded,
+                                nr_target,
+                            ),
+                            unsafe_allow_html=True,
+                        )
 
                         def _withdrawal_table_rows(result: dict) -> list[dict]:
                             rows = []
@@ -3997,7 +4119,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v21 - v5.9.62 responsive yearly-withdrawal + compact simulator KPI layout + dynamic annual history + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

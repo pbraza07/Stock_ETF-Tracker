@@ -1433,3 +1433,37 @@ button[data-baseweb="tab"] {
   font-weight: 800;
   letter-spacing: .02em;
 }
+
+/* v5.9.62 — compact Portfolio Simulator totals use the same visual language as withdrawal KPIs */
+.portfolio-summary-kpi-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+  margin-bottom: 18px;
+}
+.portfolio-summary-kpi-card {
+  min-height: 92px;
+}
+.annual-funded-card .positive-month-lines b {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+@media (max-width: 1100px) {
+  .portfolio-summary-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .portfolio-summary-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .portfolio-summary-kpi-card,
+  .monthly-withdrawal-kpi-card {
+    min-height: 76px;
+    padding: 12px 14px;
+  }
+  .portfolio-summary-kpi-card > b,
+  .monthly-withdrawal-kpi-card > b {
+    font-size: clamp(1.18rem, 7vw, 1.75rem);
+  }
+}

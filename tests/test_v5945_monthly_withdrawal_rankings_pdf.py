@@ -59,7 +59,7 @@ def test_saved_record_and_pdf_contain_actual_monthly_strategy_results():
     assert "Actual adjusted month-end returns from Yahoo/yfinance daily market history." in PDF
 
 def test_pdf_layout_v10_and_persistence_protection():
-    marker = "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v21 - v5.9.62 responsive yearly-withdrawal + compact simulator KPI layout + dynamic annual history + required instrument market data on page 1"
     assert APP.count(marker) >= 2
     storage = (ROOT / "pdf_storage.py").read_text(encoding="utf-8")
     assert 'PROTECTED_SIMULATION_LIBRARY = "data/saved_portfolio_simulations.json"' in storage

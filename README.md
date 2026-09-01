@@ -1,3 +1,7 @@
+# MarketScope v5.9.62 — Responsive Yearly Withdrawal + Compact Simulator KPIs
+
+Yearly Withdrawal now uses the same responsive five-card visual system as Monthly Withdrawal, including a full RB/NR **Withdrawals Funded** card. The main Portfolio Simulator totals (Portfolio Invested, Ending Value, Profit/Loss, Return) are also responsive compact cards instead of oversized stacked native metrics on mobile.
+
 # MarketScope v5.9.61 — $160K Annual-Withdrawal Top 100
 
 Portfolio Simulator now has a dedicated **$300K start / $160K per year / 10Y** Top-100 family for Rebalanced and Not-Rebalanced portfolios. Every portfolio contains four stocks from four different sectors and each ticker is capped at five appearances across each Top 100 list. Coverage fields make it explicit when an aggressive $160K withdrawal eventually depletes a portfolio.

@@ -24,7 +24,7 @@ ET = ZoneInfo("America/New_York")
 
 
 def test_release_version_5958():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.61"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.62"
 
 
 def test_dynamic_year_count_grows_without_code_change():
@@ -103,7 +103,7 @@ def test_pdf_dynamically_paginates_annual_history():
 
 
 def test_pdf_contract_is_v17():
-    marker = "MarketScope Portfolio Split Simulator v20 - v5.9.61 160K annual-withdrawal Top100 + UI visibility/logo restore + dynamic annual history + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v21 - v5.9.62 responsive yearly-withdrawal + compact simulator KPI layout + dynamic annual history + required instrument market data on page 1"
     assert APP.count(marker) >= 2
 
 
