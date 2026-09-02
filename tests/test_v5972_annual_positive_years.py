@@ -18,8 +18,8 @@ def _functions(*names):
 
 
 def test_release_version_5972():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.74"
-    assert "v5.9.74" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.75"
+    assert "v5.9.75" in APP
 
 
 def test_annual_engine_persists_positive_years_and_years_modeled():
@@ -117,6 +117,6 @@ def test_new_saved_records_persist_positive_year_counts():
 
 def test_pdf_contract_bumped_to_v30():
     marker = (
-        'MarketScope Portfolio Split Simulator v32 - v5.9.74 annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+        'MarketScope Portfolio Split Simulator v33 - v5.9.75 persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     )
     assert APP.count(marker) >= 2

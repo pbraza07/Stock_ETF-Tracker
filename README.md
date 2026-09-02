@@ -1,3 +1,13 @@
+# MarketScope v5.9.75 — Persistent Build Simulation Withdrawal Tabs
+
+The yearly-withdrawal strategy tabs inside **Build Simulation** are now structural and remain visible even when the **Yearly withdrawal** toggle is off or the annual-withdrawal calculation is temporarily unavailable.
+
+The row always remains:
+
+**↻ Rebalanced annually | ↝ Not rebalanced | ⚖ Side-by-side | 📅 Annual Reset**
+
+When Yearly Withdrawal is disabled, the tabs stay in place and explain what must be enabled to populate their calculations.
+
 # MarketScope v5.9.74 — Annual Reset Inside Yearly Withdrawal Tabs
 
 The **📅 Annual Reset** view now sits exactly beside **⚖ Side-by-Side** inside the Build Simulation yearly-withdrawal section:

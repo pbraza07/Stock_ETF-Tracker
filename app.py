@@ -1071,7 +1071,7 @@ def load_universe_change_history() -> list[dict]:
 
 
 def _current_metadata_change_events(metadata: dict) -> list[dict]:
-    """Bridge the most recent pre-v5.9.74 metadata change into the history view."""
+    """Bridge the most recent pre-v5.9.75 metadata change into the history view."""
     if not isinstance(metadata, dict):
         return []
     stamp = str(metadata.get("refreshed_at_et") or "").strip()
@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v32 - v5.9.74 annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v33 - v5.9.75 persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2572,7 +2572,7 @@ with market_tab:
         if six_month_history.empty:
             st.info(
                 "No recorded Nasdaq universe or analyst-rating changes fall within the last six months yet. "
-                "v5.9.74 begins durable history collection and migrates the latest change still present in universe metadata."
+                "v5.9.75 begins durable history collection and migrates the latest change still present in universe metadata."
             )
         else:
             history_counts = six_month_history["Change Type"].value_counts()
@@ -4602,6 +4602,10 @@ with portfolio_tab:
                                 )
                     st.markdown("</div>", unsafe_allow_html=True)
 
+                # v5.9.75 - keep the annual strategy tab row visible inside Build Simulation
+                # even when Yearly Withdrawal is disabled or its calculation is not yet available.
+                annual_withdrawal_tabs_rendered = False
+
                 # v5.9.38 - annual withdrawals are now modeled under both portfolio-maintenance
                 # strategies so the user can compare annual rebalancing against natural weight drift.
                 if portfolio_withdrawals_enabled and portfolio_annual_withdrawal > 0 and unresolved_amount <= 0.005:
@@ -4678,6 +4682,7 @@ with portfolio_tab:
                             "⚖ Side-by-side",
                             "📅 Annual Reset",
                         ])
+                        annual_withdrawal_tabs_rendered = True
                         with rb_tab:
                             st.caption("After each completed-year withdrawal, the remaining balance is restored to the original target weights.")
                             rb_rows = _withdrawal_table_rows(portfolio_withdrawal_rebalanced_result)
@@ -4784,6 +4789,59 @@ with portfolio_tab:
                         for label, result in (("Rebalanced", portfolio_withdrawal_rebalanced_result), ("Not rebalanced", portfolio_withdrawal_not_rebalanced_result)):
                             if result.get("depleted_year"):
                                 st.error(f"{label} portfolio is depleted during {result.get('depleted_year')} under this withdrawal amount; later withdrawals cannot be funded.")
+
+                if not annual_withdrawal_tabs_rendered:
+                    # The tab row is structural UI and must never disappear. Calculations populate
+                    # once Yearly Withdrawal is active and all required portfolio data is available.
+                    rb_tab, nr_tab, compare_tab, reset_tab = st.tabs([
+                        "↻ Rebalanced annually",
+                        "↝ Not rebalanced",
+                        "⚖ Side-by-side",
+                        "📅 Annual Reset",
+                    ])
+
+                    if not portfolio_withdrawals_enabled:
+                        _annual_tab_message = (
+                            "Enable **Yearly withdrawal** above to populate the annual withdrawal calculations. "
+                            "The tabs remain visible so the Build Simulation layout never changes."
+                        )
+                    elif float(portfolio_annual_withdrawal or 0.0) <= 0:
+                        _annual_tab_message = (
+                            "Enter a **Withdrawal / year ($)** amount greater than $0 to populate these annual tables."
+                        )
+                    elif unresolved_amount > 0.005:
+                        _annual_tab_message = (
+                            "Complete the portfolio allocation/return inputs before the annual withdrawal tables can be calculated."
+                        )
+                    else:
+                        _unavailable_reason = (
+                            portfolio_withdrawal_rebalanced_result.get("reason")
+                            or portfolio_withdrawal_not_rebalanced_result.get("reason")
+                            or "Required annual return data is unavailable for the selected portfolio/window."
+                        )
+                        _annual_tab_message = f"Annual withdrawal calculation is currently unavailable: {_unavailable_reason}"
+
+                    with rb_tab:
+                        st.caption("After each completed-year withdrawal, the remaining balance is restored to the original target weights.")
+                        st.info(_annual_tab_message)
+                    with nr_tab:
+                        st.caption("After each withdrawal, holdings keep their post-return weights; no annual rebalance is performed.")
+                        st.info(_annual_tab_message)
+                    with compare_tab:
+                        st.caption("Compares the annual Rebalanced and Not-Rebalanced withdrawal paths year by year.")
+                        st.info(_annual_tab_message)
+                    with reset_tab:
+                        st.caption(
+                            "Independent annual reset test: every eligible year restarts from the same original investment "
+                            "and target allocation, then applies that year's return and the selected annual withdrawal."
+                        )
+                        if not portfolio_withdrawals_enabled:
+                            st.info(
+                                "Enable **Yearly withdrawal** above to apply the **Withdrawal / year ($)** amount "
+                                "to each independent Annual Reset row."
+                            )
+                        else:
+                            st.info(_annual_tab_message)
 
                 # v5.9.50 - monthly withdrawal mode uses actual adjusted month-to-month
                 # returns from durable monthly history, with an on-demand Yahoo daily-history fallback.
@@ -4968,7 +5026,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.74: repeat the active withdrawal outcome here so the income
+        # v5.9.75: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -5229,7 +5287,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v32 - v5.9.74 annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v33 - v5.9.75 persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5448,7 +5506,7 @@ with market_tab:
             unsafe_allow_html=True,
         )
 
-        # v5.9.74: use the same searchable dropdown interaction as Portfolio
+        # v5.9.75: use the same searchable dropdown interaction as Portfolio
         # Simulator / Comparison rather than a plain free-text filter.
         _card_search_rows = filtered.copy()
         _card_search_rows["Symbol"] = _card_search_rows["Symbol"].astype(str).str.upper().str.strip()
@@ -6513,7 +6571,7 @@ with market_tab:
             "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
         ]
-        # v5.9.74: Table View uses the same searchable multiselect dropdown
+        # v5.9.75: Table View uses the same searchable multiselect dropdown
         # behavior as Portfolio Simulator / Stock & ETF Comparison.
         _table_search_rows = table_df.copy()
         _table_search_rows["Symbol"] = _table_search_rows["Symbol"].astype(str).str.upper().str.strip()

@@ -1,3 +1,9 @@
+# v5.9.75 deployment note
+
+Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF files.
+
+After deployment, open Portfolio Simulator → Build Simulation. With two or more valid instruments selected, the four annual strategy tabs remain visible even when Yearly Withdrawal is OFF.
+
 # v5.9.74 deployment note
 
 Deploy over the existing repository and preserve all live saved Portfolio Simulation JSON/PDF files.
