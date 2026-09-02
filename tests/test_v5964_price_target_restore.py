@@ -13,8 +13,8 @@ SNAPSHOT = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 MARKER = (
-    "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + "
-    "manual universe refresh + responsive withdrawal KPI layout + "
+    "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + "
+    "Market Table target transcription + responsive withdrawal KPI layout + "
     "required instrument market data on page 1"
 )
 
@@ -25,13 +25,17 @@ def _hydrate_function():
         node
         for node in tree.body
         if isinstance(node, ast.FunctionDef)
-        and node.name in {"_valid_price_target", "_hydrate_price_targets"}
+        and node.name in {
+            "_valid_price_target", "_price_target_registry", "_remember_price_targets",
+            "_apply_remembered_price_targets", "_hydrate_price_targets",
+        }
     ]
     ns = {
         "pd": pd,
         "np": np,
         "PRICE_TARGET_COLS": ["Price Target Low", "Price Target Average", "Price Target High"],
         "format_et": lambda: "Sep 02, 2026 09:00 AM ET",
+        "_PRICE_TARGET_REGISTRY_FALLBACK": {},
     }
     calls = []
 
@@ -52,7 +56,7 @@ def _hydrate_function():
 
 
 def test_release_version_5964():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.67"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
     assert "v5.9.66" in APP
 
 

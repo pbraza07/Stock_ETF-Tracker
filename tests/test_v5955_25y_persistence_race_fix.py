@@ -6,7 +6,7 @@ PERSIST = (ROOT / "scripts" / "persist_generated_files.sh").read_text(encoding="
 
 
 def test_release_version_5955():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.67"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
 
 
 def test_workflow_uses_full_checkout_for_safe_fetch_reset():

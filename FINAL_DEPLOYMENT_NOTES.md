@@ -1,3 +1,7 @@
+# v5.9.68 deployment note
+
+Deploy over the existing repository and preserve live saved simulation JSON/PDF files. Older PDFs automatically rebuild under layout v26. If Market Table displays valid Low / Avg / High targets, PDF page 1 now reuses those exact in-session values.
+
 # v5.9.67 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state. This release adds display/persistence fields only; no migration is required. Existing saved annual/monthly records remain readable and their withdrawal summary is derived from saved result schedules when explicit v5.9.67 count fields are absent.

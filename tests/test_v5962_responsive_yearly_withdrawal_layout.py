@@ -22,7 +22,7 @@ def _load_functions(*names):
 
 
 def test_release_version_5962():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.67"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
     assert "v5.9.66" in APP
 
 
@@ -97,5 +97,5 @@ def test_mobile_css_is_compact_and_responsive():
 
 
 def test_pdf_contract_bumped_to_v21():
-    marker = "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1"
     assert APP.count(marker) >= 2

@@ -70,3 +70,7 @@ Stock analyst Low, Average/Consensus, and High targets come from Yahoo Finance t
 Stock analyst Low / Average / High targets are sourced from Yahoo Finance through yfinance's analyst-price-target and financial-data interfaces. MarketScope first preserves durable saved targets, then retries current Yahoo consensus data when a range is missing or incomplete.
 
 `Price Target Source` and `Price Target Updated ET` are retained in the snapshot and exposed in Market Table / Comparison Table. ETF stock-style analyst targets remain blank when Yahoo does not publish them.
+
+## v5.9.68 Market Table-to-PDF target transcription
+
+When Market Table has already resolved valid stock analyst Low / Average / High values, MarketScope keeps those exact values in an in-session target registry. Portfolio PDF page 1 overlays this registry before any new Yahoo request, so a target visible in Market Table cannot disappear from the PDF merely because a second provider request is throttled or empty.

@@ -14,7 +14,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5966():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.67"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
     assert "v5.9.66" in APP
 
 
@@ -121,7 +121,10 @@ def test_snapshot_quality_prefers_target_populated_candidate_when_history_is_equ
 
 
 def test_hydrator_bypasses_cached_empty_result_with_direct_symbol_retry():
-    nodes = _app_functions("_valid_price_target", "_hydrate_price_targets")
+    nodes = _app_functions(
+        "_valid_price_target", "_price_target_registry", "_remember_price_targets",
+        "_apply_remembered_price_targets", "_hydrate_price_targets"
+    )
     calls = []
 
     class FakeProvider:
@@ -141,6 +144,7 @@ def test_hydrator_bypasses_cached_empty_result_with_direct_symbol_retry():
         "format_et": lambda: "Sep 02, 2026 10:00 AM EDT",
         "cached_price_targets": lambda symbols: {},
         "provider": FakeProvider(),
+        "_PRICE_TARGET_REGISTRY_FALLBACK": {},
     }
     exec(compile(ast.Module(body=nodes, type_ignores=[]), "app.py", "exec"), ns)
     frame = pd.DataFrame([{
@@ -194,8 +198,8 @@ def test_snapshot_has_post_history_target_completion_pass_and_metadata():
 
 def test_pdf_contract_bumped_to_v25():
     marker = (
-        "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + "
-        "manual universe refresh + responsive withdrawal KPI layout + "
+        "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + "
+        "Market Table target transcription + responsive withdrawal KPI layout + "
         "required instrument market data on page 1"
     )
     assert APP.count(marker) >= 2

@@ -16,7 +16,7 @@ def _usage(df):
 
 
 def test_release_version_5952():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.67"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
     assert "v5.9.66" in APP
 
 

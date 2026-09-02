@@ -270,6 +270,9 @@ if "portfolio_manager_open" not in st.session_state:
     st.session_state.portfolio_manager_open = False
 if "combo_autoload_message" not in st.session_state:
     st.session_state.combo_autoload_message = None
+if "market_table_price_targets" not in st.session_state:
+    # Exact in-session bridge from Market Table target values to PDF page 1.
+    st.session_state.market_table_price_targets = {}
 
 
 @st.cache_data(show_spinner=False)
@@ -1248,6 +1251,76 @@ def _valid_price_target(value) -> bool:
     return bool(pd.notna(parsed) and np.isfinite(parsed) and float(parsed) > 0)
 
 
+_PRICE_TARGET_REGISTRY_FALLBACK: dict[str, dict] = {}
+
+
+def _price_target_registry() -> dict:
+    """Session registry for exact Low/Avg/High values already shown in Market Table."""
+    try:
+        registry = st.session_state.get("market_table_price_targets")
+        if not isinstance(registry, dict):
+            registry = {}
+            st.session_state.market_table_price_targets = registry
+        return registry
+    except Exception:
+        return _PRICE_TARGET_REGISTRY_FALLBACK
+
+
+def _remember_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str] | None = None, source_context: str = "") -> None:
+    if df is None or df.empty or "Symbol" not in df.columns:
+        return
+    requested = None if symbols is None else {str(s).strip().upper() for s in symbols if str(s).strip()}
+    registry = _price_target_registry()
+    for _, row in df.iterrows():
+        symbol = str(row.get("Symbol") or "").strip().upper()
+        if not symbol or (requested is not None and symbol not in requested):
+            continue
+        values = {}
+        for key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
+            value = pd.to_numeric(pd.Series([row.get(col)]), errors="coerce").iloc[0]
+            if pd.notna(value) and np.isfinite(value) and float(value) > 0:
+                values[key] = float(value)
+        if not values:
+            continue
+        existing = dict(registry.get(symbol) or {})
+        existing.update(values)
+        existing["source"] = str(row.get("Price Target Source") or source_context or existing.get("source") or "Market Table")
+        existing["updated_et"] = str(row.get("Price Target Updated ET") or existing.get("updated_et") or "")
+        registry[symbol] = existing
+
+
+def _apply_remembered_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str]) -> pd.DataFrame:
+    if df is None or df.empty or "Symbol" not in df.columns:
+        return df
+    out = df.copy()
+    registry = _price_target_registry()
+    if not registry:
+        return out
+    requested = {str(s).strip().upper() for s in symbols if str(s).strip()}
+    upper = out["Symbol"].astype(str).str.upper().str.strip()
+    for symbol in requested:
+        values = registry.get(symbol) or {}
+        mask = upper.eq(symbol)
+        if not mask.any():
+            continue
+        for key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
+            value = values.get(key)
+            if not _valid_price_target(value):
+                continue
+            if col not in out.columns:
+                out[col] = np.nan
+            numeric = pd.to_numeric(out[col], errors="coerce")
+            replace = mask & (numeric.isna() | ~np.isfinite(numeric) | (numeric <= 0))
+            out.loc[replace, col] = float(value)
+        if "Price Target Source" in out.columns and values.get("source"):
+            source_text = out["Price Target Source"].astype(str).str.strip()
+            out.loc[mask & source_text.isin(["", "—", "-"]), "Price Target Source"] = str(values.get("source"))
+        if "Price Target Updated ET" in out.columns and values.get("updated_et"):
+            updated_text = out["Price Target Updated ET"].astype(str).str.strip()
+            out.loc[mask & updated_text.isin(["", "—", "-"]), "Price Target Updated ET"] = str(values.get("updated_et"))
+    return out
+
+
 def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str]) -> pd.DataFrame:
     """Fill missing stock analyst Low / Average / High targets across every surface.
 
@@ -1278,6 +1351,9 @@ def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str
         if col not in out.columns:
             out[col] = default
 
+    # Reuse exact target values already shown in Market Table before making any
+    # additional provider request.
+    out = _apply_remembered_price_targets(out, requested)
     upper_symbols = out["Symbol"].astype(str).str.upper().str.strip()
     wanted = out.loc[upper_symbols.isin(requested)].copy()
     if wanted.empty:
@@ -1293,6 +1369,7 @@ def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str
                 missing_symbols.append(symbol)
     missing_symbols = list(dict.fromkeys(missing_symbols))
     if not missing_symbols:
+        _remember_price_targets(out, requested)
         return out
 
     try:
@@ -1344,6 +1421,7 @@ def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str
             out.loc[mask, "Price Target Source"] = str(
                 values.get("source") or "Yahoo Finance analyst consensus"
             )
+    _remember_price_targets(out, requested)
     return out
 
 
@@ -1401,7 +1479,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -1456,6 +1534,8 @@ def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame
 
     if market_df is not None and not market_df.empty:
         lookup_source = _hydrate_price_targets(market_df, symbols) if symbols else market_df.copy()
+        if symbols:
+            lookup_source = _apply_remembered_price_targets(lookup_source, symbols)
         lookup_df = lookup_source.copy()
         lookup_df["Symbol"] = lookup_df["Symbol"].astype(str).str.upper().str.strip()
         lookup_df = lookup_df.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False)
@@ -3362,7 +3442,7 @@ def _saved_simulation_withdrawal_kpi(record: dict) -> tuple[str, str] | None:
         )
         rb_funded, rb_target = _annual_withdrawal_funding_counts(rb, amount)
         nr_funded, nr_target = _annual_withdrawal_funding_counts(nr, amount)
-        # v5.9.67 stores explicit counts for faster/safer library rendering.
+        # v5.9.68 stores explicit counts for faster/safer library rendering.
         rb_funded = int(record.get("annual_withdrawals_funded_rebalanced") or rb_funded)
         nr_funded = int(record.get("annual_withdrawals_funded_not_rebalanced") or nr_funded)
         rb_target = int(record.get("annual_withdrawals_targeted_rebalanced") or rb_target)
@@ -4362,7 +4442,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.67: repeat the active withdrawal outcome here so the income
+        # v5.9.68: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -4607,7 +4687,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5759,6 +5839,9 @@ with market_tab:
             table_df["Type"].astype(str).str.upper().eq("STOCK"), "Symbol"
         ].astype(str).tolist()
         table_df = _hydrate_price_targets(table_df, table_target_symbols)
+        # Authoritative PDF handoff: any Low/Avg/High value visible in Market Table
+        # is remembered verbatim and reused on Portfolio PDF page 1.
+        _remember_price_targets(table_df, table_target_symbols, source_context="Market Table")
 
         # Add the same investment simulation result currently selected above so the
         # table can be ranked by estimated dollar profit as well as raw market data.

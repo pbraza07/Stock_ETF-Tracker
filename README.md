@@ -1,3 +1,7 @@
+# MarketScope v5.9.68 - PDF Withdrawal Summary + Market Table Target Transcription
+
+Portfolio PDF page 1 now places the applicable yearly/monthly withdrawal summary directly inside the **TOTAL INVESTED** card. Low / Average-Consensus / High analyst targets displayed in Market Table are also remembered in-session and transcribed into PDF page 1, preventing a second failed Yahoo lookup from turning visible targets back into dashes.
+
 # MarketScope v5.9.67 — Save / Manage Withdrawal Summary
 
 Save / Manage now displays the same annual or monthly withdrawal KPI summary as the live Portfolio Simulator, and Saved Simulations retain that summary beneath each recurring-income record.

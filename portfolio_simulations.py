@@ -350,18 +350,77 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     )
     c.drawCentredString(lwidth / 2, lheight - 55, meta[:165])
 
-    # Four main portfolio result cards.
+    # Four main portfolio result cards. v5.9.68 keeps the withdrawal context
+    # inside TOTAL INVESTED so page 1 shows the income assumptions/results at a
+    # glance without adding a separate large section.
     labels = [
         ("TOTAL INVESTED", _money(record.get("total_invested", 0)), text),
         ("EST. ENDING VALUE", _money(record.get("ending_value", 0)), text),
         ("PROFIT / LOSS", _money(record.get("profit_loss", 0), signed=True), color_for_number(record.get("profit_loss"))),
         ("TOTAL RETURN", _pct(record.get("total_return", 0)), color_for_number(record.get("total_return"))),
     ]
+
+    def _page1_withdrawal_lines():
+        if bool(record.get("monthly_withdrawals_enabled")):
+            amount = _as_float_or_none(record.get("monthly_withdrawal_amount")) or 0.0
+            rb = dict(record.get("monthly_withdrawal_rebalanced") or {})
+            nr = dict(record.get("monthly_withdrawal_not_rebalanced") or {})
+            rb_end = _as_float_or_none(rb.get("ending_balance"))
+            nr_end = _as_float_or_none(nr.get("ending_balance"))
+            if rb_end is None:
+                rb_end = _as_float_or_none(record.get("monthly_withdrawal_rebalanced_ending_balance")) or 0.0
+            if nr_end is None:
+                nr_end = _as_float_or_none(record.get("monthly_withdrawal_ending_balance")) or 0.0
+            rb_schedule = [dict(x) for x in (record.get("monthly_withdrawal_rebalanced_schedule") or rb.get("schedule") or []) if isinstance(x, dict)]
+            nr_schedule = [dict(x) for x in (record.get("monthly_withdrawal_not_rebalanced_schedule") or nr.get("schedule") or []) if isinstance(x, dict)]
+            rb_pos = int(record.get("monthly_positive_months_rebalanced") if record.get("monthly_positive_months_rebalanced") is not None else rb.get("positive_months") or sum(1 for row in rb_schedule if float(row.get("portfolio_return_pct") or 0.0) > 0.0))
+            nr_pos = int(record.get("monthly_positive_months_not_rebalanced") if record.get("monthly_positive_months_not_rebalanced") is not None else nr.get("positive_months") or sum(1 for row in nr_schedule if float(row.get("portfolio_return_pct") or 0.0) > 0.0))
+            rb_total = int(record.get("monthly_months_modeled_rebalanced") if record.get("monthly_months_modeled_rebalanced") is not None else rb.get("months_modeled") or len(rb_schedule))
+            nr_total = int(record.get("monthly_months_modeled_not_rebalanced") if record.get("monthly_months_modeled_not_rebalanced") is not None else nr.get("months_modeled") or len(nr_schedule))
+            return [
+                f"MONTHLY WITHDRAWAL {_money(amount)}",
+                f"REBALANCED {_money(rb_end)}  |  NOT-REBAL {_money(nr_end)}",
+                f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  POSITIVE RB {rb_pos}/{rb_total} NR {nr_pos}/{nr_total}",
+            ]
+
+        if bool(record.get("annual_withdrawals_enabled")):
+            amount = _as_float_or_none(record.get("annual_withdrawal_amount")) or 0.0
+            rb = dict(record.get("withdrawal_rebalanced") or {})
+            nr = dict(record.get("withdrawal_not_rebalanced") or {})
+            rb_end = _as_float_or_none(rb.get("ending_balance")) or 0.0
+            nr_end = _as_float_or_none(nr.get("ending_balance"))
+            if nr_end is None:
+                nr_end = _as_float_or_none(record.get("withdrawal_ending_balance")) or 0.0
+            rb_schedule = [dict(x) for x in (record.get("withdrawal_rebalanced_schedule") or rb.get("schedule") or []) if isinstance(x, dict)]
+            nr_schedule = [dict(x) for x in (record.get("withdrawal_not_rebalanced_schedule") or nr.get("schedule") or []) if isinstance(x, dict)]
+
+            def _funded(saved_key, target_key, schedule):
+                saved = record.get(saved_key)
+                target = record.get(target_key)
+                funded = int(saved) if saved is not None else sum(1 for row in schedule if float(row.get("withdrawal") or 0.0) >= amount - 0.005)
+                if target is not None:
+                    target_count = int(target)
+                elif record.get("effective_calendar_years"):
+                    target_count = len(record.get("effective_calendar_years") or [])
+                else:
+                    target_count = len(schedule)
+                return funded, target_count
+
+            rb_funded, rb_target = _funded("annual_withdrawals_funded_rebalanced", "annual_withdrawals_targeted_rebalanced", rb_schedule)
+            nr_funded, nr_target = _funded("annual_withdrawals_funded_not_rebalanced", "annual_withdrawals_targeted_not_rebalanced", nr_schedule)
+            return [
+                f"ANNUAL WITHDRAWAL {_money(amount)}",
+                f"REBALANCED {_money(rb_end)}  |  NOT-REBAL {_money(nr_end)}",
+                f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  FUNDED RB {rb_funded}/{rb_target} NR {nr_funded}/{nr_target}",
+            ]
+        return []
+
+    withdrawal_lines = _page1_withdrawal_lines()
     x0 = 24
     gap = 10
     box_w = (lwidth - 2 * x0 - 3 * gap) / 4
-    box_y = lheight - 128
-    box_h = 54
+    box_y = lheight - (132 if withdrawal_lines else 128)
+    box_h = 70 if withdrawal_lines else 54
     for i, (label, value, value_color) in enumerate(labels):
         x = x0 + i * (box_w + gap)
         c.setFillColor(card)
@@ -369,11 +428,20 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
         c.setLineWidth(0.8)
         c.roundRect(x, box_y, box_w, box_h, 7, fill=1, stroke=1)
         c.setFillColor(muted)
-        c.setFont("Helvetica-Bold", 7.6)
-        c.drawCentredString(x + box_w / 2, box_y + 36, label)
+        c.setFont("Helvetica-Bold", 7.4 if withdrawal_lines else 7.6)
+        c.drawCentredString(x + box_w / 2, box_y + (52 if withdrawal_lines else 36), label)
         c.setFillColor(value_color)
-        c.setFont("Helvetica-Bold", 13.5)
-        c.drawCentredString(x + box_w / 2, box_y + 15, value)
+        c.setFont("Helvetica-Bold", 12.4 if withdrawal_lines else 13.5)
+        c.drawCentredString(x + box_w / 2, box_y + (31 if withdrawal_lines else 15), value)
+        if i == 0 and withdrawal_lines:
+            c.setFillColor(muted)
+            c.setFont("Helvetica-Bold", 4.65)
+            c.drawCentredString(x + box_w / 2, box_y + 18, withdrawal_lines[0][:72])
+            c.setFont("Helvetica", 4.15)
+            c.drawCentredString(x + box_w / 2, box_y + 10.5, withdrawal_lines[1][:82])
+            c.setFillColor(cyan)
+            c.setFont("Helvetica-Bold", 4.05)
+            c.drawCentredString(x + box_w / 2, box_y + 3.5, withdrawal_lines[2][:92])
 
     # Combined portfolio performance statistics.
     section_y = box_y - 28
