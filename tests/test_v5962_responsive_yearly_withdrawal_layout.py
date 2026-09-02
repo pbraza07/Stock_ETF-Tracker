@@ -22,7 +22,7 @@ def _load_functions(*names):
 
 
 def test_release_version_5962():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.66"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.67"
     assert "v5.9.66" in APP
 
 

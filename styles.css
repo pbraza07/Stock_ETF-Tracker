@@ -1467,3 +1467,15 @@ button[data-baseweb="tab"] {
     font-size: clamp(1.18rem, 7vw, 1.75rem);
   }
 }
+
+/* v5.9.67 — withdrawal context inside Save / Manage and Saved Simulations */
+.save-manage-withdrawal-title {
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+.saved-withdrawal-summary-title {
+  margin-top: 10px;
+  margin-bottom: 2px;
+  font-size: .76rem;
+  opacity: .92;
+}

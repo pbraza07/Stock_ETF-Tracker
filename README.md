@@ -1,3 +1,7 @@
+# MarketScope v5.9.67 — Save / Manage Withdrawal Summary
+
+Save / Manage now displays the same annual or monthly withdrawal KPI summary as the live Portfolio Simulator, and Saved Simulations retain that summary beneath each recurring-income record.
+
 # MarketScope v5.9.66 — End-to-End Price Target Fix
 
 Analyst **Low / Average-Consensus / High** targets are now repaired end-to-end across Market Table, Card View, Full Details, Comparison, saved simulations and Portfolio PDF page 1. The Yahoo/yfinance resolver no longer loses its `get_info()` fallback when the analyst-target endpoint throws, target-rich snapshots are preferred over target-empty equivalents, and cached misses receive a direct per-symbol retry.

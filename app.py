@@ -3303,6 +3303,80 @@ def _annual_withdrawal_kpi_grid(
     return '<div class="monthly-withdrawal-kpi-grid">' + "".join(html) + "</div>"
 
 
+def _saved_simulation_withdrawal_kpi(record: dict) -> tuple[str, str] | None:
+    """Return the saved simulation's annual/monthly five-card withdrawal summary.
+
+    The library uses the same KPI renderers as the live Portfolio Simulator so a
+    saved record preserves the exact income context at a glance. Legacy records
+    are supported through the existing saved result/schedule fields.
+    """
+    if not isinstance(record, dict):
+        return None
+
+    if bool(record.get("monthly_withdrawals_enabled")):
+        rb = dict(record.get("monthly_withdrawal_rebalanced") or {})
+        nr = dict(record.get("monthly_withdrawal_not_rebalanced") or {})
+        amount = float(record.get("monthly_withdrawal_amount") or 0.0)
+        rb_end = float(rb.get("ending_balance") or 0.0)
+        nr_end = float(
+            nr.get("ending_balance")
+            if nr.get("ending_balance") is not None
+            else (record.get("monthly_withdrawal_ending_balance") or 0.0)
+        )
+        rb_positive = int(
+            rb.get("positive_months")
+            if rb.get("positive_months") is not None
+            else (record.get("monthly_positive_months_rebalanced") or 0)
+        )
+        nr_positive = int(
+            nr.get("positive_months")
+            if nr.get("positive_months") is not None
+            else (record.get("monthly_positive_months_not_rebalanced") or 0)
+        )
+        rb_months = int(
+            rb.get("months_modeled")
+            if rb.get("months_modeled") is not None
+            else (record.get("monthly_months_modeled_rebalanced") or 0)
+        )
+        nr_months = int(
+            nr.get("months_modeled")
+            if nr.get("months_modeled") is not None
+            else (record.get("monthly_months_modeled_not_rebalanced") or 0)
+        )
+        return (
+            "MONTHLY WITHDRAWAL SUMMARY",
+            _monthly_withdrawal_kpi_grid(
+                amount, rb_end, nr_end, rb_positive, rb_months, nr_positive, nr_months
+            ),
+        )
+
+    if bool(record.get("annual_withdrawals_enabled")):
+        rb = dict(record.get("withdrawal_rebalanced") or {})
+        nr = dict(record.get("withdrawal_not_rebalanced") or {})
+        amount = float(record.get("annual_withdrawal_amount") or 0.0)
+        rb_end = float(rb.get("ending_balance") or 0.0)
+        nr_end = float(
+            nr.get("ending_balance")
+            if nr.get("ending_balance") is not None
+            else (record.get("withdrawal_ending_balance") or 0.0)
+        )
+        rb_funded, rb_target = _annual_withdrawal_funding_counts(rb, amount)
+        nr_funded, nr_target = _annual_withdrawal_funding_counts(nr, amount)
+        # v5.9.67 stores explicit counts for faster/safer library rendering.
+        rb_funded = int(record.get("annual_withdrawals_funded_rebalanced") or rb_funded)
+        nr_funded = int(record.get("annual_withdrawals_funded_not_rebalanced") or nr_funded)
+        rb_target = int(record.get("annual_withdrawals_targeted_rebalanced") or rb_target)
+        nr_target = int(record.get("annual_withdrawals_targeted_not_rebalanced") or nr_target)
+        return (
+            "ANNUAL WITHDRAWAL SUMMARY",
+            _annual_withdrawal_kpi_grid(
+                amount, rb_end, nr_end, rb_funded, rb_target, nr_funded, nr_target
+            ),
+        )
+
+    return None
+
+
 def _portfolio_analytics_dataframe(payloads: list[dict]) -> pd.DataFrame:
     rows = []
     for item in payloads:
@@ -4287,6 +4361,67 @@ with portfolio_tab:
             st.session_state.simulation_library_message = None
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
+
+        # v5.9.67: repeat the active withdrawal outcome here so the income
+        # assumptions/results remain visible at the exact point where the user
+        # names, saves or manages the simulation.
+        if (
+            portfolio_withdrawals_enabled
+            and float(portfolio_annual_withdrawal or 0.0) > 0
+            and portfolio_withdrawal_rebalanced_result
+            and portfolio_withdrawal_not_rebalanced_result
+            and not portfolio_withdrawal_rebalanced_result.get("unavailable")
+            and not portfolio_withdrawal_not_rebalanced_result.get("unavailable")
+        ):
+            _manage_rb_end = float(portfolio_withdrawal_rebalanced_result.get("ending_balance") or 0.0)
+            _manage_nr_end = float(portfolio_withdrawal_not_rebalanced_result.get("ending_balance") or 0.0)
+            _manage_rb_funded, _manage_rb_target = _annual_withdrawal_funding_counts(
+                portfolio_withdrawal_rebalanced_result, float(portfolio_annual_withdrawal)
+            )
+            _manage_nr_funded, _manage_nr_target = _annual_withdrawal_funding_counts(
+                portfolio_withdrawal_not_rebalanced_result, float(portfolio_annual_withdrawal)
+            )
+            st.markdown(
+                "<div class='portfolio-analytics-title save-manage-withdrawal-title'>ACTIVE ANNUAL WITHDRAWAL SUMMARY</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                _annual_withdrawal_kpi_grid(
+                    float(portfolio_annual_withdrawal),
+                    _manage_rb_end,
+                    _manage_nr_end,
+                    _manage_rb_funded,
+                    _manage_rb_target,
+                    _manage_nr_funded,
+                    _manage_nr_target,
+                ),
+                unsafe_allow_html=True,
+            )
+        elif (
+            portfolio_monthly_withdrawals_enabled
+            and float(portfolio_monthly_withdrawal or 0.0) > 0
+            and portfolio_monthly_withdrawal_rebalanced_result
+            and portfolio_monthly_withdrawal_not_rebalanced_result
+            and not portfolio_monthly_withdrawal_rebalanced_result.get("unavailable")
+            and not portfolio_monthly_withdrawal_not_rebalanced_result.get("unavailable")
+        ):
+            st.markdown(
+                "<div class='portfolio-analytics-title save-manage-withdrawal-title'>ACTIVE MONTHLY WITHDRAWAL SUMMARY</div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                _monthly_withdrawal_kpi_grid(
+                    float(portfolio_monthly_withdrawal),
+                    float(portfolio_monthly_withdrawal_rebalanced_result.get("ending_balance") or 0.0),
+                    float(portfolio_monthly_withdrawal_not_rebalanced_result.get("ending_balance") or 0.0),
+                    int(portfolio_monthly_withdrawal_rebalanced_result.get("positive_months") or 0),
+                    int(portfolio_monthly_withdrawal_rebalanced_result.get("months_modeled") or 0),
+                    int(portfolio_monthly_withdrawal_not_rebalanced_result.get("positive_months") or 0),
+                    int(portfolio_monthly_withdrawal_not_rebalanced_result.get("months_modeled") or 0),
+                ),
+                unsafe_allow_html=True,
+            )
+
         save_cols = st.columns([2.4, 1.3, 1.3, 2.1])
         with save_cols[0]:
             simulation_name = st.text_input(
@@ -4434,6 +4569,22 @@ with portfolio_tab:
                 "monthly_months_modeled_not_rebalanced": int(portfolio_monthly_withdrawal_not_rebalanced_result.get("months_modeled") or 0) if portfolio_monthly_withdrawals_enabled else None,
                 "annual_withdrawals_enabled": bool(portfolio_withdrawals_enabled),
                 "annual_withdrawal_amount": float(portfolio_annual_withdrawal or 0) if portfolio_withdrawals_enabled else 0.0,
+                "annual_withdrawals_funded_rebalanced": (
+                    _annual_withdrawal_funding_counts(portfolio_withdrawal_rebalanced_result, float(portfolio_annual_withdrawal or 0))[0]
+                    if portfolio_withdrawals_enabled else None
+                ),
+                "annual_withdrawals_targeted_rebalanced": (
+                    _annual_withdrawal_funding_counts(portfolio_withdrawal_rebalanced_result, float(portfolio_annual_withdrawal or 0))[1]
+                    if portfolio_withdrawals_enabled else None
+                ),
+                "annual_withdrawals_funded_not_rebalanced": (
+                    _annual_withdrawal_funding_counts(portfolio_withdrawal_not_rebalanced_result, float(portfolio_annual_withdrawal or 0))[0]
+                    if portfolio_withdrawals_enabled else None
+                ),
+                "annual_withdrawals_targeted_not_rebalanced": (
+                    _annual_withdrawal_funding_counts(portfolio_withdrawal_not_rebalanced_result, float(portfolio_annual_withdrawal or 0))[1]
+                    if portfolio_withdrawals_enabled else None
+                ),
                 # Legacy fields intentionally retain the not-rebalanced path for backward compatibility.
                 "withdrawal_total": float(portfolio_withdrawal_not_rebalanced_result.get("total_withdrawn") or 0) if portfolio_withdrawals_enabled else 0.0,
                 "withdrawal_ending_balance": float(portfolio_withdrawal_not_rebalanced_result.get("ending_balance") or 0) if portfolio_withdrawals_enabled else None,
@@ -4519,6 +4670,14 @@ with portfolio_tab:
                         "</div>",
                         unsafe_allow_html=True,
                     )
+                    _saved_withdrawal_summary = _saved_simulation_withdrawal_kpi(rec)
+                    if _saved_withdrawal_summary:
+                        _saved_withdrawal_title, _saved_withdrawal_html = _saved_withdrawal_summary
+                        st.markdown(
+                            f"<div class='portfolio-analytics-title saved-withdrawal-summary-title'>{escape(_saved_withdrawal_title)}</div>",
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(_saved_withdrawal_html, unsafe_allow_html=True)
                     action_cols = st.columns([1.35, 1.15, 1.0, 3.7])
                     pdf_record = _enrich_pdf_record_with_current_market(rec, market)
                     record_json = json.dumps(pdf_record, sort_keys=True, separators=(",", ":"))
