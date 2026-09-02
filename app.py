@@ -37,6 +37,7 @@ from persistence import (
     load_remote_metadata,
     load_remote_snapshot,
     load_remote_universe_metadata,
+    load_remote_universe_change_history,
     now_et,
     persist_snapshot,
     persist_universe_refresh,
@@ -76,6 +77,7 @@ SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
 BOOTSTRAP_META_FILE = BASE_DIR / "data" / "snapshot_metadata.bootstrap.json"
 UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.json"
 BOOTSTRAP_UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.bootstrap.json"
+UNIVERSE_CHANGE_HISTORY_FILE = BASE_DIR / "data" / "universe_change_history.json"
 MONTHLY_RETURNS_FILE = BASE_DIR / "data" / "monthly_returns_10y.csv"
 MONTHLY_RETURNS_REPO_PATH = "data/monthly_returns_10y.csv"
 MONTHLY_RETURNS_FULL_FILE = BASE_DIR / "data" / "monthly_returns_full_history.csv"
@@ -227,6 +229,8 @@ if "last_refresh_summary" not in st.session_state:
     st.session_state.last_refresh_summary = None
 if "universe_refresh_message" not in st.session_state:
     st.session_state.universe_refresh_message = None
+if "universe_change_history_open" not in st.session_state:
+    st.session_state.universe_change_history_open = False
 if "selected_symbol" not in st.session_state:
     st.session_state.selected_symbol = None
 if "card_page" not in st.session_state:
@@ -940,6 +944,21 @@ def _run_manual_universe_refresh() -> tuple[bool, bool, str, dict]:
     script = BASE_DIR / "scripts" / "update_universe.py"
     if not script.exists():
         return False, False, "Nasdaq universe refresh script is missing.", {}
+    # Manual Render refresh must start from the durable append-only history,
+    # otherwise ephemeral local storage could forget older historical events.
+    history_path = BASE_DIR / "data" / "universe_change_history.json"
+    try:
+        local_history = []
+        if history_path.exists():
+            local_payload = json.loads(history_path.read_text(encoding="utf-8"))
+            if isinstance(local_payload, list):
+                local_history = local_payload
+        remote_history = load_remote_universe_change_history(timeout=12)
+        merged_history = _merge_universe_change_history(local_history, remote_history)
+        history_path.write_text(json.dumps(merged_history, indent=2) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
     try:
         completed = subprocess.run(
             [sys.executable, str(script)],
@@ -964,7 +983,12 @@ def _run_manual_universe_refresh() -> tuple[bool, bool, str, dict]:
     if not generated_universe.exists() or not metadata_payload:
         return False, False, "Nasdaq universe refresh finished but did not produce the expected generated files.", {}
 
-    durable_ok, durable_message = persist_universe_refresh(generated_universe, generated_metadata)
+    generated_history = BASE_DIR / "data" / "universe_change_history.json"
+    durable_ok, durable_message = persist_universe_refresh(
+        generated_universe,
+        generated_metadata,
+        generated_history,
+    )
     stock_count = int(metadata_payload.get("stock_count") or 0)
     etf_count = int(metadata_payload.get("etf_count") or 0)
     added_count = int(metadata_payload.get("added_count") or 0)
@@ -1001,6 +1025,149 @@ def load_universe_metadata() -> dict:
         if isinstance(candidate, dict) and _valid_status_text(candidate.get("refreshed_at_display_et")):
             return candidate
     return remote or local or bootstrap or {}
+
+
+def _universe_history_event_key(event: dict) -> tuple:
+    return (
+        str(event.get("occurred_at_et") or ""),
+        str(event.get("change_type") or ""),
+        str(event.get("symbol") or "").upper(),
+        str(event.get("from") or ""),
+        str(event.get("to") or ""),
+    )
+
+
+def _merge_universe_change_history(*collections) -> list[dict]:
+    """Merge local/durable events without pruning old history."""
+    output: list[dict] = []
+    known = set()
+    for collection in collections:
+        if not isinstance(collection, list):
+            continue
+        for item in collection:
+            if not isinstance(item, dict):
+                continue
+            key = _universe_history_event_key(item)
+            if key in known:
+                continue
+            output.append(dict(item))
+            known.add(key)
+    output.sort(key=lambda item: str(item.get("occurred_at_et") or ""))
+    return output
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def load_universe_change_history() -> list[dict]:
+    """Load the append-only Nasdaq membership/rating history from local + GitHub."""
+    local = []
+    try:
+        payload = json.loads(UNIVERSE_CHANGE_HISTORY_FILE.read_text(encoding="utf-8"))
+        if isinstance(payload, list):
+            local = payload
+    except Exception:
+        local = []
+    remote = load_remote_universe_change_history(timeout=10)
+    return _merge_universe_change_history(local, remote)
+
+
+def _current_metadata_change_events(metadata: dict) -> list[dict]:
+    """Bridge the most recent pre-v5.9.70 metadata change into the history view."""
+    if not isinstance(metadata, dict):
+        return []
+    stamp = str(metadata.get("refreshed_at_et") or "").strip()
+    display = str(metadata.get("refreshed_at_display_et") or "").strip()
+    if not stamp:
+        return []
+    source = str(metadata.get("source") or "Nasdaq Stock Screener")
+    events = []
+    for symbol in metadata.get("added_symbols") or []:
+        sym = str(symbol or "").upper().strip()
+        if sym:
+            events.append({
+                "occurred_at_et": stamp,
+                "occurred_at_display_et": display,
+                "change_type": "Stock Added",
+                "symbol": sym,
+                "name": sym,
+                "from": "Outside >$100B universe",
+                "to": "Included >$100B universe",
+                "source": source,
+            })
+    for symbol in metadata.get("removed_symbols") or []:
+        sym = str(symbol or "").upper().strip()
+        if sym:
+            events.append({
+                "occurred_at_et": stamp,
+                "occurred_at_display_et": display,
+                "change_type": "Stock Removed",
+                "symbol": sym,
+                "name": sym,
+                "from": "Included >$100B universe",
+                "to": "Outside >$100B universe",
+                "source": source,
+            })
+    for change in metadata.get("analyst_rating_changes") or []:
+        if not isinstance(change, dict):
+            continue
+        sym = str(change.get("symbol") or "").upper().strip()
+        if sym:
+            events.append({
+                "occurred_at_et": stamp,
+                "occurred_at_display_et": display,
+                "change_type": "Analyst Rating",
+                "symbol": sym,
+                "name": str(change.get("name") or sym),
+                "from": str(change.get("from") or "Not Rated"),
+                "to": str(change.get("to") or "Not Rated"),
+                "source": source,
+            })
+    return events
+
+
+def _six_month_universe_history_frame(history: list[dict], as_of=None) -> pd.DataFrame:
+    """Filter the view to six months while leaving the stored history untouched."""
+    columns = ["Date / Time (ET)", "Change Type", "Symbol", "Name", "Previous", "New", "Source"]
+    if not history:
+        return pd.DataFrame(columns=columns)
+
+    now_value = pd.Timestamp(as_of if as_of is not None else now_et())
+    if now_value.tzinfo is None:
+        now_value = now_value.tz_localize("America/New_York")
+    else:
+        now_value = now_value.tz_convert("America/New_York")
+    cutoff = now_value - pd.DateOffset(months=6)
+
+    rows = []
+    for event in history:
+        if not isinstance(event, dict):
+            continue
+        occurred = pd.to_datetime(event.get("occurred_at_et"), errors="coerce")
+        if pd.isna(occurred):
+            continue
+        if getattr(occurred, "tzinfo", None) is None:
+            occurred = occurred.tz_localize("America/New_York")
+        else:
+            occurred = occurred.tz_convert("America/New_York")
+        if occurred < cutoff or occurred > now_value:
+            continue
+        display = str(event.get("occurred_at_display_et") or "").strip()
+        if not display:
+            display = occurred.strftime("%b %d, %Y %I:%M:%S %p ET")
+        rows.append({
+            "_occurred": occurred,
+            "Date / Time (ET)": display,
+            "Change Type": str(event.get("change_type") or "Change"),
+            "Symbol": str(event.get("symbol") or "").upper(),
+            "Name": str(event.get("name") or event.get("symbol") or ""),
+            "Previous": str(event.get("from") or "—"),
+            "New": str(event.get("to") or "—"),
+            "Source": str(event.get("source") or "Nasdaq Stock Screener"),
+        })
+
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    frame = pd.DataFrame(rows).sort_values("_occurred", ascending=False).drop(columns="_occurred")
+    return frame[columns].reset_index(drop=True)
 
 
 @st.cache_data(ttl=30, show_spinner=False)
@@ -1479,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2244,6 +2411,10 @@ st.markdown(
 snapshot = load_snapshot()
 metadata = load_snapshot_metadata()
 universe_metadata = load_universe_metadata()
+universe_change_history = _merge_universe_change_history(
+    load_universe_change_history(),
+    _current_metadata_change_events(universe_metadata),
+)
 base_symbols = default_universe["Symbol"].astype(str).str.upper().tolist()
 snapshot_symbols = snapshot["Symbol"].tolist() if not snapshot.empty else []
 extra_symbols = [s for s in st.session_state.extra_symbols if s not in set(base_symbols)]
@@ -2358,7 +2529,8 @@ with market_tab:
         unsafe_allow_html=True,
     )
 
-    universe_refresh_col, universe_help_col = st.columns([1.55, 4.45])
+    six_month_history = _six_month_universe_history_frame(universe_change_history)
+    universe_refresh_col, universe_history_col, universe_help_col = st.columns([1.55, 1.65, 3.3])
     with universe_refresh_col:
         refresh_universe_now = st.button(
             "↻ Refresh Nasdaq Universe Now",
@@ -2369,11 +2541,53 @@ with market_tab:
                 "This uses the same universe generator as the scheduled workflow."
             ),
         )
+    with universe_history_col:
+        if st.button(
+            (
+                f"🕘 6-Month Change History ({len(six_month_history)})"
+                if not st.session_state.universe_change_history_open
+                else "🕘 Hide Change History"
+            ),
+            key="toggle_universe_change_history",
+            use_container_width=True,
+            help=(
+                "Show stock additions/removals and analyst-rating changes recorded during the last six months. "
+                "Older events remain permanently stored for historical purposes."
+            ),
+        ):
+            st.session_state.universe_change_history_open = not st.session_state.universe_change_history_open
+            st.rerun()
     with universe_help_col:
         st.caption(
-            "Updates the Nasdaq >$100B membership, added/removed symbols, analyst-rating changes, and this Last Refreshed timestamp. "
-            "The existing full market refresh below continues to update Yahoo prices/history; the scheduled cloud job also rebuilds ranking datasets."
+            "Refresh updates Nasdaq >$100B membership and analyst ratings. Change History is append-only: "
+            "the button displays the latest six months, while older records remain stored permanently."
         )
+
+    if st.session_state.universe_change_history_open:
+        st.markdown("### 🕘 Nasdaq Universe & Analyst Change History · Last 6 Months")
+        st.caption(
+            "Every recorded stock addition, stock removal, and analyst-rating change is listed below. "
+            "Only the view is limited to six months; the underlying historical log is never pruned."
+        )
+        if six_month_history.empty:
+            st.info(
+                "No recorded Nasdaq universe or analyst-rating changes fall within the last six months yet. "
+                "v5.9.70 begins durable history collection and migrates the latest change still present in universe metadata."
+            )
+        else:
+            history_counts = six_month_history["Change Type"].value_counts()
+            hc1, hc2, hc3, hc4 = st.columns(4)
+            hc1.metric("Total changes", f"{len(six_month_history):,}")
+            hc2.metric("Stocks added", f"{int(history_counts.get('Stock Added', 0)):,}")
+            hc3.metric("Stocks removed", f"{int(history_counts.get('Stock Removed', 0)):,}")
+            hc4.metric("Rating changes", f"{int(history_counts.get('Analyst Rating', 0)):,}")
+            st.dataframe(
+                six_month_history,
+                use_container_width=True,
+                hide_index=True,
+                height=min(600, 72 + max(1, len(six_month_history)) * 35),
+                key="nasdaq_six_month_change_history",
+            )
 
     if refresh_universe_now:
         with st.spinner("Refreshing Nasdaq >$100B universe and analyst ratings..."):
@@ -2381,6 +2595,7 @@ with market_tab:
         st.session_state.universe_refresh_message = (local_ok, durable_ok, refresh_message)
         if local_ok:
             load_universe_metadata.clear()
+            load_universe_change_history.clear()
             load_snapshot_metadata.clear()
         st.rerun()
 
@@ -4505,7 +4720,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.69: repeat the active withdrawal outcome here so the income
+        # v5.9.70: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -4750,7 +4965,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

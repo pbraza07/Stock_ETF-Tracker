@@ -1,3 +1,11 @@
+# v5.9.70 deployment note
+
+Deploy over the existing GitHub repository and preserve all live MarketScope data.
+
+The release adds `data/universe_change_history.json`. Do not delete or periodically replace this file with an empty file after initial deployment. It is the permanent append-only Nasdaq membership/rating history.
+
+The scheduled workflow and manual Nasdaq refresh both update it automatically.
+
 # v5.9.69 deployment note
 
 Deploy over the existing repository and preserve the live saved Portfolio Simulation JSON/PDF library.

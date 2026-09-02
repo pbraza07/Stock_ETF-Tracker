@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.69)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.70)
 # Automatic daily refresh owns the full dynamically growing completed-year adjusted-history window
 # and the matching dynamic-history actual-monthly dataset used by withdrawal simulations.
 
@@ -11,6 +11,7 @@ on:
       - 'data/market_snapshot.csv'
       - 'data/snapshot_metadata.json'
       - 'data/universe_metadata.json'
+      - 'data/universe_change_history.json'
       - 'data/saved_portfolio_simulations.json'
       - 'data/generated_pdfs/**'
       - 'static/generated_pdfs/**'
@@ -74,7 +75,8 @@ jobs:
           scripts/persist_generated_files.sh \
             "chore: persist Nasdaq universe refresh" \
             data/default_universe.csv \
-            data/universe_metadata.json
+            data/universe_metadata.json \
+            data/universe_change_history.json
 
       - name: Build dynamic annual returns and matching actual monthly history
         env:
@@ -114,6 +116,7 @@ jobs:
             data/market_snapshot.csv \
             data/snapshot_metadata.json \
             data/universe_metadata.json \
+            data/universe_change_history.json \
             data/monthly_returns_10y.csv \
             data/monthly_returns_full_history.csv
 

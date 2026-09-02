@@ -74,3 +74,14 @@ Stock analyst Low / Average / High targets are sourced from Yahoo Finance throug
 ## v5.9.68 Market Table-to-PDF target transcription
 
 When Market Table has already resolved valid stock analyst Low / Average / High values, MarketScope keeps those exact values in an in-session target registry. Portfolio PDF page 1 overlays this registry before any new Yahoo request, so a target visible in Market Table cannot disappear from the PDF merely because a second provider request is throttled or empty.
+
+## v5.9.70 Nasdaq change-history source
+
+`data/universe_change_history.json` is generated from the same Nasdaq Stock Screener universe refresh that maintains the >$100B stock universe and Nasdaq analyst-consensus ratings.
+
+The log records actual refresh-to-refresh changes only:
+- stock entered the tracked >$100B universe
+- stock exited the tracked >$100B universe
+- analyst consensus rating changed
+
+The historical file is append-only. The Market Navigator's 6-month display filter does not delete older events.

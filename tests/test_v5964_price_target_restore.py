@@ -13,8 +13,8 @@ SNAPSHOT = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 MARKER = (
-    "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + "
-    "PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + "
+    "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + "
+    "saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + "
     "required instrument market data on page 1"
 )
 
@@ -56,7 +56,7 @@ def _hydrate_function():
 
 
 def test_release_version_5964():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.69"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
     assert "v5.9.66" in APP
 
 

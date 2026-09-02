@@ -12,7 +12,7 @@ WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_
 
 
 def test_release_version_5965():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.69"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
     assert "v5.9.66" in APP
 
 
@@ -30,7 +30,8 @@ def test_market_navigator_has_manual_universe_refresh_button():
 
 
 def test_manual_button_refreshes_membership_metadata_not_fake_snapshot_timestamp():
-    assert "persist_universe_refresh(generated_universe, generated_metadata)" in APP
+    assert "persist_universe_refresh(" in APP
+    assert "generated_history" in APP
     assert '"stock_count"' in APP
     assert '"added_count"' in APP
     assert '"removed_count"' in APP
@@ -81,5 +82,5 @@ def test_scheduled_workflow_persists_universe_before_long_history_work():
 
 
 def test_pdf_contract_bumped_to_v24():
-    marker = "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     assert APP.count(marker) >= 2

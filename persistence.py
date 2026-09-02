@@ -18,6 +18,7 @@ DEFAULT_BRANCH = os.getenv("MARKETSCOPE_GITHUB_BRANCH", "main")
 SNAPSHOT_PATH = "data/market_snapshot.csv"
 METADATA_PATH = "data/snapshot_metadata.json"
 UNIVERSE_METADATA_PATH = "data/universe_metadata.json"
+UNIVERSE_CHANGE_HISTORY_PATH = "data/universe_change_history.json"
 UNIVERSE_PATH = "data/default_universe.csv"
 
 
@@ -73,6 +74,17 @@ def load_remote_universe_metadata(timeout: int = 8) -> dict:
         return {}
 
 
+def load_remote_universe_change_history(timeout: int = 8) -> list[dict]:
+    """Load the append-only Nasdaq universe/rating change history from GitHub."""
+    try:
+        response = requests.get(_raw_url(UNIVERSE_CHANGE_HISTORY_PATH), timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, list) else []
+    except Exception:
+        return []
+
+
 def _headers(token: str) -> dict:
     return {
         "Authorization": f"Bearer {token}",
@@ -105,7 +117,11 @@ def _put_text_file(path: str, text: str, message: str, token: str) -> Tuple[bool
         return False, f"GitHub persistence error: {exc}"
 
 
-def persist_universe_refresh(universe_path: Path, metadata_path: Path) -> Tuple[bool, str]:
+def persist_universe_refresh(
+    universe_path: Path,
+    metadata_path: Path,
+    history_path: Optional[Path] = None,
+) -> Tuple[bool, str]:
     """Persist a manual Nasdaq-universe refresh locally and durably in GitHub.
 
     The updater writes both files locally first. This helper mirrors those exact
@@ -115,6 +131,11 @@ def persist_universe_refresh(universe_path: Path, metadata_path: Path) -> Tuple[
     try:
         universe_text = universe_path.read_text(encoding="utf-8")
         metadata_text = metadata_path.read_text(encoding="utf-8")
+        history_text = (
+            history_path.read_text(encoding="utf-8")
+            if history_path is not None and history_path.exists()
+            else None
+        )
     except Exception as exc:
         return False, f"Universe refresh completed locally, but persistence files could not be read: {exc}"
 
@@ -136,7 +157,19 @@ def persist_universe_refresh(universe_path: Path, metadata_path: Path) -> Tuple[
     )
     if not ok:
         return False, msg
-    return True, "Nasdaq universe and refresh metadata saved permanently to GitHub and locally on Render."
+    if history_text is not None:
+        ok, msg = _put_text_file(
+            UNIVERSE_CHANGE_HISTORY_PATH,
+            history_text,
+            f"data: manual Nasdaq universe change history {stamp}",
+            token,
+        )
+        if not ok:
+            return False, msg
+    return True, (
+        "Nasdaq universe, refresh metadata, and change history saved permanently "
+        "to GitHub and locally on Render."
+    )
 
 
 def persist_snapshot(df: pd.DataFrame, local_path: Path, source: str, updated_count: int) -> Tuple[bool, str]:

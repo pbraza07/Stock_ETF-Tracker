@@ -1,3 +1,7 @@
+# MarketScope v5.9.70 — 6-Month Nasdaq Change History
+
+Market Navigator now includes a **6-Month Change History** button beside the manual Nasdaq refresh. MarketScope permanently retains every recorded Nasdaq >$100B stock addition/removal and analyst-rating change in an append-only history file, while the button displays only the most recent six months.
+
 # MarketScope v5.9.69 — Saved Simulation Inline Withdrawal Summary
 
 Saved recurring-income portfolios now show the Yearly or Monthly withdrawal summary **inside the same Saved Simulation card** as Invested / Ending / Profit-Loss / Return. The compact second row sits directly under those primary metrics and uses smaller typography so the saved library is dense and easy to scan.

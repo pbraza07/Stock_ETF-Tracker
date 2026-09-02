@@ -17,6 +17,7 @@ from providers.nasdaq import NasdaqScreenerProvider
 OUT = BASE_DIR / "data" / "default_universe.csv"
 ETF_FILE = BASE_DIR / "data" / "etf_allowlist.csv"
 UNIVERSE_META_OUT = BASE_DIR / "data" / "universe_metadata.json"
+UNIVERSE_HISTORY_OUT = BASE_DIR / "data" / "universe_change_history.json"
 MIN_MARKET_CAP = 100_000_000_000.0
 NASDAQ_URL = "https://api.nasdaq.com/api/screener/stocks?tableonly=true&limit=10000&offset=0&download=true"
 HEADERS = {
@@ -195,11 +196,113 @@ def load_etfs(existing: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _read_json(path: Path, default):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return default
+
+
+def _history_event_key(event: dict) -> tuple:
+    return (
+        str(event.get("occurred_at_et") or ""),
+        str(event.get("change_type") or ""),
+        str(event.get("symbol") or "").upper(),
+        str(event.get("from") or ""),
+        str(event.get("to") or ""),
+    )
+
+
+def _append_history_events(history: list[dict], events: list[dict]) -> list[dict]:
+    """Append new events without pruning any historical records."""
+    output = [dict(item) for item in history if isinstance(item, dict)]
+    known = {_history_event_key(item) for item in output}
+    for event in events:
+        if not isinstance(event, dict):
+            continue
+        key = _history_event_key(event)
+        if key in known:
+            continue
+        output.append(dict(event))
+        known.add(key)
+    output.sort(key=lambda item: str(item.get("occurred_at_et") or ""))
+    return output
+
+
+def _metadata_events(metadata: dict, name_map: dict | None = None) -> list[dict]:
+    """Convert one universe refresh metadata payload into durable change events."""
+    if not isinstance(metadata, dict):
+        return []
+    stamp = str(metadata.get("refreshed_at_et") or "").strip()
+    display = str(metadata.get("refreshed_at_display_et") or "").strip()
+    if not stamp:
+        return []
+
+    names = name_map or {}
+    source = str(metadata.get("source") or "Nasdaq Stock Screener")
+    events: list[dict] = []
+
+    for symbol in metadata.get("added_symbols") or []:
+        sym = str(symbol or "").upper().strip()
+        if not sym:
+            continue
+        info = names.get(sym, {}) or {}
+        events.append({
+            "occurred_at_et": stamp,
+            "occurred_at_display_et": display,
+            "change_type": "Stock Added",
+            "symbol": sym,
+            "name": str(info.get("Name") or sym),
+            "from": "Outside >$100B universe",
+            "to": "Included >$100B universe",
+            "source": source,
+        })
+
+    for symbol in metadata.get("removed_symbols") or []:
+        sym = str(symbol or "").upper().strip()
+        if not sym:
+            continue
+        info = names.get(sym, {}) or {}
+        events.append({
+            "occurred_at_et": stamp,
+            "occurred_at_display_et": display,
+            "change_type": "Stock Removed",
+            "symbol": sym,
+            "name": str(info.get("Name") or sym),
+            "from": "Included >$100B universe",
+            "to": "Outside >$100B universe",
+            "source": source,
+        })
+
+    for change in metadata.get("analyst_rating_changes") or []:
+        if not isinstance(change, dict):
+            continue
+        sym = str(change.get("symbol") or "").upper().strip()
+        if not sym:
+            continue
+        events.append({
+            "occurred_at_et": stamp,
+            "occurred_at_display_et": display,
+            "change_type": "Analyst Rating",
+            "symbol": sym,
+            "name": str(change.get("name") or (names.get(sym, {}) or {}).get("Name") or sym),
+            "from": str(change.get("from") or "Not Rated"),
+            "to": str(change.get("to") or "Not Rated"),
+            "source": source,
+        })
+    return events
+
+
 def main() -> None:
     try:
         existing = pd.read_csv(OUT) if OUT.exists() else pd.DataFrame()
     except Exception:
         existing = pd.DataFrame()
+
+    prior_universe_meta = _read_json(UNIVERSE_META_OUT, {})
+    universe_history = _read_json(UNIVERSE_HISTORY_OUT, [])
+    if not isinstance(universe_history, list):
+        universe_history = []
 
     prior_stock_symbols: set[str] = set()
     if not existing.empty and "Symbol" in existing.columns:
@@ -267,6 +370,22 @@ def main() -> None:
     }
     UNIVERSE_META_OUT.write_text(json.dumps(universe_meta, indent=2) + "\n", encoding="utf-8")
 
+    # Keep the full history forever. On the first v5.9.70 run, also migrate
+    # whatever changes are still present in the immediately prior metadata file.
+    prior_name_map = _map(existing)
+    universe_history = _append_history_events(
+        universe_history,
+        _metadata_events(prior_universe_meta, prior_name_map),
+    )
+    universe_history = _append_history_events(
+        universe_history,
+        _metadata_events(universe_meta, {**prior_name_map, **_map(stocks)}),
+    )
+    UNIVERSE_HISTORY_OUT.write_text(
+        json.dumps(universe_history, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
     print(f"Universe written: {OUT} ({len(stocks):,} stocks + {len(etfs):,} CSV ETFs = {len(out):,})")
     print(
         f"Universe membership changes: +{len(added_symbols):,} / -{len(removed_symbols):,} "
@@ -278,6 +397,7 @@ def main() -> None:
         ))
     else:
         print("Analyst rating changes: none")
+    print(f"Historical universe/rating change events retained: {len(universe_history):,}")
 
 
 if __name__ == "__main__":
