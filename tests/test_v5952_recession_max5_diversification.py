@@ -16,8 +16,8 @@ def _usage(df):
 
 
 def test_release_version_5952():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
-    assert "v5.9.65" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.66"
+    assert "v5.9.66" in APP
 
 
 def test_ranker_hard_codes_max_five_ticker_repeats():

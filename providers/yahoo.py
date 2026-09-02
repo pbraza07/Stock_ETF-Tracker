@@ -402,47 +402,108 @@ class YahooFinanceProvider(MarketDataProvider):
     def get_price_targets(self, symbol: str) -> dict:
         """Return Yahoo analyst low/mean/high price targets for one stock.
 
-        The narrower analyst_price_targets endpoint is tried first. get_info is
-        only used as a fallback so bulk daily refreshes avoid unnecessary quote
-        metadata work when possible.
+        v5.9.66 deliberately keeps each Yahoo retrieval path independent. A failure
+        in analyst_price_targets must never disable the get_info fallback.
         """
         symbol = str(symbol).strip().upper()
         if not symbol:
             return {}
-        low = mean = high = median = None
+
         try:
             ticker = yf.Ticker(symbol)
-            targets = ticker.analyst_price_targets or {}
         except Exception:
             ticker = None
-            targets = {}
-        if isinstance(targets, dict):
-            low = targets.get("low")
-            mean = targets.get("mean")
-            high = targets.get("high")
-            median = targets.get("median")
-        if not any(value is not None for value in (low, mean, high)) and ticker is not None:
+        if ticker is None:
+            return {}
+
+        def unpack(value):
+            # Yahoo/yfinance can expose plain numbers or nested raw/fmt payloads.
+            if isinstance(value, dict):
+                for key in ("raw", "value", "fmt"):
+                    if key in value:
+                        candidate = unpack(value.get(key))
+                        if candidate is not None:
+                            return candidate
+                return None
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                return None
+            return number if pd.notna(number) and number > 0 else None
+
+        resolved = {"low": None, "mean": None, "high": None, "median": None}
+
+        def merge(payload):
+            if payload is None:
+                return
+            # Current yfinance API returns a dict with keys:
+            # current, low, high, mean, median.
+            if isinstance(payload, dict):
+                aliases = {
+                    "low": ("low", "targetLowPrice", "lowTarget"),
+                    "mean": ("mean", "targetMeanPrice", "average", "avg"),
+                    "high": ("high", "targetHighPrice", "highTarget"),
+                    "median": ("median", "targetMedianPrice"),
+                }
+                for target_key, keys in aliases.items():
+                    if resolved[target_key] is not None:
+                        continue
+                    for key in keys:
+                        if key in payload:
+                            value = unpack(payload.get(key))
+                            if value is not None:
+                                resolved[target_key] = value
+                                break
+                return
+
+            # Defensive compatibility for Series/DataFrame-shaped responses.
+            try:
+                if hasattr(payload, "to_dict"):
+                    converted = payload.to_dict()
+                    if isinstance(converted, dict):
+                        # DataFrames can become nested column dictionaries.
+                        flat = {}
+                        for key, value in converted.items():
+                            if isinstance(value, dict) and len(value) == 1:
+                                value = next(iter(value.values()))
+                            flat[key] = value
+                        merge(flat)
+            except Exception:
+                pass
+
+        # Current public yfinance method. Keep this first because it is narrower
+        # and cheaper than full quote-summary info.
+        try:
+            merge(ticker.get_analyst_price_targets())
+        except Exception:
+            pass
+
+        # Property fallback for yfinance releases where the method/property paths
+        # differ internally.
+        if not all(resolved[key] is not None for key in ("low", "mean", "high")):
+            try:
+                merge(ticker.analyst_price_targets)
+            except Exception:
+                pass
+
+        # Full Yahoo financialData fallback. Critically, this still runs even when
+        # either analyst-target endpoint above threw an exception.
+        if not all(resolved[key] is not None for key in ("low", "mean", "high")):
             try:
                 info = ticker.get_info() or {}
             except Exception:
                 info = {}
-            low = info.get("targetLowPrice", low)
-            mean = info.get("targetMeanPrice", mean)
-            high = info.get("targetHighPrice", high)
-            median = info.get("targetMedianPrice", median)
-        def clean(value):
-            try:
-                value = float(value)
-                return value if value > 0 else None
-            except (TypeError, ValueError):
-                return None
+            merge(info)
+
         result = {
-            "low": clean(low),
-            "mean": clean(mean),
-            "high": clean(high),
-            "median": clean(median),
+            "low": resolved["low"],
+            "mean": resolved["mean"],
+            "high": resolved["high"],
+            "median": resolved["median"],
+            "source": "Yahoo Finance analyst consensus",
         }
         return result if any(result[k] is not None for k in ("low", "mean", "high")) else {}
+
 
     def get_price_targets_many(self, symbols: Iterable[str], max_workers: int = 4) -> Dict[str, dict]:
         """Fetch analyst target ranges with a low-concurrency pass plus individual retry.
@@ -469,14 +530,21 @@ class YahooFinanceProvider(MarketDataProvider):
                     output[symbol] = values
 
         missing = [symbol for symbol in symbols if symbol not in output]
-        for symbol in missing:
-            try:
-                time.sleep(0.12)
-                values = self.get_price_targets(symbol)
-            except Exception:
-                values = {}
-            if values:
-                output[symbol] = values
+        for pass_no in range(2):
+            if not missing:
+                break
+            next_missing = []
+            for symbol in missing:
+                try:
+                    time.sleep(0.18 + 0.12 * pass_no)
+                    values = self.get_price_targets(symbol)
+                except Exception:
+                    values = {}
+                if values:
+                    output[symbol] = values
+                else:
+                    next_missing.append(symbol)
+            missing = next_missing
         return output
 
 

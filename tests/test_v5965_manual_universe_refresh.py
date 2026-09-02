@@ -12,8 +12,8 @@ WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_
 
 
 def test_release_version_5965():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
-    assert "v5.9.65" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.66"
+    assert "v5.9.66" in APP
 
 
 def test_pending_copy_refers_to_first_success_not_only_schedule():
@@ -81,5 +81,5 @@ def test_scheduled_workflow_persists_universe_before_long_history_work():
 
 
 def test_pdf_contract_bumped_to_v24():
-    marker = "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1"
     assert APP.count(marker) >= 2

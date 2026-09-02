@@ -231,6 +231,11 @@ def main() -> None:
                 "Price Target Average": target_mean if target_mean is not None else prior.get("Price Target Average", pd.NA),
                 "Price Target Low": target_low if target_low is not None else prior.get("Price Target Low", pd.NA),
                 "Price Target Updated ET": refresh_display if any(v is not None for v in (target_high, target_mean, target_low)) else prior.get("Price Target Updated ET", "—"),
+                "Price Target Source": (
+                    str(target_values.get("source") or "Yahoo Finance analyst consensus")
+                    if any(v is not None for v in (target_high, target_mean, target_low))
+                    else prior.get("Price Target Source", "")
+                ),
                 "Universe Source": m.get("Source") or prior.get("Universe Source") or "Manual persistent symbol",
                 "Return Basis": _basis(instrument_type),
                 "Snapshot Updated ET": refresh_display,
@@ -263,6 +268,7 @@ def main() -> None:
                         "Price Target Average": pd.NA,
                         "Price Target Low": pd.NA,
                         "Price Target Updated ET": "—",
+                        "Price Target Source": "",
                         "Since Inception": pd.NA,
                         **{c: pd.NA for c in PERF_COLS},
                         "Short Buy": False,
@@ -338,10 +344,67 @@ def main() -> None:
         time.sleep(PAUSE_SECONDS)
 
     df = pd.DataFrame([rows[s] for s in symbols if s in rows])
+
+    # v5.9.66 target completion pass:
+    # history downloads and Yahoo quote-summary modules have different throttle
+    # behavior. Recheck only stock rows that still lack one or more consensus
+    # targets, sequentially, after the heavy history loop has finished.
+    if not df.empty and "Symbol" in df.columns:
+        for col in ("Price Target Low", "Price Target Average", "Price Target High"):
+            if col not in df.columns:
+                df[col] = pd.NA
+        if "Price Target Source" not in df.columns:
+            df["Price Target Source"] = ""
+        if "Price Target Updated ET" not in df.columns:
+            df["Price Target Updated ET"] = "—"
+
+        stock_mask = df["Type"].astype(str).str.upper().str.strip().eq("STOCK")
+        target_numeric = {
+            col: pd.to_numeric(df[col], errors="coerce")
+            for col in ("Price Target Low", "Price Target Average", "Price Target High")
+        }
+        missing_mask = stock_mask.copy()
+        complete_mask = stock_mask.copy()
+        for col, values in target_numeric.items():
+            valid = values.notna() & np.isfinite(values) & (values > 0)
+            complete_mask &= valid
+        missing_mask &= ~complete_mask
+        missing_symbols = df.loc[missing_mask, "Symbol"].astype(str).str.upper().str.strip().tolist()
+
+        for target_start in range(0, len(missing_symbols), 12):
+            target_batch = missing_symbols[target_start:target_start + 12]
+            refreshed_targets = provider.get_price_targets_many(target_batch, max_workers=1)
+            for symbol in target_batch:
+                values = refreshed_targets.get(symbol) or {}
+                symbol_mask = df["Symbol"].astype(str).str.upper().str.strip().eq(symbol)
+                wrote = False
+                for source_key, col in (
+                    ("low", "Price Target Low"),
+                    ("mean", "Price Target Average"),
+                    ("high", "Price Target High"),
+                ):
+                    value = values.get(source_key)
+                    try:
+                        value = float(value)
+                    except (TypeError, ValueError):
+                        value = None
+                    if value is not None and np.isfinite(value) and value > 0:
+                        existing = pd.to_numeric(df.loc[symbol_mask, col], errors="coerce")
+                        if existing.empty or existing.isna().all() or (existing <= 0).all():
+                            df.loc[symbol_mask, col] = value
+                            wrote = True
+                if wrote:
+                    df.loc[symbol_mask, "Price Target Updated ET"] = refresh_display
+                    df.loc[symbol_mask, "Price Target Source"] = str(
+                        values.get("source") or "Yahoo Finance analyst consensus"
+                    )
+            if target_batch:
+                time.sleep(0.30)
+
     columns = [
         "Symbol", "Name", "Sector", "Industry", "Type", "MarketCap", "Price", "NAV",
         "Analyst Rating", "Rating Source", "Rating Updated ET",
-        "Price Target High", "Price Target Average", "Price Target Low", "Price Target Updated ET",
+        "Price Target High", "Price Target Average", "Price Target Low", "Price Target Updated ET", "Price Target Source",
         "1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS,
         "Since Inception", "Short Buy", "Long Buy", "Fundamental Buy",
         "Short Signal New", "Long Signal New", "Signal Reasons", "Signal Updated ET",
@@ -392,6 +455,15 @@ def main() -> None:
         df["Short Signal New"].fillna(False).astype(bool).sum()
         + df["Long Signal New"].fillna(False).astype(bool).sum()
     )
+    target_cols = ["Price Target Low", "Price Target Average", "Price Target High"]
+    stock_rows = df.loc[df["Type"].astype(str).str.upper().str.strip().eq("STOCK")].copy()
+    target_valid = []
+    for col in target_cols:
+        values = pd.to_numeric(stock_rows[col], errors="coerce")
+        target_valid.append(values.notna() & np.isfinite(values) & (values > 0))
+    complete_target_rows = int((target_valid[0] & target_valid[1] & target_valid[2]).sum()) if len(target_valid) == 3 else 0
+    target_cells = int(sum(int(mask.sum()) for mask in target_valid))
+
     annual_coverage_by_year = {
         year: int(pd.to_numeric(df[year], errors="coerce").notna().sum())
         for year in YEAR_RETURN_COLS
@@ -409,6 +481,9 @@ def main() -> None:
             "updated_instruments": populated,
             "snapshot_rows": int(len(df)),
             "new_buy_signal_events": new_alerts,
+            "price_target_complete_stock_rows": complete_target_rows,
+            "price_target_populated_cells": target_cells,
+            "price_target_source": "Yahoo Finance analyst consensus",
             "annual_history_year_count": len(YEAR_RETURN_COLS),
             "annual_history_first_year": ANNUAL_HISTORY_FIRST_YEAR,
             "annual_history_latest_completed_year": int(YEAR_RETURN_COLS[0]) if YEAR_RETURN_COLS else None,

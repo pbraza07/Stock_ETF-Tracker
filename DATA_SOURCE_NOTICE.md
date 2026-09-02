@@ -65,3 +65,8 @@ Only stocks with complete data for all 20 years are eligible. The ranking genera
 
 Stock analyst Low, Average/Consensus, and High targets come from Yahoo Finance through yfinance (`analyst_price_targets`, with Yahoo quote metadata fallback). Durable snapshot values are preferred; missing or partial stock target ranges are hydrated lazily in the app. ETFs remain blank when stock-style consensus targets are not published.
 
+## v5.9.66 analyst target source
+
+Stock analyst Low / Average / High targets are sourced from Yahoo Finance through yfinance's analyst-price-target and financial-data interfaces. MarketScope first preserves durable saved targets, then retries current Yahoo consensus data when a range is missing or incomplete.
+
+`Price Target Source` and `Price Target Updated ET` are retained in the snapshot and exposed in Market Table / Comparison Table. ETF stock-style analyst targets remain blank when Yahoo does not publish them.

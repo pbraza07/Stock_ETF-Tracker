@@ -69,7 +69,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
-# v5.9.65: manual Nasdaq-universe refresh + durable refresh timestamp recovery.
+# v5.9.66: manual Nasdaq-universe refresh + durable refresh timestamp recovery.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -731,7 +731,7 @@ def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
             df[col] = np.nan
         df[col] = pd.to_numeric(df[col], errors="coerce")
     for col in [
-        "Analyst Rating", "Rating Source", "Rating Updated ET", "Price Target Updated ET", "Snapshot Updated ET",
+        "Analyst Rating", "Rating Source", "Rating Updated ET", "Price Target Updated ET", "Price Target Source", "Snapshot Updated ET",
         "History Verification", "Verification Coverage", "Verification Exceptions",
         "Verification Source", "Verification Updated ET",
     ]:
@@ -777,13 +777,43 @@ def _annual_coverage_stats(df: pd.DataFrame) -> dict:
     }
 
 
+def _price_target_coverage_stats(df: pd.DataFrame) -> dict:
+    """Count genuine saved analyst-target coverage for snapshot selection/QA."""
+    if df is None or df.empty:
+        return {"target_cells": 0, "complete_stock_rows": 0}
+    work = df.copy()
+    types = (
+        work["Type"].astype(str).str.upper().str.strip()
+        if "Type" in work.columns else pd.Series("", index=work.index)
+    )
+    stocks = work.loc[types.eq("STOCK")].copy()
+    if stocks.empty:
+        return {"target_cells": 0, "complete_stock_rows": 0}
+    valid_cols = []
+    for col in PRICE_TARGET_COLS:
+        if col not in stocks.columns:
+            stocks[col] = np.nan
+        numeric = pd.to_numeric(stocks[col], errors="coerce")
+        valid = numeric.notna() & np.isfinite(numeric) & (numeric > 0)
+        valid_cols.append(valid)
+    target_cells = int(sum(int(mask.sum()) for mask in valid_cols))
+    complete = valid_cols[0] & valid_cols[1] & valid_cols[2]
+    return {
+        "target_cells": target_cells,
+        "complete_stock_rows": int(complete.sum()),
+    }
+
+
 def _snapshot_quality_key(df: pd.DataFrame) -> tuple:
-    """Prefer the snapshot with the strongest dynamically tracked annual history, then the most populated prices."""
+    """Prefer genuine annual history first, then analyst-target coverage and prices."""
     stats = _annual_coverage_stats(df)
+    targets = _price_target_coverage_stats(df)
     return (
         int(stats["years_with_any"]),
         int(stats["oldest_five_cells"]),
         int(stats["annual_cells"]),
+        int(targets["complete_stock_rows"]),
+        int(targets["target_cells"]),
         int(_populated_price_count(df)),
         int(stats["rows"]),
     )
@@ -876,7 +906,14 @@ def load_snapshot() -> pd.DataFrame:
     pool = populated or candidates
     # Python max is stable; local/GitHub/bootstrap order breaks exact ties without
     # changing data. A complete dynamic-history remote snapshot outranks a stale shorter local one.
-    _, best = max(pool, key=lambda pair: _snapshot_quality_key(pair[1]))
+    source_priority = {"bootstrap": 0, "local": 1, "github": 2}
+    _, best = max(
+        pool,
+        key=lambda pair: (
+            _snapshot_quality_key(pair[1]),
+            int(source_priority.get(pair[0], 0)),
+        ),
+    )
     return best
 
 
@@ -1201,7 +1238,7 @@ def cached_price_targets(symbols: tuple[str, ...]) -> dict:
     if not clean:
         return {}
     try:
-        return provider.get_price_targets_many(clean, max_workers=3)
+        return provider.get_price_targets_many(clean, max_workers=2)
     except Exception:
         return {}
 
@@ -1212,53 +1249,101 @@ def _valid_price_target(value) -> bool:
 
 
 def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str]) -> pd.DataFrame:
-    """Fill missing stock analyst Low / Average / High targets everywhere MarketScope displays them.
+    """Fill missing stock analyst Low / Average / High targets across every surface.
 
-    Durable snapshot values remain the first source. If any of the three fields is
-    missing for a requested stock, Yahoo/yfinance is queried through the shared
-    cached target loader. Existing valid values are preserved when a fresh source
-    omits only part of the range.
+    Resolution order:
+    1. durable snapshot value;
+    2. shared cached Yahoo batch resolver;
+    3. uncached per-symbol Yahoo resolver as a second chance.
+
+    Existing valid values are never erased by a partial/failed response.
     """
     if df is None or df.empty or "Symbol" not in df.columns:
         return df
+
     out = df.copy()
-    requested = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
+    requested = tuple(
+        dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip())
+    )
     if not requested:
         return out
-    for col in [*PRICE_TARGET_COLS, "Price Target Updated ET"]:
+
+    for col in PRICE_TARGET_COLS:
         if col not in out.columns:
-            out[col] = np.nan if col in PRICE_TARGET_COLS else "—"
+            out[col] = np.nan
+    for col, default in (
+        ("Price Target Updated ET", "—"),
+        ("Price Target Source", ""),
+    ):
+        if col not in out.columns:
+            out[col] = default
+
     upper_symbols = out["Symbol"].astype(str).str.upper().str.strip()
-    wanted = out[upper_symbols.isin(requested)].copy()
+    wanted = out.loc[upper_symbols.isin(requested)].copy()
     if wanted.empty:
         return out
+
     missing_symbols = []
     for _, row in wanted.iterrows():
         if str(row.get("Type") or "").strip().upper() != "STOCK":
             continue
         if any(not _valid_price_target(row.get(col)) for col in PRICE_TARGET_COLS):
-            missing_symbols.append(str(row.get("Symbol") or "").upper().strip())
+            symbol = str(row.get("Symbol") or "").upper().strip()
+            if symbol:
+                missing_symbols.append(symbol)
     missing_symbols = list(dict.fromkeys(missing_symbols))
     if not missing_symbols:
         return out
+
     try:
-        target_map = cached_price_targets(tuple(missing_symbols))
+        target_map = dict(cached_price_targets(tuple(missing_symbols)) or {})
     except Exception:
         target_map = {}
-    if not target_map:
-        return out
+
+    # A cached empty/partial batch must not lock Table View or PDF into blanks.
+    # Retry unresolved symbols directly, sequentially, bypassing the cache.
+    for symbol in missing_symbols:
+        values = target_map.get(symbol) or {}
+        if not all(_valid_price_target(values.get(key)) for key in ("low", "mean", "high")):
+            try:
+                direct = provider.get_price_targets(symbol) or {}
+            except Exception:
+                direct = {}
+            if direct:
+                merged = dict(values)
+                for key in ("low", "mean", "high", "median", "source"):
+                    if direct.get(key) is not None:
+                        merged[key] = direct.get(key)
+                target_map[symbol] = merged
+
     stamp = format_et()
     for symbol in missing_symbols:
         values = target_map.get(symbol) or {}
         mask = upper_symbols.eq(symbol)
         wrote = False
-        for source_key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
-            value = pd.to_numeric(pd.Series([values.get(source_key)]), errors="coerce").iloc[0]
+        for source_key, col in (
+            ("low", "Price Target Low"),
+            ("mean", "Price Target Average"),
+            ("high", "Price Target High"),
+        ):
+            value = pd.to_numeric(
+                pd.Series([values.get(source_key)]), errors="coerce"
+            ).iloc[0]
             if pd.notna(value) and np.isfinite(value) and float(value) > 0:
-                out.loc[mask, col] = float(value)
+                # Only replace missing/invalid values; retain durable valid targets.
+                current = pd.to_numeric(out.loc[mask, col], errors="coerce")
+                replace_mask = mask & (
+                    pd.to_numeric(out[col], errors="coerce").isna()
+                    | ~np.isfinite(pd.to_numeric(out[col], errors="coerce"))
+                    | (pd.to_numeric(out[col], errors="coerce") <= 0)
+                )
+                out.loc[replace_mask, col] = float(value)
                 wrote = True
         if wrote:
             out.loc[mask, "Price Target Updated ET"] = stamp
+            out.loc[mask, "Price Target Source"] = str(
+                values.get("source") or "Yahoo Finance analyst consensus"
+            )
     return out
 
 
@@ -1316,7 +1401,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -4371,7 +4456,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -4437,7 +4522,7 @@ with portfolio_tab:
                     action_cols = st.columns([1.35, 1.15, 1.0, 3.7])
                     pdf_record = _enrich_pdf_record_with_current_market(rec, market)
                     record_json = json.dumps(pdf_record, sort_keys=True, separators=(",", ":"))
-                    # v5.9.65 forces the first open of an older saved PDF through the current
+                    # v5.9.66 forces the first open of an older saved PDF through the current
                     # page-1 contract so current price/rating/low/avg/high targets are present.
                     pdf_bytes = cached_simulation_pdf(record_json)
                     with action_cols[0]:
@@ -5606,9 +5691,10 @@ with market_tab:
 
         TABLE_COLUMNS = [
             "Symbol", "Name", "Type", "Sector", "Industry", "Price", "Market Cap ($B)",
+            "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
+            "Price Target Source", "Price Target Updated ET",
             "Analyst Rating", "Worst Year", "History Verification", "Verification Coverage",
             "Verification Discrepancies", "Max Verification Diff (pp)", "Verification Exceptions",
-            "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
             "Short Buy", "Long Buy", "Fundamental Buy",
             *PERF_COLS,
             "Simulation Period", "Investment Amount ($)", "Estimated Value ($)", "Profit / Loss ($)", "Simulation Return %",
@@ -5707,6 +5793,8 @@ with market_tab:
             "Price Target Average": st.column_config.NumberColumn("Target Avg", format="$%.2f"),
             "Price Target High": st.column_config.NumberColumn("Target High", format="$%.2f"),
             "Avg Target Implied %": st.column_config.NumberColumn("Avg Target Implied", format="%.2f%%"),
+            "Price Target Source": st.column_config.TextColumn("Target Source"),
+            "Price Target Updated ET": st.column_config.TextColumn("Target Updated ET"),
             "Investment Amount ($)": st.column_config.NumberColumn("Investment", format="$%.2f"),
             "Estimated Value ($)": st.column_config.NumberColumn("Est. Value", format="$%.2f"),
             "Profit / Loss ($)": st.column_config.NumberColumn("Profit / Loss", format="$%.2f"),
@@ -6027,6 +6115,7 @@ with compare_tab:
             comparison_columns = [
                 "Logo", "Symbol", "Name", "Sector", "Industry", "Price", "Market Cap ($B)",
                 "Analyst Rating", "Price Target Low", "Price Target Average", "Price Target High", "Avg Target Implied %",
+                "Price Target Source", "Price Target Updated ET",
                 "Short Buy", "Long Buy", "Fundamental Buy", *PERF_COLS,
                 "Simulation Period", "Investment Amount ($)", "Estimated Value ($)", "Profit / Loss ($)", "Simulation Return %",
                 "Signal Reasons",
@@ -6079,6 +6168,8 @@ with compare_tab:
                 "Price Target Average": st.column_config.NumberColumn("Target Avg", format="$%.2f"),
                 "Price Target High": st.column_config.NumberColumn("Target High", format="$%.2f"),
                 "Avg Target Implied %": st.column_config.NumberColumn("Avg Target Implied", format="%.2f%%"),
+                "Price Target Source": st.column_config.TextColumn("Target Source"),
+                "Price Target Updated ET": st.column_config.TextColumn("Target Updated ET"),
                 "Investment Amount ($)": st.column_config.NumberColumn("Investment", format="$%.2f"),
                 "Estimated Value ($)": st.column_config.NumberColumn("Est. Value", format="$%.2f"),
                 "Profit / Loss ($)": st.column_config.NumberColumn("Profit / Loss", format="$%.2f"),

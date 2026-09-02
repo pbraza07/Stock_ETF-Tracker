@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.65)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.66)
 # Automatic daily refresh owns the full dynamically growing completed-year adjusted-history window
 # and the matching dynamic-history actual-monthly dataset used by withdrawal simulations.
 
@@ -66,7 +66,7 @@ jobs:
       - name: Refresh Nasdaq >$100B universe and analyst ratings
         run: python scripts/update_universe.py
 
-      # v5.9.65: save universe membership immediately. A later Yahoo/history,
+      # v5.9.66: save universe membership immediately. A later Yahoo/history,
       # verification, or ranking failure must not leave the dashboard saying
       # the Nasdaq universe has never refreshed.
       - name: Persist Nasdaq universe refresh immediately

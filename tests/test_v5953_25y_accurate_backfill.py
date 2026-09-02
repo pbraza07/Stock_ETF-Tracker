@@ -9,7 +9,7 @@ PERSISTENCE = (ROOT / "persistence.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.66"
 
 
 def test_app_tracks_dynamic_completed_years_and_oldest_five():
@@ -24,7 +24,8 @@ def test_snapshot_loader_prefers_real_full_history_coverage_over_price_only():
     assert "def _snapshot_quality_key" in APP
     assert 'int(stats["years_with_any"])' in APP
     assert 'int(stats["oldest_five_cells"])' in APP
-    assert 'max(pool, key=lambda pair: _snapshot_quality_key(pair[1]))' in APP
+    assert 'source_priority = {"bootstrap": 0, "local": 1, "github": 2}' in APP
+    assert "_snapshot_quality_key(pair[1])" in APP
 
 
 def test_no_separate_history_repair_ui_remains():
@@ -45,7 +46,7 @@ def test_workflow_runs_dynamic_history_before_rankings():
     monthly_pos = WORKFLOW.index("python scripts/build_actual_monthly_rankings.py")
     assert audit_pos < monthly_pos
     assert 'MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01' in WORKFLOW
-    assert 'name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.65)' in WORKFLOW
+    assert 'name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.66)' in WORKFLOW
 
 
 def test_validator_schema_is_dynamic():
@@ -62,7 +63,7 @@ def test_manual_persistence_metadata_records_annual_coverage():
 
 
 def test_pdf_layout_v17_rebuilds_from_dynamic_snapshot():
-    marker = "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + manual universe refresh + responsive withdrawal KPI layout + required instrument market data on page 1"
     assert APP.count(marker) >= 2
 
 

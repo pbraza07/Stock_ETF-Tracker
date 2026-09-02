@@ -1,3 +1,7 @@
+# MarketScope v5.9.66 — End-to-End Price Target Fix
+
+Analyst **Low / Average-Consensus / High** targets are now repaired end-to-end across Market Table, Card View, Full Details, Comparison, saved simulations and Portfolio PDF page 1. The Yahoo/yfinance resolver no longer loses its `get_info()` fallback when the analyst-target endpoint throws, target-rich snapshots are preferred over target-empty equivalents, and cached misses receive a direct per-symbol retry.
+
 # MarketScope v5.9.65 — Manual Nasdaq Universe Refresh
 
 Market Navigator now has a dedicated **Refresh Nasdaq Universe Now** button. It refreshes >$100B Nasdaq stock membership, analyst ratings, added/removed symbols, and the universe timestamp immediately. The scheduled workflow also persists universe metadata before the longer Yahoo/history pipeline, preventing later data-job failures from leaving the universe status stuck at Pending.

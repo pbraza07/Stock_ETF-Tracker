@@ -1,3 +1,15 @@
+# v5.9.66 deployment note
+
+Deploy over the existing GitHub repository and preserve live saved Portfolio Simulation JSON/PDF files.
+
+After deployment:
+1. confirm the app header shows v5.9.66;
+2. open Market Table — Target Low / Target Avg / Target High now appear directly after Market Cap;
+3. open or rebuild a saved Portfolio PDF — page 1 is forced through PDF layout v25;
+4. the normal scheduled snapshot refresh performs a dedicated target-completion pass and persists target coverage metadata.
+
+No manual target repair is required.
+
 # v5.9.65 deployment note
 
 Deploy over the existing repository. Keep `MARKETSCOPE_GITHUB_TOKEN` configured with repository Contents read/write permission. The new manual Nasdaq universe button uses that same permission; it does not require GitHub Actions write access.

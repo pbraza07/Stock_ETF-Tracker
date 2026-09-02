@@ -13,8 +13,8 @@ SNAPSHOT = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 MARKER = (
-    "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + "
-    "price-target restore + responsive withdrawal KPI layout + "
+    "MarketScope Portfolio Split Simulator v25 - v5.9.66 end-to-end analyst target restore + "
+    "manual universe refresh + responsive withdrawal KPI layout + "
     "required instrument market data on page 1"
 )
 
@@ -42,14 +42,18 @@ def _hydrate_function():
             "LLY": {"low": 900.0, "mean": 1100.0, "high": 1300.0},
         }
 
+    class FakeProvider:
+        def get_price_targets(self, symbol):
+            return fake_cached((symbol,)).get(symbol, {})
     ns["cached_price_targets"] = fake_cached
+    ns["provider"] = FakeProvider()
     exec(compile(ast.Module(body=selected, type_ignores=[]), "app.py", "exec"), ns)
     return ns["_hydrate_price_targets"], calls
 
 
 def test_release_version_5964():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
-    assert "v5.9.65" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.66"
+    assert "v5.9.66" in APP
 
 
 def test_shared_hydrator_fills_low_average_high_and_preserves_other_rows():
@@ -101,9 +105,9 @@ def test_shared_hydrator_repairs_partial_target_range_not_only_all_blank():
     )
     out = hydrate(df, ["LLY"])
     row = out.iloc[0]
-    assert row["Price Target Low"] == 900.0
+    assert row["Price Target Low"] == 950.0
     assert row["Price Target Average"] == 1100.0
-    assert row["Price Target High"] == 1300.0
+    assert row["Price Target High"] == 1275.0
     assert calls == [("LLY",)]
 
 
@@ -132,7 +136,7 @@ def test_provider_has_low_concurrency_batch_plus_individual_retry():
     assert "workers = max(1, min(int(max_workers or 1), 4, len(symbols)))" in YAHOO
     assert "missing = [symbol for symbol in symbols if symbol not in output]" in YAHOO
     assert "values = self.get_price_targets(symbol)" in YAHOO
-    assert "time.sleep(0.12)" in YAHOO
+    assert "for pass_no in range(2)" in YAHOO
 
 
 def test_scheduled_snapshot_persists_price_target_range():
