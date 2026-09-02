@@ -1,38 +1,17 @@
 {
-  "refreshed_at_et": "2026-09-02T09:38:28.067333-04:00",
-  "refreshed_at_display_et": "Sep 02, 2026 09:38:28 AM EDT",
+  "refreshed_at_et": "2026-09-02T11:25:01.300650-04:00",
+  "refreshed_at_display_et": "Sep 02, 2026 11:25:01 AM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
   "stock_count": 171,
   "etf_count": 213,
-  "added_count": 2,
-  "removed_count": 6,
-  "added_symbols": [
-    "PSX",
-    "VLO"
-  ],
+  "added_count": 0,
+  "removed_count": 1,
+  "added_symbols": [],
   "removed_symbols": [
-    "AEM",
-    "BN",
-    "CEG",
-    "DASH",
-    "GD",
-    "VRT"
+    "AEM"
   ],
-  "analyst_rating_change_count": 2,
-  "analyst_rating_changes": [
-    {
-      "symbol": "DE",
-      "name": "Deere & Company Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
-    },
-    {
-      "symbol": "PBR",
-      "name": "Petroleo Brasileiro S.A. Petrobras ADS",
-      "from": "Buy",
-      "to": "Strong Buy"
-    }
-  ]
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }
