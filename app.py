@@ -1071,7 +1071,7 @@ def load_universe_change_history() -> list[dict]:
 
 
 def _current_metadata_change_events(metadata: dict) -> list[dict]:
-    """Bridge the most recent pre-v5.9.77 metadata change into the history view."""
+    """Bridge the most recent pre-v5.9.78 metadata change into the history view."""
     if not isinstance(metadata, dict):
         return []
     stamp = str(metadata.get("refreshed_at_et") or "").strip()
@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2572,7 +2572,7 @@ with market_tab:
         if six_month_history.empty:
             st.info(
                 "No recorded Nasdaq universe or analyst-rating changes fall within the last six months yet. "
-                "v5.9.77 begins durable history collection and migrates the latest change still present in universe metadata."
+                "v5.9.78 begins durable history collection and migrates the latest change still present in universe metadata."
             )
         else:
             history_counts = six_month_history["Change Type"].value_counts()
@@ -3514,6 +3514,59 @@ def _portfolio_start_year_paths_dataframe(
         return pd.DataFrame(columns=columns)
 
     return pd.DataFrame(rows)[columns]
+
+
+def _start_year_depletion_summary(paths_df: pd.DataFrame) -> dict:
+    """Summarize the first depletion event across rolling Start-Year cohorts.
+
+    A cohort is depleted when Remaining After Withdrawal reaches effectively $0.
+    The displayed year is the earliest calendar year in which any cohort depletes.
+    The associated Start Year is retained so the dashboard remains auditable.
+    """
+    empty = {
+        "total_cohorts": 0,
+        "depleted_cohorts": 0,
+        "first_depletion_year": None,
+        "first_depletion_start_year": None,
+    }
+    if paths_df is None or paths_df.empty:
+        return empty
+    required = {"Start Year", "Year", "Remaining After Withdrawal ($)"}
+    if not required.issubset(paths_df.columns):
+        return empty
+
+    work = paths_df.copy()
+    work["Start Year"] = pd.to_numeric(work["Start Year"], errors="coerce")
+    work["Year"] = pd.to_numeric(work["Year"], errors="coerce")
+    work["Remaining After Withdrawal ($)"] = pd.to_numeric(
+        work["Remaining After Withdrawal ($)"], errors="coerce"
+    )
+    work = work.dropna(subset=["Start Year", "Year", "Remaining After Withdrawal ($)"])
+    if work.empty:
+        return empty
+
+    total_cohorts = int(work["Start Year"].nunique())
+    depleted = work.loc[work["Remaining After Withdrawal ($)"] <= 0.005].copy()
+    if depleted.empty:
+        return {
+            "total_cohorts": total_cohorts,
+            "depleted_cohorts": 0,
+            "first_depletion_year": None,
+            "first_depletion_start_year": None,
+        }
+
+    first_per_cohort = (
+        depleted.sort_values(["Start Year", "Year"])
+        .groupby("Start Year", as_index=False)
+        .first()
+    )
+    first_event = first_per_cohort.sort_values(["Year", "Start Year"]).iloc[0]
+    return {
+        "total_cohorts": total_cohorts,
+        "depleted_cohorts": int(first_per_cohort["Start Year"].nunique()),
+        "first_depletion_year": int(first_event["Year"]),
+        "first_depletion_start_year": int(first_event["Start Year"]),
+    }
 
 
 def _portfolio_monthly_withdrawal_schedule(
@@ -4730,7 +4783,7 @@ with portfolio_tab:
                                 )
                     st.markdown("</div>", unsafe_allow_html=True)
 
-                # v5.9.77 - keep the annual strategy tab row visible inside Build Simulation
+                # v5.9.78 - keep the annual strategy tab row visible inside Build Simulation
                 # even when Yearly Withdrawal is disabled or its calculation is not yet available.
                 annual_withdrawal_tabs_rendered = False
 
@@ -4916,23 +4969,59 @@ with portfolio_tab:
                                     key="portfolio_annual_reset_performance_table",
                                 )
 
+                        start_year_rb_paths_df = _portfolio_start_year_paths_dataframe(
+                            market,
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                            float(portfolio_annual_withdrawal),
+                            list(effective_portfolio_years),
+                            True,
+                        )
+                        start_year_nr_paths_df = _portfolio_start_year_paths_dataframe(
+                            market,
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                            float(portfolio_annual_withdrawal),
+                            list(effective_portfolio_years),
+                            False,
+                        )
+                        start_year_rb_depletion = _start_year_depletion_summary(start_year_rb_paths_df)
+                        start_year_nr_depletion = _start_year_depletion_summary(start_year_nr_paths_df)
+
+                        def _render_start_year_depletion_dashboard() -> None:
+                            """Two wide cards below the KPI row so depletion text is never squeezed."""
+                            st.markdown(
+                                "<div style='font-size:.72rem;font-weight:800;letter-spacing:.06em;margin:.7rem 0 .25rem 0;'>"
+                                "ACCOUNT DEPLETION · ROLLING START-YEAR COHORTS</div>",
+                                unsafe_allow_html=True,
+                            )
+                            dep_rb_col, dep_nr_col = st.columns(2)
+                            for _col, _label, _summary in (
+                                (dep_rb_col, "RB first depletion year", start_year_rb_depletion),
+                                (dep_nr_col, "NR first depletion year", start_year_nr_depletion),
+                            ):
+                                _year = _summary.get("first_depletion_year")
+                                _start = _summary.get("first_depletion_start_year")
+                                _depleted = int(_summary.get("depleted_cohorts") or 0)
+                                _total = int(_summary.get("total_cohorts") or 0)
+                                _col.metric(_label, str(_year) if _year is not None else "Not depleted")
+                                if _year is not None:
+                                    _col.caption(
+                                        f"Earliest affected start cohort: {_start} • Depleted cohorts: {_depleted}/{_total}"
+                                    )
+                                else:
+                                    _col.caption(f"All modeled cohorts survived • Depleted cohorts: 0/{_total}")
+
                         def _render_start_year_paths_tab(
                             *,
-                            rebalance_after_withdrawal: bool,
+                            paths_df: pd.DataFrame,
                             table_key: str,
                             title: str,
                             caption: str,
                         ) -> None:
                             st.caption(caption)
-                            paths_df = _portfolio_start_year_paths_dataframe(
-                                market,
-                                list(selected_portfolio_symbols),
-                                dict(portfolio_weights),
-                                float(portfolio_total),
-                                float(portfolio_annual_withdrawal),
-                                list(effective_portfolio_years),
-                                bool(rebalance_after_withdrawal),
-                            )
 
                             if paths_df.empty:
                                 st.warning(
@@ -4953,9 +5042,12 @@ with portfolio_tab:
                             sp4.metric("Earliest / Latest", f"{earliest_start} / {latest_start}")
                             sp5.metric("Path rows", f"{total_rows:,}")
 
+                            _render_start_year_depletion_dashboard()
+
                             st.caption(
                                 "Profit ($) and Profit (%) are cumulative versus the original investment and include cash already withdrawn: "
-                                "Remaining After Withdrawal + Cumulative Withdrawn − Initial Investment."
+                                "Remaining After Withdrawal + Cumulative Withdrawn − Initial Investment. "
+                                "Depletion year is the earliest calendar year where any rolling cohort reaches a $0 remaining balance."
                             )
 
                             start_year_column_config = {
@@ -4985,7 +5077,7 @@ with portfolio_tab:
 
                         with start_year_rb_tab:
                             _render_start_year_paths_tab(
-                                rebalance_after_withdrawal=True,
+                                paths_df=start_year_rb_paths_df,
                                 table_key="portfolio_start_year_rebalanced_table",
                                 title="Rebalanced",
                                 caption=(
@@ -4997,7 +5089,7 @@ with portfolio_tab:
 
                         with start_year_nr_tab:
                             _render_start_year_paths_tab(
-                                rebalance_after_withdrawal=False,
+                                paths_df=start_year_nr_paths_df,
                                 table_key="portfolio_start_year_not_rebalanced_table",
                                 title="Not-Rebalanced",
                                 caption=(
@@ -5273,7 +5365,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.77: repeat the active withdrawal outcome here so the income
+        # v5.9.78: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -5534,7 +5626,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5753,7 +5845,7 @@ with market_tab:
             unsafe_allow_html=True,
         )
 
-        # v5.9.77: use the same searchable dropdown interaction as Portfolio
+        # v5.9.78: use the same searchable dropdown interaction as Portfolio
         # Simulator / Comparison rather than a plain free-text filter.
         _card_search_rows = filtered.copy()
         _card_search_rows["Symbol"] = _card_search_rows["Symbol"].astype(str).str.upper().str.strip()
@@ -6818,7 +6910,7 @@ with market_tab:
             "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
         ]
-        # v5.9.77: Table View uses the same searchable multiselect dropdown
+        # v5.9.78: Table View uses the same searchable multiselect dropdown
         # behavior as Portfolio Simulator / Stock & ETF Comparison.
         _table_search_rows = table_df.copy()
         _table_search_rows["Symbol"] = _table_search_rows["Symbol"].astype(str).str.upper().str.strip()

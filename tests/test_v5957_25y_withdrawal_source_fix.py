@@ -8,7 +8,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.77"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.78"
     assert "v5.9.66" in APP
 
 
@@ -79,7 +79,7 @@ def test_pdf_does_not_truncate_annual_withdrawal_schedule():
 
 
 def test_pdf_contract_is_v17():
-    marker = 'MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2
 
 

@@ -1,3 +1,9 @@
+# MarketScope v5.9.78 — Start-Year RB/NR Depletion Dashboard
+
+The Start-Year Rebalanced and Start-Year Not Rebalanced dashboards now add a separate, full-width **Account Depletion** row beneath the existing five KPI cards. The original KPI row is unchanged, so Initial Investment, Annual Withdrawal, Start-Year Cohorts, Earliest/Latest and Path Rows retain their current large text and spacing.
+
+The new row uses two wide cards: **RB First Depletion Year** and **NR First Depletion Year**. Each also identifies the earliest affected Start-Year cohort and how many rolling cohorts depleted. If no cohort reaches $0, the card displays **Not depleted**.
+
 # MarketScope v5.9.77 — Split Start-Year Strategies
 
 The rolling Start-Year analysis is now separated into two dedicated Build Simulation tabs:

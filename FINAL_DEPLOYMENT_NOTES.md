@@ -1,3 +1,9 @@
+# v5.9.78 deployment note
+
+Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF files.
+
+After deployment, open either Start-Year Rebalanced or Start-Year Not Rebalanced. The existing five KPI cards remain unchanged; directly below them, two wide cards show the first depletion year for RB and NR.
+
 # v5.9.77 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state.

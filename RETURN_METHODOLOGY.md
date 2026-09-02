@@ -173,3 +173,11 @@ For Rebalanced, target weights are restored after each completed-year withdrawal
 For Not Rebalanced, holdings retain their drifted weights after returns and proportional withdrawals.
 
 Both carry Remaining After Withdrawal forward into subsequent years and both use the same cumulative economic-profit definition.
+
+## v5.9.78 Start-Year depletion metric
+
+For each Start-Year strategy, a cohort is depleted when its Remaining After Withdrawal reaches effectively zero (`<= $0.005`).
+
+The dashboard's First Depletion Year is the earliest calendar year among the first depletion event of each depleted cohort. The associated Start Year is retained and displayed for auditability.
+
+This metric does not alter the underlying withdrawal or portfolio calculations.

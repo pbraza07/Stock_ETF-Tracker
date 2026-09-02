@@ -31,8 +31,8 @@ def _load_reset_helpers():
 
 
 def test_release_version_5974():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.77"
-    assert "v5.9.77" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.78"
+    assert "v5.9.78" in APP
 
 
 def test_annual_reset_is_inside_build_annual_withdrawal_tabs_not_top_level():
@@ -184,5 +184,5 @@ def test_reset_tab_uses_current_simulator_withdrawal_and_effective_years():
 
 
 def test_pdf_contract_bumped_to_v32():
-    marker = 'MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2
