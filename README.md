@@ -1,3 +1,11 @@
+# MarketScope v5.9.76 — Start-Year Rolling Withdrawal Paths
+
+Portfolio Simulator → Build Simulation now includes a fifth annual-withdrawal tab:
+
+**↻ Rebalanced annually | ↝ Not rebalanced | ⚖ Side-by-side | 📅 Annual Reset | 📈 Start-Year Paths**
+
+Start-Year Paths answers: “What if I first invested in each different eligible year?” Each cohort begins with the same original investment in its own Start Year, applies the selected annual withdrawal every year, and carries the Remaining After Withdrawal forward into all subsequent eligible years. The balance does not reset after the cohort starts.
+
 # MarketScope v5.9.75 — Persistent Build Simulation Withdrawal Tabs
 
 The yearly-withdrawal strategy tabs inside **Build Simulation** are now structural and remain visible even when the **Yearly withdrawal** toggle is off or the annual-withdrawal calculation is temporarily unavailable.

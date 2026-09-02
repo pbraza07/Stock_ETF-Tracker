@@ -143,3 +143,23 @@ For each eligible completed calendar year:
 The starting balance is then reset before the next calendar year. No balance, profit, loss, or allocation drift carries between rows.
 
 The Annual Reset tab is restricted to the current completed-year Portfolio Simulator window and excludes any year where one or more selected instruments lacks a valid annual return.
+
+## v5.9.76 start-year rolling withdrawal paths
+
+For every eligible Start Year, the portfolio begins with the same original investment and target allocation.
+
+From that Start Year forward, each completed calendar year follows the standard annual-withdrawal sequence:
+
+1. begin with the prior year's Remaining After Withdrawal;
+2. apply each holding's actual saved annual return;
+3. calculate annual portfolio gain/loss;
+4. take the requested annual withdrawal;
+5. carry the remaining balance into the next year.
+
+The cohort is never reset after its Start Year.
+
+A new cohort begins for every eligible Start Year.
+
+Cumulative Profit includes cash already withdrawn:
+
+`Profit = Current Remaining Balance + Cumulative Withdrawals − Original Investment`

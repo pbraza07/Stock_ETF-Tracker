@@ -29,8 +29,8 @@ def _namespace():
 
 
 def test_release_version_5969():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.75"
-    assert "v5.9.75" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.76"
+    assert "v5.9.76" in APP
 
 
 def test_saved_withdrawal_strip_is_inside_same_library_card():
@@ -118,6 +118,6 @@ def test_inline_strip_matches_red_arrow_location_under_primary_metrics():
 
 def test_pdf_contract_bumped_to_v27():
     marker = (
-        'MarketScope Portfolio Split Simulator v33 - v5.9.75 persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+        'MarketScope Portfolio Split Simulator v34 - v5.9.76 start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     )
     assert APP.count(marker) >= 2

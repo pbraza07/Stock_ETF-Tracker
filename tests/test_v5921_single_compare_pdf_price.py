@@ -5,7 +5,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 VIEWER = (ROOT / "static" / "pdf_viewer.html").read_text(encoding="utf-8")
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.75"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.76"
 
 def test_single_comparison_input_contract():
     assert '"Stocks & ETFs to compare (unlimited selection)"' in APP

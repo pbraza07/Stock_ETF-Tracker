@@ -6,11 +6,11 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5959():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.75"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.76"
 
 
 def test_pdf_contract_bumped_to_v18():
-    marker = 'MarketScope Portfolio Split Simulator v33 - v5.9.75 persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v34 - v5.9.76 start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2
 
 

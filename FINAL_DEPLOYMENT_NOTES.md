@@ -1,3 +1,11 @@
+# v5.9.76 deployment note
+
+Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state.
+
+After deployment, Portfolio Simulator → Build Simulation → Yearly Withdrawal displays the new **📈 Start-Year Paths** tab immediately beside **📅 Annual Reset**.
+
+No data migration is required.
+
 # v5.9.75 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF files.

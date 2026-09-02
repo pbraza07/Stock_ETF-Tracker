@@ -31,8 +31,8 @@ def _load_reset_helpers():
 
 
 def test_release_version_5974():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.75"
-    assert "v5.9.75" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.76"
+    assert "v5.9.76" in APP
 
 
 def test_annual_reset_is_inside_build_annual_withdrawal_tabs_not_top_level():
@@ -40,7 +40,7 @@ def test_annual_reset_is_inside_build_annual_withdrawal_tabs_not_top_level():
     assert "portfolio_reset_tab" not in APP
     assert '"📅 Annual Reset"' in APP
     annual_section = APP[APP.index("ANNUAL WITHDRAWAL — REBALANCED VS NOT REBALANCED"):]
-    assert 'rb_tab, nr_tab, compare_tab, reset_tab = st.tabs([' in annual_section
+    assert 'rb_tab, nr_tab, compare_tab, reset_tab, start_year_tab = st.tabs([' in annual_section
     assert '"⚖ Side-by-side",' in annual_section
     assert '"📅 Annual Reset",' in annual_section
     assert "with reset_tab:" in annual_section
@@ -184,10 +184,5 @@ def test_reset_tab_uses_current_simulator_withdrawal_and_effective_years():
 
 
 def test_pdf_contract_bumped_to_v32():
-    marker = (
-        "MarketScope Portfolio Split Simulator v33 - v5.9.75 persistent Build Simulation withdrawal tabs + "
-        "annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + "
-        "display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + "
-        "PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
-    )
+    marker = 'MarketScope Portfolio Split Simulator v34 - v5.9.76 start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2
