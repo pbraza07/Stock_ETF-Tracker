@@ -14,7 +14,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5966():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.69"
     assert "v5.9.66" in APP
 
 
@@ -198,8 +198,8 @@ def test_snapshot_has_post_history_target_completion_pass_and_metadata():
 
 def test_pdf_contract_bumped_to_v25():
     marker = (
-        "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + "
-        "Market Table target transcription + responsive withdrawal KPI layout + "
+        "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + "
+        "PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + "
         "required instrument market data on page 1"
     )
     assert APP.count(marker) >= 2

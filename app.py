@@ -1479,7 +1479,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -3383,13 +3383,8 @@ def _annual_withdrawal_kpi_grid(
     return '<div class="monthly-withdrawal-kpi-grid">' + "".join(html) + "</div>"
 
 
-def _saved_simulation_withdrawal_kpi(record: dict) -> tuple[str, str] | None:
-    """Return the saved simulation's annual/monthly five-card withdrawal summary.
-
-    The library uses the same KPI renderers as the live Portfolio Simulator so a
-    saved record preserves the exact income context at a glance. Legacy records
-    are supported through the existing saved result/schedule fields.
-    """
+def _saved_simulation_withdrawal_values(record: dict) -> dict | None:
+    """Normalize saved annual/monthly withdrawal metrics for compact library rendering."""
     if not isinstance(record, dict):
         return None
 
@@ -3423,12 +3418,19 @@ def _saved_simulation_withdrawal_kpi(record: dict) -> tuple[str, str] | None:
             if nr.get("months_modeled") is not None
             else (record.get("monthly_months_modeled_not_rebalanced") or 0)
         )
-        return (
-            "MONTHLY WITHDRAWAL SUMMARY",
-            _monthly_withdrawal_kpi_grid(
-                amount, rb_end, nr_end, rb_positive, rb_months, nr_positive, nr_months
-            ),
-        )
+        return {
+            "mode": "monthly",
+            "amount_label": "MONTHLY WITHDRAWAL",
+            "amount": amount,
+            "rb_end": rb_end,
+            "nr_end": nr_end,
+            "difference": rb_end - nr_end,
+            "final_label": "POSITIVE MONTHS",
+            "rb_count": rb_positive,
+            "rb_total": rb_months,
+            "nr_count": nr_positive,
+            "nr_total": nr_months,
+        }
 
     if bool(record.get("annual_withdrawals_enabled")):
         rb = dict(record.get("withdrawal_rebalanced") or {})
@@ -3442,19 +3444,80 @@ def _saved_simulation_withdrawal_kpi(record: dict) -> tuple[str, str] | None:
         )
         rb_funded, rb_target = _annual_withdrawal_funding_counts(rb, amount)
         nr_funded, nr_target = _annual_withdrawal_funding_counts(nr, amount)
-        # v5.9.68 stores explicit counts for faster/safer library rendering.
         rb_funded = int(record.get("annual_withdrawals_funded_rebalanced") or rb_funded)
         nr_funded = int(record.get("annual_withdrawals_funded_not_rebalanced") or nr_funded)
         rb_target = int(record.get("annual_withdrawals_targeted_rebalanced") or rb_target)
         nr_target = int(record.get("annual_withdrawals_targeted_not_rebalanced") or nr_target)
+        return {
+            "mode": "annual",
+            "amount_label": "ANNUAL WITHDRAWAL",
+            "amount": amount,
+            "rb_end": rb_end,
+            "nr_end": nr_end,
+            "difference": rb_end - nr_end,
+            "final_label": "WITHDRAWALS FUNDED",
+            "rb_count": rb_funded,
+            "rb_total": rb_target,
+            "nr_count": nr_funded,
+            "nr_total": nr_target,
+        }
+
+    return None
+
+
+def _saved_simulation_withdrawal_inline_html(record: dict) -> str:
+    """Render saved withdrawal metrics inside the existing Saved Simulation card."""
+    values = _saved_simulation_withdrawal_values(record)
+    if not values:
+        return ""
+
+    diff = float(values["difference"])
+    diff_class = "pos" if diff > 0 else ("neg" if diff < 0 else "flat")
+    return (
+        "<div class='simulation-library-withdrawal-strip'>"
+        f"<div class='simulation-library-withdrawal-metric'><small>{escape(str(values['amount_label']))}</small><b>${float(values['amount']):,.2f}</b></div>"
+        f"<div class='simulation-library-withdrawal-metric'><small>REBALANCED REMAINING</small><b>${float(values['rb_end']):,.2f}</b></div>"
+        f"<div class='simulation-library-withdrawal-metric'><small>NOT-REBALANCED REMAINING</small><b>${float(values['nr_end']):,.2f}</b></div>"
+        f"<div class='simulation-library-withdrawal-metric'><small>REBALANCE DIFFERENCE</small><b class='{diff_class}'>${diff:+,.2f}</b></div>"
+        f"<div class='simulation-library-withdrawal-metric simulation-library-withdrawal-counts'><small>{escape(str(values['final_label']))}</small>"
+        f"<b><em>RB</em> {int(values['rb_count'])}/{int(values['rb_total'])}</b>"
+        f"<b><em>NR</em> {int(values['nr_count'])}/{int(values['nr_total'])}</b></div>"
+        "</div>"
+    )
+
+
+def _saved_simulation_withdrawal_kpi(record: dict) -> tuple[str, str] | None:
+    """Return the saved simulation's annual/monthly five-card withdrawal summary."""
+    values = _saved_simulation_withdrawal_values(record)
+    if not values:
+        return None
+
+    if values["mode"] == "monthly":
         return (
-            "ANNUAL WITHDRAWAL SUMMARY",
-            _annual_withdrawal_kpi_grid(
-                amount, rb_end, nr_end, rb_funded, rb_target, nr_funded, nr_target
+            "MONTHLY WITHDRAWAL SUMMARY",
+            _monthly_withdrawal_kpi_grid(
+                float(values["amount"]),
+                float(values["rb_end"]),
+                float(values["nr_end"]),
+                int(values["rb_count"]),
+                int(values["rb_total"]),
+                int(values["nr_count"]),
+                int(values["nr_total"]),
             ),
         )
 
-    return None
+    return (
+        "ANNUAL WITHDRAWAL SUMMARY",
+        _annual_withdrawal_kpi_grid(
+            float(values["amount"]),
+            float(values["rb_end"]),
+            float(values["nr_end"]),
+            int(values["rb_count"]),
+            int(values["rb_total"]),
+            int(values["nr_count"]),
+            int(values["nr_total"]),
+        ),
+    )
 
 
 def _portfolio_analytics_dataframe(payloads: list[dict]) -> pd.DataFrame:
@@ -4442,7 +4505,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.68: repeat the active withdrawal outcome here so the income
+        # v5.9.69: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -4687,7 +4750,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -4738,26 +4801,20 @@ with portfolio_tab:
                     profit_value = float(rec.get("profit_loss") or 0)
                     return_value = float(rec.get("total_return") or 0)
                     profit_class = "pos" if profit_value > 0 else ("neg" if profit_value < 0 else "flat")
+                    _saved_withdrawal_inline = _saved_simulation_withdrawal_inline_html(rec)
                     st.markdown(
                         "<div class='simulation-library-card'>"
-                        f"<div><span class='simulation-library-name'>{escape(rec_name)}</span>"
+                        f"<div class='simulation-library-identity'><span class='simulation-library-name'>{escape(rec_name)}</span>"
                         f"<small>{escape(str(rec.get('created_at_display_et') or ''))} • {escape(str(rec.get('period') or 'YTD'))} • "
                         f"{int(rec.get('instrument_count') or len(rec.get('instruments') or []))} instrument(s)</small></div>"
                         f"<div class='simulation-library-metric'><small>INVESTED</small><b>${float(rec.get('total_invested') or 0):,.2f}</b></div>"
                         f"<div class='simulation-library-metric'><small>ENDING</small><b>${float(rec.get('ending_value') or 0):,.2f}</b></div>"
                         f"<div class='simulation-library-metric'><small>PROFIT / LOSS</small><b class='{profit_class}'>${profit_value:+,.2f}</b></div>"
                         f"<div class='simulation-library-metric'><small>RETURN</small><b class='{profit_class}'>{return_value:+.2f}%</b></div>"
+                        f"{_saved_withdrawal_inline}"
                         "</div>",
                         unsafe_allow_html=True,
                     )
-                    _saved_withdrawal_summary = _saved_simulation_withdrawal_kpi(rec)
-                    if _saved_withdrawal_summary:
-                        _saved_withdrawal_title, _saved_withdrawal_html = _saved_withdrawal_summary
-                        st.markdown(
-                            f"<div class='portfolio-analytics-title saved-withdrawal-summary-title'>{escape(_saved_withdrawal_title)}</div>",
-                            unsafe_allow_html=True,
-                        )
-                        st.markdown(_saved_withdrawal_html, unsafe_allow_html=True)
                     action_cols = st.columns([1.35, 1.15, 1.0, 3.7])
                     pdf_record = _enrich_pdf_record_with_current_market(rec, market)
                     record_json = json.dumps(pdf_record, sort_keys=True, separators=(",", ":"))

@@ -9,7 +9,7 @@ CSS = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 
 def test_release_version_5967():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.69"
 
 
 def test_save_manage_repeats_active_annual_withdrawal_kpis():
@@ -31,13 +31,16 @@ def test_save_manage_repeats_active_monthly_withdrawal_kpis():
     assert 'get("months_modeled")' in section
 
 
-def test_saved_library_renders_withdrawal_summary_for_each_recurring_income_record():
-    assert "def _saved_simulation_withdrawal_kpi(record: dict)" in APP
-    assert "_saved_withdrawal_summary = _saved_simulation_withdrawal_kpi(rec)" in APP
-    assert "MONTHLY WITHDRAWAL SUMMARY" in APP
-    assert "ANNUAL WITHDRAWAL SUMMARY" in APP
-    assert "saved-withdrawal-summary-title" in APP
-    assert ".saved-withdrawal-summary-title" in CSS
+def test_saved_library_renders_withdrawal_summary_inside_each_saved_card():
+    assert "def _saved_simulation_withdrawal_values(record: dict)" in APP
+    assert "def _saved_simulation_withdrawal_inline_html(record: dict)" in APP
+    assert "_saved_withdrawal_inline = _saved_simulation_withdrawal_inline_html(rec)" in APP
+    assert 'f"{_saved_withdrawal_inline}"' in APP
+    assert "simulation-library-withdrawal-strip" in APP
+    assert ".simulation-library-withdrawal-strip" in CSS
+    # The old separate full-width summary below the card is intentionally gone.
+    assert "_saved_withdrawal_title" not in APP
+    assert "saved-withdrawal-summary-title" not in APP
 
 
 def test_new_annual_saved_records_persist_funded_and_targeted_counts_for_both_paths():
@@ -57,6 +60,7 @@ def test_saved_summary_helper_supports_legacy_schedule_derived_counts():
         if isinstance(node, ast.FunctionDef)
         and node.name in {
             "_annual_withdrawal_funding_counts",
+            "_saved_simulation_withdrawal_values",
             "_saved_simulation_withdrawal_kpi",
         }
     ]

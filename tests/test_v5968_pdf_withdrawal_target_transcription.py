@@ -11,15 +11,15 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 MARKER = (
-    "MarketScope Portfolio Split Simulator v26 - v5.9.68 PDF withdrawal summary + "
-    "Market Table target transcription + responsive withdrawal KPI layout + "
+    "MarketScope Portfolio Split Simulator v27 - v5.9.69 saved-card inline withdrawal summary + "
+    "PDF withdrawal summary + Market Table target transcription + responsive withdrawal KPI layout + "
     "required instrument market data on page 1"
 )
 
 
 def test_release_version_5968():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.68"
-    assert "v5.9.68" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.69"
+    assert "v5.9.69" in APP
 
 
 def test_pdf_contract_bumped_to_v26():
@@ -116,7 +116,7 @@ def test_pdf_enrichment_reuses_market_table_registry_after_hydration():
     assert 'f"LOW {low}   AVG/CONS {avg}   HIGH {high}"' in PDF
 
 
-def test_v5967_save_manage_withdrawal_summary_is_preserved():
+def test_save_manage_withdrawal_summary_is_preserved_and_inline_for_saved_cards():
     assert "ACTIVE ANNUAL WITHDRAWAL SUMMARY" in APP
     assert "ACTIVE MONTHLY WITHDRAWAL SUMMARY" in APP
-    assert "_saved_simulation_withdrawal_kpi(rec)" in APP
+    assert "_saved_simulation_withdrawal_inline_html(rec)" in APP

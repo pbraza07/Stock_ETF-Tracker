@@ -1,3 +1,9 @@
+# v5.9.69 deployment note
+
+Deploy over the existing repository and preserve the live saved Portfolio Simulation JSON/PDF library.
+
+No data migration is required. Existing saved recurring-income simulations automatically render their annual/monthly withdrawal metrics inside the Saved Simulation card after deployment.
+
 # v5.9.68 deployment note
 
 Deploy over the existing repository and preserve live saved simulation JSON/PDF files. Older PDFs automatically rebuild under layout v26. If Market Table displays valid Low / Avg / High targets, PDF page 1 now reuses those exact in-session values.
