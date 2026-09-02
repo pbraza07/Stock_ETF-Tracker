@@ -1,3 +1,9 @@
+# MarketScope v5.9.79 — Monthly Reset + Monthly Start-Year Paths
+
+Monthly Withdrawal now mirrors the full yearly-withdrawal analysis structure: persistent Rebalanced, Not-Rebalanced, Side-by-Side, Monthly Reset, Monthly Start-Year Rebalanced, and Monthly Start-Year Not-Rebalanced tabs. Monthly start-year cohorts use actual adjusted month-end returns, take the selected withdrawal every month, and carry the remaining balance continuously into every subsequent month and year without an annual reset.
+
+The two monthly Start-Year strategy tabs remain separate and display cumulative Profit ($), Profit (%), Withdrawal, Remaining After Withdrawal, Cumulative Withdrawn, monthly withdrawal status, and RB/NR first-depletion-month cards without squeezing the five original KPI cards.
+
 # MarketScope v5.9.78 — Start-Year RB/NR Depletion Dashboard
 
 The Start-Year Rebalanced and Start-Year Not Rebalanced dashboards now add a separate, full-width **Account Depletion** row beneath the existing five KPI cards. The original KPI row is unchanged, so Initial Investment, Annual Withdrawal, Start-Year Cohorts, Earliest/Latest and Path Rows retain their current large text and spacing.

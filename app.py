@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -3717,6 +3717,247 @@ def _portfolio_monthly_withdrawal_schedule(
     }
 
 
+def _portfolio_monthly_reset_dataframe(
+    symbols: list[str],
+    weights: dict[str, float],
+    total_investment: float,
+    monthly_withdrawal: float,
+    calendar_years: list[str],
+    actual_monthly_returns: dict[str, dict[str, float]],
+) -> pd.DataFrame:
+    """Independent monthly reset test using genuine month-end returns.
+
+    Every row restarts from the same original investment and target weights,
+    applies only that historical month's actual instrument returns, and then
+    takes one monthly withdrawal. No balance, profit, or holding drift carries
+    from one reset row into the next.
+    """
+    base_columns = [
+        "Month",
+        "Starting Balance ($)",
+        "Monthly Return (%)",
+        "Month Gain / Loss ($)",
+        "Before Withdrawal ($)",
+        "Withdrawal ($)",
+        "Remaining After Withdrawal ($)",
+        "Withdrawal Status",
+    ]
+    clean = list(dict.fromkeys(str(sym).upper().strip() for sym in symbols if str(sym).strip()))
+    try:
+        principal = float(total_investment)
+        requested_withdrawal = max(0.0, float(monthly_withdrawal))
+    except Exception:
+        return pd.DataFrame(columns=base_columns)
+    if principal <= 0 or not np.isfinite(principal) or not clean:
+        return pd.DataFrame(columns=base_columns)
+
+    weight_values = {sym: max(0.0, float(weights.get(sym, 0.0) or 0.0)) for sym in clean}
+    weight_total = sum(weight_values.values())
+    if weight_total <= 0 or abs(weight_total - 100.0) > 0.05:
+        return pd.DataFrame(columns=base_columns)
+
+    month_labels = _actual_month_labels(tuple(str(year) for year in calendar_years))
+    monthly_data = actual_monthly_returns or {}
+    rows: list[dict] = []
+    for label in month_labels:
+        row_out: dict = {"Month": label, "Starting Balance ($)": principal}
+        before_withdrawal = 0.0
+        valid = True
+        for sym in clean:
+            value = (monthly_data.get(sym) or {}).get(label)
+            if value is None or not np.isfinite(value) or float(value) <= -1.0:
+                valid = False
+                break
+            pct = float(value) * 100.0
+            row_out[f"{sym} Return (%)"] = pct
+            allocated = principal * weight_values[sym] / weight_total
+            before_withdrawal += allocated * (1.0 + float(value))
+        if not valid:
+            continue
+
+        gain_loss = before_withdrawal - principal
+        portfolio_return = gain_loss / principal * 100.0
+        actual_withdrawal = min(requested_withdrawal, max(0.0, before_withdrawal))
+        remaining = max(0.0, before_withdrawal - actual_withdrawal)
+        if requested_withdrawal <= 0:
+            status = "No withdrawal"
+        elif actual_withdrawal >= requested_withdrawal - 0.005:
+            status = "Funded"
+        elif actual_withdrawal > 0:
+            status = "Partial"
+        else:
+            status = "Not funded"
+        row_out.update({
+            "Monthly Return (%)": portfolio_return,
+            "Month Gain / Loss ($)": gain_loss,
+            "Before Withdrawal ($)": before_withdrawal,
+            "Withdrawal ($)": actual_withdrawal,
+            "Remaining After Withdrawal ($)": remaining,
+            "Withdrawal Status": status,
+        })
+        rows.append(row_out)
+
+    if not rows:
+        return pd.DataFrame(columns=base_columns)
+    ordered = ["Month", "Starting Balance ($)"]
+    ordered.extend(f"{sym} Return (%)" for sym in clean)
+    ordered.extend(base_columns[2:])
+    return pd.DataFrame(rows)[ordered]
+
+
+def _portfolio_monthly_start_year_paths_dataframe(
+    market_df: pd.DataFrame,
+    symbols: list[str],
+    weights: dict[str, float],
+    total_invested: float,
+    monthly_withdrawal: float,
+    calendar_years: list[str],
+    rebalance_after_withdrawal: bool,
+    actual_monthly_returns: dict[str, dict[str, float]],
+) -> pd.DataFrame:
+    """Build continuous monthly paths for every eligible investment start year.
+
+    Each cohort begins with the same original investment in January of its Start
+    Year. Actual monthly returns and one cash withdrawal are applied every month.
+    Remaining After Withdrawal carries into the next month and across calendar
+    year boundaries; no annual reset occurs.
+    """
+    columns = [
+        "Start Year",
+        "Month",
+        "Month #",
+        "Year",
+        "Starting Balance ($)",
+        "Monthly Return (%)",
+        "Month Gain / Loss ($)",
+        "Before Withdrawal ($)",
+        "Withdrawal ($)",
+        "Remaining After Withdrawal ($)",
+        "Cumulative Withdrawn ($)",
+        "Profit ($)",
+        "Profit (%)",
+        "Withdrawal Status",
+    ]
+    clean = list(dict.fromkeys(str(sym).upper().strip() for sym in symbols if str(sym).strip()))
+    try:
+        principal = float(total_invested)
+        withdrawal = max(0.0, float(monthly_withdrawal))
+    except Exception:
+        return pd.DataFrame(columns=columns)
+    if principal <= 0 or not clean:
+        return pd.DataFrame(columns=columns)
+
+    common_years = _portfolio_common_calendar_years(market_df, clean, ANNUAL_HISTORY_YEARS)
+    common_set = set(common_years)
+    requested = [str(year) for year in (calendar_years or []) if str(year) in common_set]
+    if not requested:
+        return pd.DataFrame(columns=columns)
+
+    rows: list[dict] = []
+    for start_year in sorted(requested, key=lambda value: int(value)):
+        start_index = requested.index(str(start_year))
+        cohort_years = requested[: start_index + 1]
+        result = _portfolio_monthly_withdrawal_schedule(
+            market_df=market_df,
+            symbols=clean,
+            weights=weights,
+            total_invested=principal,
+            period_choice=f"{len(cohort_years)}Y",
+            monthly_withdrawal=withdrawal,
+            calendar_years=cohort_years,
+            rebalance_after_withdrawal=bool(rebalance_after_withdrawal),
+            actual_monthly_returns=actual_monthly_returns,
+        )
+        if result.get("unavailable"):
+            continue
+
+        cumulative_withdrawn = 0.0
+        for sequence, schedule_row in enumerate(result.get("schedule") or [], start=1):
+            period = str(schedule_row.get("period") or "")
+            if not period:
+                continue
+            actual_withdrawal = float(schedule_row.get("withdrawal") or 0.0)
+            cumulative_withdrawn += actual_withdrawal
+            remaining = float(schedule_row.get("ending_balance") or 0.0)
+            cumulative_profit = remaining + cumulative_withdrawn - principal
+            cumulative_profit_pct = cumulative_profit / principal * 100.0 if principal > 0 else 0.0
+            if withdrawal <= 0:
+                status = "No withdrawal"
+            elif actual_withdrawal >= withdrawal - 0.005:
+                status = "Funded"
+            elif actual_withdrawal > 0:
+                status = "Partial"
+            else:
+                status = "Not funded"
+            rows.append({
+                "Start Year": int(start_year),
+                "Month": period,
+                "Month #": int(sequence),
+                "Year": int(schedule_row.get("year") or str(period)[:4]),
+                "Starting Balance ($)": float(schedule_row.get("starting_balance") or 0.0),
+                "Monthly Return (%)": float(schedule_row.get("portfolio_return_pct") or 0.0),
+                "Month Gain / Loss ($)": float(schedule_row.get("gain_loss") or 0.0),
+                "Before Withdrawal ($)": float(schedule_row.get("balance_before_withdrawal") or 0.0),
+                "Withdrawal ($)": actual_withdrawal,
+                "Remaining After Withdrawal ($)": remaining,
+                "Cumulative Withdrawn ($)": cumulative_withdrawn,
+                "Profit ($)": cumulative_profit,
+                "Profit (%)": cumulative_profit_pct,
+                "Withdrawal Status": status,
+            })
+
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.DataFrame(rows)[columns]
+
+
+def _monthly_start_year_depletion_summary(paths_df: pd.DataFrame) -> dict:
+    """Return the earliest monthly depletion across rolling start-year cohorts."""
+    empty = {
+        "total_cohorts": 0,
+        "depleted_cohorts": 0,
+        "first_depletion_period": None,
+        "first_depletion_start_year": None,
+    }
+    if paths_df is None or paths_df.empty:
+        return empty
+    required = {"Start Year", "Month", "Remaining After Withdrawal ($)"}
+    if not required.issubset(paths_df.columns):
+        return empty
+
+    work = paths_df.copy()
+    work["Start Year"] = pd.to_numeric(work["Start Year"], errors="coerce")
+    work["_month_order"] = pd.to_datetime(work["Month"], format="%Y-%m", errors="coerce")
+    work["Remaining After Withdrawal ($)"] = pd.to_numeric(
+        work["Remaining After Withdrawal ($)"], errors="coerce"
+    )
+    work = work.dropna(subset=["Start Year", "_month_order", "Remaining After Withdrawal ($)"])
+    if work.empty:
+        return empty
+
+    total_cohorts = int(work["Start Year"].nunique())
+    depleted = work.loc[work["Remaining After Withdrawal ($)"] <= 0.005].copy()
+    if depleted.empty:
+        return {
+            "total_cohorts": total_cohorts,
+            "depleted_cohorts": 0,
+            "first_depletion_period": None,
+            "first_depletion_start_year": None,
+        }
+    first_per_cohort = (
+        depleted.sort_values(["Start Year", "_month_order"])
+        .groupby("Start Year", as_index=False)
+        .first()
+    )
+    first_event = first_per_cohort.sort_values(["_month_order", "Start Year"]).iloc[0]
+    return {
+        "total_cohorts": total_cohorts,
+        "depleted_cohorts": int(first_per_cohort["Start Year"].nunique()),
+        "first_depletion_period": str(first_event["Month"]),
+        "first_depletion_start_year": int(first_event["Start Year"]),
+    }
+
+
 def _finite_number(value):
     parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
     return float(parsed) if pd.notna(parsed) and np.isfinite(parsed) else None
@@ -5182,8 +5423,12 @@ with portfolio_tab:
                         else:
                             st.info(_annual_tab_message)
 
-                # v5.9.50 - monthly withdrawal mode uses actual adjusted month-to-month
-                # returns from durable monthly history, with an on-demand Yahoo daily-history fallback.
+                # v5.9.79 - keep the complete monthly strategy tab row visible and
+                # apply the annual Reset/Start-Year requirements at monthly granularity.
+                monthly_withdrawal_tabs_rendered = False
+
+                # Monthly withdrawal mode uses actual adjusted month-to-month returns
+                # from durable monthly history, with an on-demand Yahoo daily-history fallback.
                 if portfolio_monthly_withdrawals_enabled and portfolio_monthly_withdrawal > 0 and unresolved_amount <= 0.005:
                     actual_monthly_payload = cached_actual_monthly_returns(
                         tuple(str(s).upper() for s in selected_portfolio_symbols),
@@ -5247,6 +5492,42 @@ with portfolio_tab:
                             unsafe_allow_html=True,
                         )
 
+                        monthly_return_data = actual_monthly_payload.get("returns") or {}
+                        monthly_reset_df = _portfolio_monthly_reset_dataframe(
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                            float(portfolio_monthly_withdrawal),
+                            list(effective_portfolio_years),
+                            monthly_return_data,
+                        )
+                        monthly_start_year_rb_paths_df = _portfolio_monthly_start_year_paths_dataframe(
+                            market,
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                            float(portfolio_monthly_withdrawal),
+                            list(effective_portfolio_years),
+                            True,
+                            monthly_return_data,
+                        )
+                        monthly_start_year_nr_paths_df = _portfolio_monthly_start_year_paths_dataframe(
+                            market,
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                            float(portfolio_monthly_withdrawal),
+                            list(effective_portfolio_years),
+                            False,
+                            monthly_return_data,
+                        )
+                        monthly_start_year_rb_depletion = _monthly_start_year_depletion_summary(
+                            monthly_start_year_rb_paths_df
+                        )
+                        monthly_start_year_nr_depletion = _monthly_start_year_depletion_summary(
+                            monthly_start_year_nr_paths_df
+                        )
+
                         def _monthly_withdrawal_table_rows(result: dict) -> list[dict]:
                             rows = []
                             for row in result.get("schedule") or []:
@@ -5261,7 +5542,15 @@ with portfolio_tab:
                                 })
                             return rows
 
-                        mrb_tab, mnr_tab, mcompare_tab = st.tabs(["↻ Rebalanced monthly", "↝ Not rebalanced monthly", "⚖ Monthly side-by-side"])
+                        mrb_tab, mnr_tab, mcompare_tab, mreset_tab, mstart_year_rb_tab, mstart_year_nr_tab = st.tabs([
+                            "↻ Rebalanced monthly",
+                            "↝ Not rebalanced monthly",
+                            "⚖ Monthly side-by-side",
+                            "📅 Monthly Reset",
+                            "📈 Monthly Start-Year Rebalanced",
+                            "📉 Monthly Start-Year Not Rebalanced",
+                        ])
+                        monthly_withdrawal_tabs_rendered = True
                         with mrb_tab:
                             st.caption("After every month-end withdrawal, the remaining balance is restored to the original target weights.")
                             rows = _monthly_withdrawal_table_rows(portfolio_monthly_withdrawal_rebalanced_result)
@@ -5292,9 +5581,197 @@ with portfolio_tab:
                             if compare_rows:
                                 st.dataframe(pd.DataFrame(compare_rows), use_container_width=True, hide_index=True, height=560)
 
+                        with mreset_tab:
+                            st.caption(
+                                "Independent monthly reset test: every historical month restarts with the same original investment and target allocation, "
+                                "applies that month's actual returns, and takes one monthly withdrawal. Nothing carries into the next reset row."
+                            )
+                            if monthly_reset_df.empty:
+                                st.warning(
+                                    "No monthly reset rows can be calculated because valid actual monthly returns are required for every selected instrument."
+                                )
+                            else:
+                                mr1, mr2, mr3, mr4, mr5 = st.columns(5)
+                                mr1.metric("Initial investment", f"${float(portfolio_total):,.2f}")
+                                mr2.metric("Monthly withdrawal", f"${float(portfolio_monthly_withdrawal):,.2f}")
+                                mr3.metric("Reset months", f"{len(monthly_reset_df):,}")
+                                mr4.metric(
+                                    "Positive months",
+                                    f"{int((monthly_reset_df['Monthly Return (%)'] > 0).sum())}/{len(monthly_reset_df)}",
+                                )
+                                mr5.metric(
+                                    "Funded months",
+                                    f"{int((monthly_reset_df['Withdrawal Status'] == 'Funded').sum())}/{len(monthly_reset_df)}",
+                                )
+                                monthly_reset_column_config = {
+                                    "Month": st.column_config.TextColumn("Month"),
+                                    "Starting Balance ($)": st.column_config.NumberColumn("Starting Balance", format="$%.2f"),
+                                    "Monthly Return (%)": st.column_config.NumberColumn("Monthly Return", format="%+.3f%%"),
+                                    "Month Gain / Loss ($)": st.column_config.NumberColumn("Month Gain / Loss", format="$%+.2f"),
+                                    "Before Withdrawal ($)": st.column_config.NumberColumn("Before Withdrawal", format="$%.2f"),
+                                    "Withdrawal ($)": st.column_config.NumberColumn("Withdrawal", format="$%.2f"),
+                                    "Remaining After Withdrawal ($)": st.column_config.NumberColumn("Remaining After Withdrawal", format="$%.2f"),
+                                    "Withdrawal Status": st.column_config.TextColumn("Withdrawal Status"),
+                                }
+                                for _sym in selected_portfolio_symbols:
+                                    monthly_reset_column_config[f"{_sym} Return (%)"] = st.column_config.NumberColumn(
+                                        f"{_sym} Return", format="%+.3f%%"
+                                    )
+                                st.dataframe(
+                                    monthly_reset_df,
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    height=min(760, 70 + 34 * len(monthly_reset_df)),
+                                    column_config=monthly_reset_column_config,
+                                    key="portfolio_monthly_reset_table",
+                                )
+
+                        def _render_monthly_start_year_depletion_dashboard() -> None:
+                            st.markdown(
+                                "<div style='font-size:.72rem;font-weight:800;letter-spacing:.06em;margin:.7rem 0 .25rem 0;'>"
+                                "ACCOUNT DEPLETION · MONTHLY ROLLING START-YEAR COHORTS</div>",
+                                unsafe_allow_html=True,
+                            )
+                            dep_rb_col, dep_nr_col = st.columns(2)
+                            for _col, _label, _summary in (
+                                (dep_rb_col, "RB first depletion month", monthly_start_year_rb_depletion),
+                                (dep_nr_col, "NR first depletion month", monthly_start_year_nr_depletion),
+                            ):
+                                _period = _summary.get("first_depletion_period")
+                                _start = _summary.get("first_depletion_start_year")
+                                _depleted = int(_summary.get("depleted_cohorts") or 0)
+                                _total = int(_summary.get("total_cohorts") or 0)
+                                _col.metric(_label, str(_period) if _period is not None else "Not depleted")
+                                if _period is not None:
+                                    _col.caption(
+                                        f"Earliest affected start cohort: {_start} • Depleted cohorts: {_depleted}/{_total}"
+                                    )
+                                else:
+                                    _col.caption(f"All modeled cohorts survived • Depleted cohorts: 0/{_total}")
+
+                        def _render_monthly_start_year_paths_tab(
+                            *, paths_df: pd.DataFrame, table_key: str, title: str, caption: str
+                        ) -> None:
+                            st.caption(caption)
+                            if paths_df.empty:
+                                st.warning(
+                                    f"No {title.lower()} monthly start-year paths can be calculated for the current portfolio/window. "
+                                    "Every included month must have an actual return for every selected instrument."
+                                )
+                                return
+                            cohort_count = int(paths_df["Start Year"].nunique())
+                            earliest_start = int(paths_df["Start Year"].min())
+                            latest_start = int(paths_df["Start Year"].max())
+                            sp1, sp2, sp3, sp4, sp5 = st.columns(5)
+                            sp1.metric("Initial investment", f"${float(portfolio_total):,.2f}")
+                            sp2.metric("Monthly withdrawal", f"${float(portfolio_monthly_withdrawal):,.2f}")
+                            sp3.metric("Start-year cohorts", f"{cohort_count}")
+                            sp4.metric("Earliest / Latest", f"{earliest_start} / {latest_start}")
+                            sp5.metric("Path rows", f"{len(paths_df):,}")
+                            _render_monthly_start_year_depletion_dashboard()
+                            st.caption(
+                                "Profit ($) and Profit (%) are cumulative versus the original investment and include cash already withdrawn: "
+                                "Remaining After Withdrawal + Cumulative Withdrawn − Initial Investment. Remaining balance carries forward every month, including across year boundaries."
+                            )
+                            monthly_start_year_column_config = {
+                                "Start Year": st.column_config.NumberColumn("Start Year", format="%d"),
+                                "Month": st.column_config.TextColumn("Month"),
+                                "Month #": st.column_config.NumberColumn("Month #", format="%d"),
+                                "Year": st.column_config.NumberColumn("Year", format="%d"),
+                                "Starting Balance ($)": st.column_config.NumberColumn("Starting Balance", format="$%.2f"),
+                                "Monthly Return (%)": st.column_config.NumberColumn("Monthly Return", format="%+.3f%%"),
+                                "Month Gain / Loss ($)": st.column_config.NumberColumn("Month Gain / Loss", format="$%+.2f"),
+                                "Before Withdrawal ($)": st.column_config.NumberColumn("Before Withdrawal", format="$%.2f"),
+                                "Withdrawal ($)": st.column_config.NumberColumn("Withdrawal", format="$%.2f"),
+                                "Remaining After Withdrawal ($)": st.column_config.NumberColumn("Remaining After Withdrawal", format="$%.2f"),
+                                "Cumulative Withdrawn ($)": st.column_config.NumberColumn("Cumulative Withdrawn", format="$%.2f"),
+                                "Profit ($)": st.column_config.NumberColumn("Profit", format="$%+.2f"),
+                                "Profit (%)": st.column_config.NumberColumn("Profit %", format="%+.2f%%"),
+                                "Withdrawal Status": st.column_config.TextColumn("Withdrawal Status"),
+                            }
+                            st.dataframe(
+                                paths_df,
+                                use_container_width=True,
+                                hide_index=True,
+                                height=min(800, 70 + 34 * len(paths_df)),
+                                column_config=monthly_start_year_column_config,
+                                key=table_key,
+                            )
+
+                        with mstart_year_rb_tab:
+                            _render_monthly_start_year_paths_tab(
+                                paths_df=monthly_start_year_rb_paths_df,
+                                table_key="portfolio_monthly_start_year_rebalanced_table",
+                                title="Rebalanced",
+                                caption=(
+                                    "Each Start Year begins in January with the same original investment. Actual monthly returns and withdrawals carry forward continuously; "
+                                    "after every monthly withdrawal, the remaining portfolio is restored to the original target weights."
+                                ),
+                            )
+
+                        with mstart_year_nr_tab:
+                            _render_monthly_start_year_paths_tab(
+                                paths_df=monthly_start_year_nr_paths_df,
+                                table_key="portfolio_monthly_start_year_not_rebalanced_table",
+                                title="Not-Rebalanced",
+                                caption=(
+                                    "Each Start Year begins in January with the same original investment. Actual monthly returns, remaining balance, and drifted holding weights "
+                                    "carry forward continuously with no monthly or annual rebalance."
+                                ),
+                            )
+
                         for label, result in (("Rebalanced", portfolio_monthly_withdrawal_rebalanced_result), ("Not rebalanced", portfolio_monthly_withdrawal_not_rebalanced_result)):
                             if result.get("depleted_period"):
                                 st.error(f"{label} portfolio is depleted during {result.get('depleted_period')} under this monthly withdrawal amount.")
+
+                if not monthly_withdrawal_tabs_rendered:
+                    mrb_tab, mnr_tab, mcompare_tab, mreset_tab, mstart_year_rb_tab, mstart_year_nr_tab = st.tabs([
+                        "↻ Rebalanced monthly",
+                        "↝ Not rebalanced monthly",
+                        "⚖ Monthly side-by-side",
+                        "📅 Monthly Reset",
+                        "📈 Monthly Start-Year Rebalanced",
+                        "📉 Monthly Start-Year Not Rebalanced",
+                    ])
+                    if not portfolio_monthly_withdrawals_enabled:
+                        _monthly_tab_message = (
+                            "Enable **Monthly withdrawal** above to populate the monthly calculations. "
+                            "These tabs remain visible so the Build Simulation layout stays consistent."
+                        )
+                    elif float(portfolio_monthly_withdrawal or 0.0) <= 0:
+                        _monthly_tab_message = "Enter a **Withdrawal / month ($)** amount greater than $0 to populate these monthly tables."
+                    elif unresolved_amount > 0.005:
+                        _monthly_tab_message = "Complete the portfolio allocation/return inputs before the monthly withdrawal tables can be calculated."
+                    else:
+                        _monthly_reason = (
+                            portfolio_monthly_withdrawal_rebalanced_result.get("reason")
+                            or portfolio_monthly_withdrawal_not_rebalanced_result.get("reason")
+                            or "Required actual monthly return data is unavailable for the selected portfolio/window."
+                        )
+                        _monthly_tab_message = f"Monthly withdrawal calculation is currently unavailable: {_monthly_reason}"
+
+                    with mrb_tab:
+                        st.caption("After each month-end withdrawal, remaining holdings are restored to the target weights.")
+                        st.info(_monthly_tab_message)
+                    with mnr_tab:
+                        st.caption("After each month-end withdrawal, holdings keep their drifted weights.")
+                        st.info(_monthly_tab_message)
+                    with mcompare_tab:
+                        st.caption("Compares the monthly Rebalanced and Not-Rebalanced paths month by month.")
+                        st.info(_monthly_tab_message)
+                    with mreset_tab:
+                        st.caption("Each historical month independently restarts from the same original investment before one monthly withdrawal.")
+                        st.info(_monthly_tab_message)
+                    with mstart_year_rb_tab:
+                        st.caption(
+                            "Each Start Year begins with the same investment; monthly returns and withdrawals carry forward continuously while target weights are restored after each month."
+                        )
+                        st.info(_monthly_tab_message)
+                    with mstart_year_nr_tab:
+                        st.caption(
+                            "Each Start Year begins with the same investment; monthly returns, balance, and drifted weights carry forward continuously without rebalancing."
+                        )
+                        st.info(_monthly_tab_message)
 
                 # v5.9.6 - populate the portfolio analytics table immediately after the simulation runs.
                 if portfolio_results:
@@ -5626,7 +6103,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

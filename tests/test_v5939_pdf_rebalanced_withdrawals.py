@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.78"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.79"
 
 
 def test_pdf_contains_both_withdrawal_strategies():
@@ -19,5 +19,5 @@ def test_pdf_contains_both_withdrawal_strategies():
 
 def test_pdf_layout_contract_forces_rebuild():
     src = (ROOT / "app.py").read_text(encoding="utf-8")
-    marker = 'MarketScope Portfolio Split Simulator v36 - v5.9.78 start-year RB/NR depletion dashboard + split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert src.count(marker) >= 2
