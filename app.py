@@ -1071,7 +1071,7 @@ def load_universe_change_history() -> list[dict]:
 
 
 def _current_metadata_change_events(metadata: dict) -> list[dict]:
-    """Bridge the most recent pre-v5.9.76 metadata change into the history view."""
+    """Bridge the most recent pre-v5.9.77 metadata change into the history view."""
     if not isinstance(metadata, dict):
         return []
     stamp = str(metadata.get("refreshed_at_et") or "").strip()
@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v34 - v5.9.76 start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2572,7 +2572,7 @@ with market_tab:
         if six_month_history.empty:
             st.info(
                 "No recorded Nasdaq universe or analyst-rating changes fall within the last six months yet. "
-                "v5.9.76 begins durable history collection and migrates the latest change still present in universe metadata."
+                "v5.9.77 begins durable history collection and migrates the latest change still present in universe metadata."
             )
         else:
             history_counts = six_month_history["Change Type"].value_counts()
@@ -3395,6 +3395,7 @@ def _portfolio_start_year_paths_dataframe(
     total_invested: float,
     annual_withdrawal: float,
     calendar_years: list[str],
+    rebalance_after_withdrawal: bool,
 ) -> pd.DataFrame:
     """Build rolling withdrawal paths for every eligible investment start year.
 
@@ -3402,9 +3403,8 @@ def _portfolio_start_year_paths_dataframe(
     From that point forward, the remaining balance is carried into every later
     completed year. The portfolio is never reset between subsequent years.
 
-    Both annual strategies are returned in one table:
-    - Rebalanced annually
-    - Not rebalanced
+    One strategy is calculated per call so the Rebalanced and Not-Rebalanced
+    Start-Year tabs remain completely separated in the UI.
 
     Profit ($) and Profit (%) are cumulative economic profit versus the original
     starting investment and include cash already withdrawn:
@@ -3414,7 +3414,6 @@ def _portfolio_start_year_paths_dataframe(
         "Start Year",
         "Year",
         "Year #",
-        "Strategy",
         "Starting Balance ($)",
         "Annual Return (%)",
         "Year Gain / Loss ($)",
@@ -3457,64 +3456,59 @@ def _portfolio_start_year_paths_dataframe(
         cohort_years = requested[: start_index + 1]
         period_choice = f"{len(cohort_years)}Y"
 
-        for rebalance_after_withdrawal, strategy in (
-            (True, "Rebalanced annually"),
-            (False, "Not rebalanced"),
-        ):
-            result = _portfolio_annual_withdrawal_schedule(
-                market_df=market_df,
-                symbols=clean,
-                weights=weights,
-                total_invested=principal,
-                period_choice=period_choice,
-                include_ytd=False,
-                annual_withdrawal=withdrawal,
-                calendar_years=cohort_years,
-                rebalance_after_withdrawal=rebalance_after_withdrawal,
-            )
-            if result.get("unavailable"):
+        result = _portfolio_annual_withdrawal_schedule(
+            market_df=market_df,
+            symbols=clean,
+            weights=weights,
+            total_invested=principal,
+            period_choice=period_choice,
+            include_ytd=False,
+            annual_withdrawal=withdrawal,
+            calendar_years=cohort_years,
+            rebalance_after_withdrawal=bool(rebalance_after_withdrawal),
+        )
+        if result.get("unavailable"):
+            continue
+
+        cumulative_withdrawn = 0.0
+        for sequence, schedule_row in enumerate(result.get("schedule") or [], start=1):
+            year = str(schedule_row.get("year") or "")
+            if not year or year.strip().lower() == "ytd (partial)":
                 continue
 
-            cumulative_withdrawn = 0.0
-            for sequence, schedule_row in enumerate(result.get("schedule") or [], start=1):
-                year = str(schedule_row.get("year") or "")
-                if not year or year.strip().lower() == "ytd (partial)":
-                    continue
+            actual_withdrawal = float(schedule_row.get("withdrawal") or 0.0)
+            cumulative_withdrawn += actual_withdrawal
+            remaining = float(schedule_row.get("ending_balance") or 0.0)
+            economic_value = remaining + cumulative_withdrawn
+            cumulative_profit = economic_value - principal
+            cumulative_profit_pct = (
+                cumulative_profit / principal * 100.0 if principal > 0 else 0.0
+            )
 
-                actual_withdrawal = float(schedule_row.get("withdrawal") or 0.0)
-                cumulative_withdrawn += actual_withdrawal
-                remaining = float(schedule_row.get("ending_balance") or 0.0)
-                economic_value = remaining + cumulative_withdrawn
-                cumulative_profit = economic_value - principal
-                cumulative_profit_pct = (
-                    cumulative_profit / principal * 100.0 if principal > 0 else 0.0
-                )
+            if withdrawal <= 0:
+                status = "No withdrawal"
+            elif actual_withdrawal >= withdrawal - 0.005:
+                status = "Funded"
+            elif actual_withdrawal > 0:
+                status = "Partial"
+            else:
+                status = "Not funded"
 
-                if withdrawal <= 0:
-                    status = "No withdrawal"
-                elif actual_withdrawal >= withdrawal - 0.005:
-                    status = "Funded"
-                elif actual_withdrawal > 0:
-                    status = "Partial"
-                else:
-                    status = "Not funded"
-
-                rows.append({
-                    "Start Year": int(start_year),
-                    "Year": int(year),
-                    "Year #": int(sequence),
-                    "Strategy": strategy,
-                    "Starting Balance ($)": float(schedule_row.get("starting_balance") or 0.0),
-                    "Annual Return (%)": float(schedule_row.get("portfolio_return_pct") or 0.0),
-                    "Year Gain / Loss ($)": float(schedule_row.get("gain_loss") or 0.0),
-                    "Before Withdrawal ($)": float(schedule_row.get("balance_before_withdrawal") or 0.0),
-                    "Withdrawal ($)": actual_withdrawal,
-                    "Remaining After Withdrawal ($)": remaining,
-                    "Cumulative Withdrawn ($)": cumulative_withdrawn,
-                    "Profit ($)": cumulative_profit,
-                    "Profit (%)": cumulative_profit_pct,
-                    "Withdrawal Status": status,
-                })
+            rows.append({
+                "Start Year": int(start_year),
+                "Year": int(year),
+                "Year #": int(sequence),
+                "Starting Balance ($)": float(schedule_row.get("starting_balance") or 0.0),
+                "Annual Return (%)": float(schedule_row.get("portfolio_return_pct") or 0.0),
+                "Year Gain / Loss ($)": float(schedule_row.get("gain_loss") or 0.0),
+                "Before Withdrawal ($)": float(schedule_row.get("balance_before_withdrawal") or 0.0),
+                "Withdrawal ($)": actual_withdrawal,
+                "Remaining After Withdrawal ($)": remaining,
+                "Cumulative Withdrawn ($)": cumulative_withdrawn,
+                "Profit ($)": cumulative_profit,
+                "Profit (%)": cumulative_profit_pct,
+                "Withdrawal Status": status,
+            })
 
     if not rows:
         return pd.DataFrame(columns=columns)
@@ -4736,7 +4730,7 @@ with portfolio_tab:
                                 )
                     st.markdown("</div>", unsafe_allow_html=True)
 
-                # v5.9.76 - keep the annual strategy tab row visible inside Build Simulation
+                # v5.9.77 - keep the annual strategy tab row visible inside Build Simulation
                 # even when Yearly Withdrawal is disabled or its calculation is not yet available.
                 annual_withdrawal_tabs_rendered = False
 
@@ -4810,12 +4804,13 @@ with portfolio_tab:
                                 })
                             return rows
 
-                        rb_tab, nr_tab, compare_tab, reset_tab, start_year_tab = st.tabs([
+                        rb_tab, nr_tab, compare_tab, reset_tab, start_year_rb_tab, start_year_nr_tab = st.tabs([
                             "↻ Rebalanced annually",
                             "↝ Not rebalanced",
                             "⚖ Side-by-side",
                             "📅 Annual Reset",
-                            "📈 Start-Year Paths",
+                            "📈 Start-Year Rebalanced",
+                            "📉 Start-Year Not Rebalanced",
                         ])
                         annual_withdrawal_tabs_rendered = True
                         with rb_tab:
@@ -4921,70 +4916,96 @@ with portfolio_tab:
                                     key="portfolio_annual_reset_performance_table",
                                 )
 
-                        with start_year_tab:
-                            st.caption(
-                                "Rolling start-year analysis: each cohort begins with the same original investment in its Start Year, "
-                                "then the Remaining After Withdrawal carries forward into every subsequent eligible year. "
-                                "Unlike Annual Reset, nothing resets after the cohort begins."
-                            )
-                            start_year_paths_df = _portfolio_start_year_paths_dataframe(
+                        def _render_start_year_paths_tab(
+                            *,
+                            rebalance_after_withdrawal: bool,
+                            table_key: str,
+                            title: str,
+                            caption: str,
+                        ) -> None:
+                            st.caption(caption)
+                            paths_df = _portfolio_start_year_paths_dataframe(
                                 market,
                                 list(selected_portfolio_symbols),
                                 dict(portfolio_weights),
                                 float(portfolio_total),
                                 float(portfolio_annual_withdrawal),
                                 list(effective_portfolio_years),
+                                bool(rebalance_after_withdrawal),
                             )
 
-                            if start_year_paths_df.empty:
+                            if paths_df.empty:
                                 st.warning(
-                                    "No rolling start-year paths can be calculated for the current portfolio/window. "
+                                    f"No {title.lower()} start-year paths can be calculated for the current portfolio/window. "
                                     "Every included year must have a valid annual return for every selected instrument."
                                 )
-                            else:
-                                cohort_count = int(start_year_paths_df["Start Year"].nunique())
-                                earliest_start = int(start_year_paths_df["Start Year"].min())
-                                latest_start = int(start_year_paths_df["Start Year"].max())
-                                total_rows = len(start_year_paths_df)
+                                return
 
-                                sp1, sp2, sp3, sp4, sp5 = st.columns(5)
-                                sp1.metric("Initial investment", f"${float(portfolio_total):,.2f}")
-                                sp2.metric("Annual withdrawal", f"${float(portfolio_annual_withdrawal):,.2f}")
-                                sp3.metric("Start-year cohorts", f"{cohort_count}")
-                                sp4.metric("Earliest / Latest", f"{earliest_start} / {latest_start}")
-                                sp5.metric("Path rows", f"{total_rows:,}")
+                            cohort_count = int(paths_df["Start Year"].nunique())
+                            earliest_start = int(paths_df["Start Year"].min())
+                            latest_start = int(paths_df["Start Year"].max())
+                            total_rows = len(paths_df)
 
-                                st.caption(
-                                    "Profit ($) and Profit (%) are cumulative versus the original investment and include cash already withdrawn: "
-                                    "Remaining After Withdrawal + Cumulative Withdrawn − Initial Investment. "
-                                    "Both Rebalanced and Not-Rebalanced paths are included in this one table."
-                                )
+                            sp1, sp2, sp3, sp4, sp5 = st.columns(5)
+                            sp1.metric("Initial investment", f"${float(portfolio_total):,.2f}")
+                            sp2.metric("Annual withdrawal", f"${float(portfolio_annual_withdrawal):,.2f}")
+                            sp3.metric("Start-year cohorts", f"{cohort_count}")
+                            sp4.metric("Earliest / Latest", f"{earliest_start} / {latest_start}")
+                            sp5.metric("Path rows", f"{total_rows:,}")
 
-                                start_year_column_config = {
-                                    "Start Year": st.column_config.NumberColumn("Start Year", format="%d"),
-                                    "Year": st.column_config.NumberColumn("Year", format="%d"),
-                                    "Year #": st.column_config.NumberColumn("Year #", format="%d"),
-                                    "Strategy": st.column_config.TextColumn("Strategy"),
-                                    "Starting Balance ($)": st.column_config.NumberColumn("Starting Balance", format="$%.2f"),
-                                    "Annual Return (%)": st.column_config.NumberColumn("Annual Return", format="%+.2f%%"),
-                                    "Year Gain / Loss ($)": st.column_config.NumberColumn("Year Gain / Loss", format="$%+.2f"),
-                                    "Before Withdrawal ($)": st.column_config.NumberColumn("Before Withdrawal", format="$%.2f"),
-                                    "Withdrawal ($)": st.column_config.NumberColumn("Withdrawal", format="$%.2f"),
-                                    "Remaining After Withdrawal ($)": st.column_config.NumberColumn("Remaining After Withdrawal", format="$%.2f"),
-                                    "Cumulative Withdrawn ($)": st.column_config.NumberColumn("Cumulative Withdrawn", format="$%.2f"),
-                                    "Profit ($)": st.column_config.NumberColumn("Profit", format="$%+.2f"),
-                                    "Profit (%)": st.column_config.NumberColumn("Profit %", format="%+.2f%%"),
-                                    "Withdrawal Status": st.column_config.TextColumn("Withdrawal Status"),
-                                }
+                            st.caption(
+                                "Profit ($) and Profit (%) are cumulative versus the original investment and include cash already withdrawn: "
+                                "Remaining After Withdrawal + Cumulative Withdrawn − Initial Investment."
+                            )
 
-                                st.dataframe(
-                                    start_year_paths_df,
-                                    use_container_width=True,
-                                    hide_index=True,
-                                    height=min(760, 70 + 34 * len(start_year_paths_df)),
-                                    column_config=start_year_column_config,
-                                    key="portfolio_start_year_paths_table",
-                                )
+                            start_year_column_config = {
+                                "Start Year": st.column_config.NumberColumn("Start Year", format="%d"),
+                                "Year": st.column_config.NumberColumn("Year", format="%d"),
+                                "Year #": st.column_config.NumberColumn("Year #", format="%d"),
+                                "Starting Balance ($)": st.column_config.NumberColumn("Starting Balance", format="$%.2f"),
+                                "Annual Return (%)": st.column_config.NumberColumn("Annual Return", format="%+.2f%%"),
+                                "Year Gain / Loss ($)": st.column_config.NumberColumn("Year Gain / Loss", format="$%+.2f"),
+                                "Before Withdrawal ($)": st.column_config.NumberColumn("Before Withdrawal", format="$%.2f"),
+                                "Withdrawal ($)": st.column_config.NumberColumn("Withdrawal", format="$%.2f"),
+                                "Remaining After Withdrawal ($)": st.column_config.NumberColumn("Remaining After Withdrawal", format="$%.2f"),
+                                "Cumulative Withdrawn ($)": st.column_config.NumberColumn("Cumulative Withdrawn", format="$%.2f"),
+                                "Profit ($)": st.column_config.NumberColumn("Profit", format="$%+.2f"),
+                                "Profit (%)": st.column_config.NumberColumn("Profit %", format="%+.2f%%"),
+                                "Withdrawal Status": st.column_config.TextColumn("Withdrawal Status"),
+                            }
+
+                            st.dataframe(
+                                paths_df,
+                                use_container_width=True,
+                                hide_index=True,
+                                height=min(760, 70 + 34 * len(paths_df)),
+                                column_config=start_year_column_config,
+                                key=table_key,
+                            )
+
+                        with start_year_rb_tab:
+                            _render_start_year_paths_tab(
+                                rebalance_after_withdrawal=True,
+                                table_key="portfolio_start_year_rebalanced_table",
+                                title="Rebalanced",
+                                caption=(
+                                    "Each Start Year begins with the same original investment. After every yearly return and withdrawal, "
+                                    "the remaining portfolio is restored to the original target weights before the next year. "
+                                    "The remaining balance still carries forward; only the weights are rebalanced."
+                                ),
+                            )
+
+                        with start_year_nr_tab:
+                            _render_start_year_paths_tab(
+                                rebalance_after_withdrawal=False,
+                                table_key="portfolio_start_year_not_rebalanced_table",
+                                title="Not-Rebalanced",
+                                caption=(
+                                    "Each Start Year begins with the same original investment. After every yearly return and withdrawal, "
+                                    "the remaining balance carries forward and the holdings keep their drifted weights. "
+                                    "No annual rebalance is performed."
+                                ),
+                            )
 
                         for label, result in (("Rebalanced", portfolio_withdrawal_rebalanced_result), ("Not rebalanced", portfolio_withdrawal_not_rebalanced_result)):
                             if result.get("depleted_year"):
@@ -4993,12 +5014,13 @@ with portfolio_tab:
                 if not annual_withdrawal_tabs_rendered:
                     # The tab row is structural UI and must never disappear. Calculations populate
                     # once Yearly Withdrawal is active and all required portfolio data is available.
-                    rb_tab, nr_tab, compare_tab, reset_tab, start_year_tab = st.tabs([
+                    rb_tab, nr_tab, compare_tab, reset_tab, start_year_rb_tab, start_year_nr_tab = st.tabs([
                         "↻ Rebalanced annually",
                         "↝ Not rebalanced",
                         "⚖ Side-by-side",
                         "📅 Annual Reset",
-                        "📈 Start-Year Paths",
+                        "📈 Start-Year Rebalanced",
+                        "📉 Start-Year Not Rebalanced",
                     ])
 
                     if not portfolio_withdrawals_enabled:
@@ -5044,14 +5066,26 @@ with portfolio_tab:
                         else:
                             st.info(_annual_tab_message)
 
-                    with start_year_tab:
+                    with start_year_rb_tab:
                         st.caption(
-                            "Rolling start-year analysis: each possible Start Year begins with the same initial investment, "
-                            "then Remaining After Withdrawal continues into every subsequent eligible year."
+                            "Rolling Rebalanced start-year analysis: each possible Start Year begins with the same initial investment; "
+                            "remaining balance carries forward while target weights are restored after every yearly withdrawal."
                         )
                         if not portfolio_withdrawals_enabled:
                             st.info(
-                                "Enable **Yearly withdrawal** above to calculate rolling Start-Year Paths with the selected annual withdrawal."
+                                "Enable **Yearly withdrawal** above to calculate Start-Year Rebalanced paths with the selected annual withdrawal."
+                            )
+                        else:
+                            st.info(_annual_tab_message)
+
+                    with start_year_nr_tab:
+                        st.caption(
+                            "Rolling Not-Rebalanced start-year analysis: each possible Start Year begins with the same initial investment; "
+                            "remaining balance and drifted holding weights carry forward after every yearly withdrawal."
+                        )
+                        if not portfolio_withdrawals_enabled:
+                            st.info(
+                                "Enable **Yearly withdrawal** above to calculate Start-Year Not-Rebalanced paths with the selected annual withdrawal."
                             )
                         else:
                             st.info(_annual_tab_message)
@@ -5239,7 +5273,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.76: repeat the active withdrawal outcome here so the income
+        # v5.9.77: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -5500,7 +5534,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v34 - v5.9.76 start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5719,7 +5753,7 @@ with market_tab:
             unsafe_allow_html=True,
         )
 
-        # v5.9.76: use the same searchable dropdown interaction as Portfolio
+        # v5.9.77: use the same searchable dropdown interaction as Portfolio
         # Simulator / Comparison rather than a plain free-text filter.
         _card_search_rows = filtered.copy()
         _card_search_rows["Symbol"] = _card_search_rows["Symbol"].astype(str).str.upper().str.strip()
@@ -6784,7 +6818,7 @@ with market_tab:
             "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
         ]
-        # v5.9.76: Table View uses the same searchable multiselect dropdown
+        # v5.9.77: Table View uses the same searchable multiselect dropdown
         # behavior as Portfolio Simulator / Stock & ETF Comparison.
         _table_search_rows = table_df.copy()
         _table_search_rows["Symbol"] = _table_search_rows["Symbol"].astype(str).str.upper().str.strip()

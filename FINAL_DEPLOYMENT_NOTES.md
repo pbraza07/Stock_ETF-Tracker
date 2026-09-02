@@ -1,3 +1,9 @@
+# v5.9.77 deployment note
+
+Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state.
+
+The former combined Start-Year Paths tab is replaced by separate Rebalanced and Not-Rebalanced tabs. No data migration is required.
+
 # v5.9.76 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state.

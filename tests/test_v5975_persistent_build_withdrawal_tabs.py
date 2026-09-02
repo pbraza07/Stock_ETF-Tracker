@@ -5,8 +5,8 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5975():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.76"
-    assert "v5.9.76" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.77"
+    assert "v5.9.77" in APP
 
 
 def test_build_simulation_has_persistent_annual_strategy_tabs():
@@ -39,15 +39,16 @@ def test_annual_reset_placeholder_explains_withdrawal_dependency():
 def test_successful_annual_withdrawal_still_renders_full_strategy_tabs():
     success = APP[APP.index("annual_withdrawal_tabs_rendered = False"):]
     success = success[:success.index("if not annual_withdrawal_tabs_rendered:")]
-    assert 'rb_tab, nr_tab, compare_tab, reset_tab, start_year_tab = st.tabs([' in success
+    assert 'rb_tab, nr_tab, compare_tab, reset_tab, start_year_rb_tab, start_year_nr_tab = st.tabs([' in success
     assert "with rb_tab:" in success
     assert "with nr_tab:" in success
     assert "with compare_tab:" in success
     assert "with reset_tab:" in success
-    assert "with start_year_tab:" in success
+    assert "with start_year_rb_tab:" in success
+    assert "with start_year_nr_tab:" in success
     assert "_portfolio_annual_reset_dataframe(" in success
 
 
 def test_pdf_contract_bumped_to_v33():
-    marker = 'MarketScope Portfolio Split Simulator v34 - v5.9.76 start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v35 - v5.9.77 split start-year rebalanced/not-rebalanced tabs + start-year rolling withdrawal paths + persistent Build Simulation withdrawal tabs + annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2

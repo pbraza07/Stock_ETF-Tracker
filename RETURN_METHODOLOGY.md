@@ -163,3 +163,13 @@ A new cohort begins for every eligible Start Year.
 Cumulative Profit includes cash already withdrawn:
 
 `Profit = Current Remaining Balance + Cumulative Withdrawals − Original Investment`
+
+## v5.9.77 split Start-Year strategy views
+
+Start-Year Rebalanced and Start-Year Not Rebalanced use the same rolling cohort methodology introduced in v5.9.76, but are rendered separately.
+
+For Rebalanced, target weights are restored after each completed-year withdrawal.
+
+For Not Rebalanced, holdings retain their drifted weights after returns and proportional withdrawals.
+
+Both carry Remaining After Withdrawal forward into subsequent years and both use the same cumulative economic-profit definition.

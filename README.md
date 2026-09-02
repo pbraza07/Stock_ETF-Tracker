@@ -1,3 +1,11 @@
+# MarketScope v5.9.77 — Split Start-Year Strategies
+
+The rolling Start-Year analysis is now separated into two dedicated Build Simulation tabs:
+
+**📈 Start-Year Rebalanced** and **📉 Start-Year Not Rebalanced**
+
+Each tab contains only its own strategy, eliminating the mixed Strategy column and making the rolling balance/withdrawal paths easier to compare.
+
 # MarketScope v5.9.76 — Start-Year Rolling Withdrawal Paths
 
 Portfolio Simulator → Build Simulation now includes a fifth annual-withdrawal tab:
