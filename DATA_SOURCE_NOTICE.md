@@ -56,3 +56,12 @@ The durable full-history monthly source is now `data/monthly_returns_full_histor
 The new $300K / $160K-per-year Top-100 ranking family is generated from the committed annual-performance CSV snapshot in `data/annual_performance_160k_source.csv`.
 
 Only completed calendar-year stock returns are used for the ten-year ranking. The generator requires complete data for all ten ranking years, four different sectors per portfolio, and a maximum of five Top-100 appearances per ticker.
+## v5.9.63 20Y $160K Top 250 ranking source
+
+The new 20-year high-withdrawal ranking family uses the frozen annual-performance source saved as `data/annual_performance_20y_160k_source.csv`. It contains the 20 completed calendar-year return columns from 2006 through 2025 used by this release.
+
+Only stocks with complete data for all 20 years are eligible. The ranking generator evaluates four-stock portfolios with four different sectors, applies a $160,000 withdrawal after each year's return, and caps each ticker at ten appearances across each Top 250 list.
+## v5.9.64 analyst price targets
+
+Stock analyst Low, Average/Consensus, and High targets come from Yahoo Finance through yfinance (`analyst_price_targets`, with Yahoo quote metadata fallback). Durable snapshot values are preferred; missing or partial stock target ranges are hydrated lazily in the app. ETFs remain blank when stock-style consensus targets are not published.
+

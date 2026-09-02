@@ -206,7 +206,7 @@ def main() -> None:
             symbol for symbol in batch
             if str((meta.get(symbol, {}) or old.get(symbol, {})).get("Type") or "").strip().lower() == "stock"
         ]
-        stock_targets = provider.get_price_targets_many(stock_batch, max_workers=6) if stock_batch else {}
+        stock_targets = provider.get_price_targets_many(stock_batch, max_workers=3) if stock_batch else {}
 
         for symbol in batch:
             m = meta.get(symbol, {})

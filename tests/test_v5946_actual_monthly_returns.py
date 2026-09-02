@@ -27,4 +27,4 @@ def test_app_has_no_equivalent_annual_to_monthly_math():
     assert "_load_actual_monthly_ranked_combo_file" in app
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.62"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.64"

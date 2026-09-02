@@ -66,7 +66,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
-# v5.9.62: monthly-withdrawal PDF yearly cash-flow reconciliation.
+# v5.9.64: monthly-withdrawal PDF yearly cash-flow reconciliation.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -134,6 +134,8 @@ COMBO_10Y_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_wi
 COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_withdrawal_10y.csv"
 COMBO_10Y_REBALANCED_WITHDRAWAL_160K_FILE = BASE_DIR / "data" / "top100_rebalanced_withdrawal_10y_160k_max5.csv"
 COMBO_10Y_NOT_REBALANCED_WITHDRAWAL_160K_FILE = BASE_DIR / "data" / "top100_not_rebalanced_withdrawal_10y_160k_max5.csv"
+COMBO_20Y_REBALANCED_WITHDRAWAL_160K_FILE = BASE_DIR / "data" / "top250_rebalanced_withdrawal_20y_160k_max10.csv"
+COMBO_20Y_NOT_REBALANCED_WITHDRAWAL_160K_FILE = BASE_DIR / "data" / "top250_not_rebalanced_withdrawal_20y_160k_max10.csv"
 COMBO_10Y_REBALANCED_MONTHLY_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv"
 COMBO_10Y_NOT_REBALANCED_MONTHLY_WITHDRAWAL_FILE = BASE_DIR / "data" / "top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv"
 COMBO_RECESSION_REBALANCED_FILE = BASE_DIR / "data" / "top100_recession_balanced_rebalanced_10y.csv"
@@ -371,6 +373,7 @@ def _apply_withdrawal_ranked_combo_selection(
     lookup_key: str,
     ranking_name: str,
     annual_withdrawal: float = COMBO_WITHDRAWAL_ANNUAL,
+    period: str = "10Y",
 ) -> None:
     selected = st.session_state.get(select_key)
     lookup = st.session_state.get(lookup_key) or {}
@@ -380,7 +383,7 @@ def _apply_withdrawal_ranked_combo_selection(
     annual_withdrawal = float(annual_withdrawal)
     st.session_state.portfolio_symbols = symbols
     st.session_state.portfolio_symbol_picker = symbols
-    st.session_state.portfolio_period = "10Y"
+    st.session_state.portfolio_period = str(period)
     st.session_state.portfolio_allocation_mode = "Equal split"
     st.session_state.portfolio_include_ytd = False
     st.session_state.portfolio_total_amount = float(COMBO_WITHDRAWAL_START)
@@ -392,32 +395,38 @@ def _apply_withdrawal_ranked_combo_selection(
         st.session_state.portfolio_annual_withdrawal = annual_withdrawal
     st.session_state.combo_autoload_message = (
         f"Loaded {ranking_name}: {' + '.join(symbols)}. Simulator set to $300,000 start, "
-        f"10Y / Equal split, with ${annual_withdrawal:,.0f} annual withdrawals."
+        f"{period} / Equal split, with ${annual_withdrawal:,.0f} annual withdrawals."
     )
 
 
 def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
-    """Display detailed yearly-withdrawal rankings, including coverage/diversification fields when present."""
+    """Display detailed yearly-withdrawal rankings for any saved horizon/list size."""
     if df is None or df.empty:
         return pd.DataFrame()
 
-    year_cols = sorted(
+    years = sorted(
         [str(col) for col in df.columns if str(col).isdigit() and len(str(col)) == 4],
         reverse=True,
     )
-    years = year_cols[:10] if year_cols else COMBO_RANK_YEARS_BY_PERIOD["10Y"]
 
     identity_cols = []
+    usage_cols = []
     for idx in range(1, 5):
         identity_cols.extend([f"Stock {idx}", f"Sector {idx}", f"Name {idx}"])
-        if f"Stock {idx} Top100 Uses" in df.columns:
-            identity_cols.append(f"Stock {idx} Top100 Uses")
+        for candidate in (f"Stock {idx} Top250 Uses", f"Stock {idx} Top100 Uses"):
+            if candidate in df.columns:
+                identity_cols.append(candidate)
+                usage_cols.append(candidate)
+                break
 
     balance_cols = [f"{year} Balance After Withdrawal ($)" for year in sorted(years)]
-    coverage_cols = [
-        "Target Withdrawals", "Withdrawals Fully Funded", "Full 10Y Withdrawal Goal",
-        "Depleted Year", "Max Ticker Repeats", "Distinct Tickers in Top 100",
+    coverage_candidates = [
+        "Target Withdrawals", "Withdrawals Fully Funded",
+        "Full 20Y Withdrawal Goal", "Full 10Y Withdrawal Goal",
+        "Depleted Year", "Max Ticker Repeats",
+        "Distinct Tickers in Top 250", "Distinct Tickers in Top 100",
     ]
+    coverage_cols = [col for col in coverage_candidates if col in df.columns]
     source_cols = ["Ranking Window Start", "Ranking Window End", "Ranking Source", "Ranking Method"]
     cols = [
         "Rank", "Combo", "Strategy", *identity_cols, *years,
@@ -429,6 +438,7 @@ def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
     ]
     available = [c for c in cols if c in df.columns]
     out = df[available].copy()
+
     for col in years + ["Worst Year %", "Best Year %"]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
@@ -439,11 +449,12 @@ def _withdrawal_combo_rank_table(df: pd.DataFrame) -> pd.DataFrame:
     ]:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
-    for col in [
-        "Target Withdrawals", "Withdrawals Fully Funded", "Max Ticker Repeats",
-        "Distinct Tickers in Top 100",
-        *[f"Stock {idx} Top100 Uses" for idx in range(1, 5)],
-    ]:
+    integer_cols = [
+        "Rank", "Target Withdrawals", "Withdrawals Fully Funded",
+        "Max Ticker Repeats", "Distinct Tickers in Top 250",
+        "Distinct Tickers in Top 100", *usage_cols,
+    ]
+    for col in integer_cols:
         if col in out.columns:
             out[col] = pd.to_numeric(out[col], errors="coerce").astype("Int64")
     return out
@@ -1131,16 +1142,72 @@ def cached_card_two_year_histories(symbols: tuple[str, ...]) -> dict[str, pd.Dat
         return {}
 
 
-@st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
+@st.cache_data(ttl=30 * 60, show_spinner=False)
 def cached_price_targets(symbols: tuple[str, ...]) -> dict:
     """Lazy Yahoo price-target fallback for stock cards visible on the current page."""
     clean = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
     if not clean:
         return {}
     try:
-        return provider.get_price_targets_many(clean, max_workers=4)
+        return provider.get_price_targets_many(clean, max_workers=3)
     except Exception:
         return {}
+
+
+def _valid_price_target(value) -> bool:
+    parsed = pd.to_numeric(pd.Series([value]), errors="coerce").iloc[0]
+    return bool(pd.notna(parsed) and np.isfinite(parsed) and float(parsed) > 0)
+
+
+def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str]) -> pd.DataFrame:
+    """Fill missing stock analyst Low / Average / High targets everywhere MarketScope displays them.
+
+    Durable snapshot values remain the first source. If any of the three fields is
+    missing for a requested stock, Yahoo/yfinance is queried through the shared
+    cached target loader. Existing valid values are preserved when a fresh source
+    omits only part of the range.
+    """
+    if df is None or df.empty or "Symbol" not in df.columns:
+        return df
+    out = df.copy()
+    requested = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
+    if not requested:
+        return out
+    for col in [*PRICE_TARGET_COLS, "Price Target Updated ET"]:
+        if col not in out.columns:
+            out[col] = np.nan if col in PRICE_TARGET_COLS else "—"
+    upper_symbols = out["Symbol"].astype(str).str.upper().str.strip()
+    wanted = out[upper_symbols.isin(requested)].copy()
+    if wanted.empty:
+        return out
+    missing_symbols = []
+    for _, row in wanted.iterrows():
+        if str(row.get("Type") or "").strip().upper() != "STOCK":
+            continue
+        if any(not _valid_price_target(row.get(col)) for col in PRICE_TARGET_COLS):
+            missing_symbols.append(str(row.get("Symbol") or "").upper().strip())
+    missing_symbols = list(dict.fromkeys(missing_symbols))
+    if not missing_symbols:
+        return out
+    try:
+        target_map = cached_price_targets(tuple(missing_symbols))
+    except Exception:
+        target_map = {}
+    if not target_map:
+        return out
+    stamp = format_et()
+    for symbol in missing_symbols:
+        values = target_map.get(symbol) or {}
+        mask = upper_symbols.eq(symbol)
+        wrote = False
+        for source_key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
+            value = pd.to_numeric(pd.Series([values.get(source_key)]), errors="coerce").iloc[0]
+            if pd.notna(value) and np.isfinite(value) and float(value) > 0:
+                out.loc[mask, col] = float(value)
+                wrote = True
+        if wrote:
+            out.loc[mask, "Price Target Updated ET"] = stamp
+    return out
 
 
 @st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
@@ -1197,7 +1264,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v21 - v5.9.62 responsive yearly-withdrawal + compact simulator KPI layout + dynamic annual history + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + 20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -1251,7 +1318,8 @@ def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame
                     item["available_months"] = int(len(values))
 
     if market_df is not None and not market_df.empty:
-        lookup_df = market_df.copy()
+        lookup_source = _hydrate_price_targets(market_df, symbols) if symbols else market_df.copy()
+        lookup_df = lookup_source.copy()
         lookup_df["Symbol"] = lookup_df["Symbol"].astype(str).str.upper().str.strip()
         lookup_df = lookup_df.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False)
         for item in instruments:
@@ -3141,7 +3209,7 @@ with portfolio_tab:
         # v5.9.53: ranking families stay hidden until their respective button is opened.
         st.caption("Portfolio preset rankings are grouped below. Open only the ranking family you want to use.")
         preset_row1 = st.columns(3)
-        preset_row2 = st.columns(3)
+        preset_row2 = st.columns(4)
 
         def _render_profit_worst_rankings(period_label: str, profit_file: Path, worst_file: Path) -> None:
             st.caption(
@@ -3425,6 +3493,101 @@ with portfolio_tab:
                     "Because $160,000 per year is a very high withdrawal relative to a $300,000 starting portfolio, "
                     "the table explicitly shows Withdrawals Fully Funded and Depleted Year. The max-five rule is "
                     "enforced across the full Top 100 list, not just within an individual combination."
+                )
+
+        with preset_row2[3]:
+            with st.popover("🏆 20Y $160K Withdrawal Top 250", use_container_width=True):
+                st.markdown("### $300K Start / $160K per Year · 20Y · Max 10 Uses per Ticker")
+                st.caption(
+                    "Exactly four stocks from four different sectors, equal 25% starting allocation, using "
+                    "20 completed annual returns (2006–2025) from the saved annual-performance source. "
+                    "Each ticker may appear in no more than 10 of the Top 250 combinations in each strategy. "
+                    "Ranking priority is withdrawals fully funded, then total cash delivered, then ending balance."
+                )
+                long_rb = _load_ranked_combo_file(str(COMBO_20Y_REBALANCED_WITHDRAWAL_160K_FILE))
+                long_nr = _load_ranked_combo_file(str(COMBO_20Y_NOT_REBALANCED_WITHDRAWAL_160K_FILE))
+
+                st.markdown("#### 🔄 Top 250 — Rebalanced Annually")
+                if long_rb.empty:
+                    st.warning("20Y $160K rebalanced Top 250 ranking data is unavailable.")
+                else:
+                    lookup_key = "combo_20y_160k_rebalanced_lookup"
+                    picker_key = "combo_20y_160k_rebalanced_picker"
+                    lookup = {}
+                    options = ["— Select a Top 250 20Y $160K rebalanced combo —"]
+                    for _, combo_row in long_rb.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Rebalanced")
+                        options.append(label)
+                        lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox(
+                        "20Y $160K rebalanced withdrawal combination",
+                        options=options,
+                        index=0,
+                        key=picker_key,
+                        on_change=_apply_withdrawal_ranked_combo_selection,
+                        args=(
+                            picker_key,
+                            lookup_key,
+                            "20Y $160K Rebalanced Withdrawal combo",
+                            COMBO_WITHDRAWAL_ANNUAL_160K,
+                            "20Y",
+                        ),
+                    )
+
+                st.markdown("#### ↗ Top 250 — Not Rebalanced")
+                if long_nr.empty:
+                    st.warning("20Y $160K not-rebalanced Top 250 ranking data is unavailable.")
+                else:
+                    lookup_key = "combo_20y_160k_not_rebalanced_lookup"
+                    picker_key = "combo_20y_160k_not_rebalanced_picker"
+                    lookup = {}
+                    options = ["— Select a Top 250 20Y $160K not-rebalanced combo —"]
+                    for _, combo_row in long_nr.sort_values("Rank").iterrows():
+                        label = _ranked_withdrawal_combo_label(combo_row, "Not Rebalanced")
+                        options.append(label)
+                        lookup[label] = _ranked_combo_symbols(combo_row)
+                    st.session_state[lookup_key] = lookup
+                    st.selectbox(
+                        "20Y $160K not-rebalanced withdrawal combination",
+                        options=options,
+                        index=0,
+                        key=picker_key,
+                        on_change=_apply_withdrawal_ranked_combo_selection,
+                        args=(
+                            picker_key,
+                            lookup_key,
+                            "20Y $160K Not-Rebalanced Withdrawal combo",
+                            COMBO_WITHDRAWAL_ANNUAL_160K,
+                            "20Y",
+                        ),
+                    )
+
+                long_rb_tab, long_nr_tab = st.tabs([
+                    "🔄 Rebalanced Top 250",
+                    "↗ Not Rebalanced Top 250",
+                ])
+                with long_rb_tab:
+                    st.dataframe(
+                        _withdrawal_combo_rank_table(long_rb),
+                        use_container_width=True,
+                        hide_index=True,
+                        height=560,
+                    )
+                with long_nr_tab:
+                    st.dataframe(
+                        _withdrawal_combo_rank_table(long_nr),
+                        use_container_width=True,
+                        hide_index=True,
+                        height=560,
+                    )
+
+                st.caption(
+                    "A $160,000 annual withdrawal is extremely aggressive relative to a $300,000 starting "
+                    "portfolio. The ranking therefore displays Withdrawals Fully Funded and Depleted Year. "
+                    "In this 20-year historical window, no four-stock portfolio in the eligible universe funds "
+                    "all 20 full withdrawals; the best combinations fund six before depletion. The max-10 rule "
+                    "is enforced across the entire Top 250 list."
                 )
 
         portfolio_total = st.number_input(
@@ -4009,7 +4172,8 @@ with portfolio_tab:
                 st.caption("Complete a portfolio simulation with return data available for every selected instrument before saving the PDF.")
 
         if save_simulation_clicked and portfolio_save_ready:
-            market_lookup = market.set_index(market["Symbol"].astype(str).str.upper(), drop=False)
+            portfolio_market = _hydrate_price_targets(market, tuple(selected_portfolio_symbols))
+            market_lookup = portfolio_market.set_index(portfolio_market["Symbol"].astype(str).str.upper(), drop=False)
             saved_instruments = []
             for result in portfolio_results:
                 sym = str(result.get("symbol") or "").upper()
@@ -4119,7 +4283,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v21 - v5.9.62 responsive yearly-withdrawal + compact simulator KPI layout + dynamic annual history + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + 20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -4185,7 +4349,7 @@ with portfolio_tab:
                     action_cols = st.columns([1.35, 1.15, 1.0, 3.7])
                     pdf_record = _enrich_pdf_record_with_current_market(rec, market)
                     record_json = json.dumps(pdf_record, sort_keys=True, separators=(",", ":"))
-                    # v5.9.23 forces the first open of an older saved PDF through the new
+                    # v5.9.64 forces the first open of an older saved PDF through the current
                     # page-1 contract so current price/rating/low/avg/high targets are present.
                     pdf_bytes = cached_simulation_pdf(record_json)
                     with action_cols[0]:
@@ -4523,26 +4687,12 @@ with market_tab:
         # v5.9 target columns. Only the visible stock cards are queried, cached for six
         # hours, and filled without slowing the entire universe. The scheduled/manual
         # refresh persists these values later.
+        # Ensure visible stock cards always receive the same Low / Average / High target range
+        # used by Table View, Comparison, Portfolio Simulator and saved PDFs.
         visible_stock_symbols = card_rows.loc[
             card_rows["Type"].astype(str).str.upper().eq("STOCK"), "Symbol"
         ].astype(str).tolist()
-        missing_target_symbols = []
-        for symbol in visible_stock_symbols:
-            row = card_rows.loc[card_rows["Symbol"].astype(str).eq(symbol)].iloc[0]
-            vals = [pd.to_numeric(pd.Series([row.get(col)]), errors="coerce").iloc[0] for col in PRICE_TARGET_COLS]
-            if not any(pd.notna(v) and np.isfinite(v) and float(v) > 0 for v in vals):
-                missing_target_symbols.append(symbol)
-        if missing_target_symbols:
-            visible_targets = cached_price_targets(tuple(missing_target_symbols))
-            for symbol, values in visible_targets.items():
-                mask = card_rows["Symbol"].astype(str).eq(symbol)
-                if not mask.any():
-                    continue
-                for source_key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
-                    value = pd.to_numeric(pd.Series([values.get(source_key)]), errors="coerce").iloc[0]
-                    if pd.notna(value) and np.isfinite(value) and float(value) > 0:
-                        card_rows.loc[mask, col] = float(value)
-                card_rows.loc[mask, "Price Target Updated ET"] = format_et()
+        card_rows = _hydrate_price_targets(card_rows, visible_stock_symbols)
 
         # One batched Yahoo request supplies two years of adjusted 1-day closes for
         # every visible card. The result is cached for 30 minutes to keep paging fast.
@@ -5142,17 +5292,9 @@ with market_tab:
 
         selected = st.session_state.selected_symbol
         if selected and selected in set(market["Symbol"].astype(str)):
-            detail_row = market.loc[market["Symbol"].astype(str) == selected].iloc[0].copy()
-            if str(detail_row.get("Type") or "").strip().upper() == "STOCK":
-                current_targets = [pd.to_numeric(pd.Series([detail_row.get(col)]), errors="coerce").iloc[0] for col in PRICE_TARGET_COLS]
-                if not any(pd.notna(v) and np.isfinite(v) and float(v) > 0 for v in current_targets):
-                    detail_target = cached_price_targets((selected,)).get(selected, {})
-                    for source_key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
-                        value = pd.to_numeric(pd.Series([detail_target.get(source_key)]), errors="coerce").iloc[0]
-                        if pd.notna(value) and np.isfinite(value) and float(value) > 0:
-                            detail_row[col] = float(value)
-                    if detail_target:
-                        detail_row["Price Target Updated ET"] = format_et()
+            detail_source = market.loc[market["Symbol"].astype(str) == selected].copy()
+            detail_source = _hydrate_price_targets(detail_source, (selected,))
+            detail_row = detail_source.iloc[0].copy()
             detail_price = f"${float(detail_row['Price']):,.2f}" if pd.notna(detail_row.get("Price")) else "—"
             detail_display_name = _card_display_name(detail_row)
             st.markdown(f"<div class='detail-header'><div><span class='detail-kicker'>INSTRUMENT INTELLIGENCE</span><h2>{selected}</h2><p>{escape(detail_display_name)}</p></div><div class='detail-price'>{detail_price}</div></div>", unsafe_allow_html=True)
@@ -5281,6 +5423,10 @@ with market_tab:
             unsafe_allow_html=True,
         )
         table_df = view_filtered.copy()
+        table_target_symbols = table_df.loc[
+            table_df["Type"].astype(str).str.upper().eq("STOCK"), "Symbol"
+        ].astype(str).tolist()
+        table_df = _hydrate_price_targets(table_df, table_target_symbols)
 
         # Add the same investment simulation result currently selected above so the
         # table can be ranked by estimated dollar profit as well as raw market data.
@@ -5593,6 +5739,7 @@ with compare_tab:
         st.info("Add two or more stocks and/or ETFs to build a comparison. You can still compare a single instrument while assembling the set.")
     else:
         comparison_df = all_compare_rows.loc[all_compare_rows["Symbol"].isin(comparison_symbols)].copy()
+        comparison_df = _hydrate_price_targets(comparison_df, comparison_symbols)
         comparison_df["_compare_order"] = comparison_df["Symbol"].map({s: i for i, s in enumerate(comparison_symbols)})
         comparison_df = comparison_df.sort_values("_compare_order").drop(columns="_compare_order")
         # Legacy logo path: _comparison_logo_html(symbol, comparison_logo_urls.get(symbol, ""))

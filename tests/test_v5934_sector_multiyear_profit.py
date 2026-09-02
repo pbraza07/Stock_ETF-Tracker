@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.62"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.64"
 
 
 def test_sector_multiyear_profit_selector_remains_compounded():

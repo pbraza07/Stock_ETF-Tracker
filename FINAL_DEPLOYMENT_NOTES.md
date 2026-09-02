@@ -1,3 +1,13 @@
+# v5.9.64 deployment note
+
+Deploy over the existing repository. Do not delete live saved Portfolio Simulation JSON/PDF state. After deployment, existing saved PDFs are rebuilt on open against the current market row and the shared target hydrator. The normal scheduled snapshot refresh also persists Low / Average / High target values with lower-concurrency Yahoo retries.
+
+# v5.9.63 deployment note
+
+Deploy over the existing repository. Do not delete live saved Portfolio Simulation JSON/PDF state.
+
+This release adds committed static ranking assets for the new 20Y $160K Top 250 family. Upload those files with the code. They are excluded from the normal market-refresh trigger to avoid workflow recursion.
+
 # v5.9.62 deployment note
 
 Deploy over the existing repository. This is a UI/layout release; no market-data migration is required and live saved Portfolio Simulation JSON/PDF state remains protected. Rebuilt PDFs carry the v21/v5.9.62 layout marker on page 1.

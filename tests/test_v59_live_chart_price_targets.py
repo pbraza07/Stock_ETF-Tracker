@@ -41,8 +41,9 @@ def test_price_targets_refresh_and_persist_in_daily_snapshot():
 def test_price_targets_have_upgrade_safe_lazy_fallback():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     assert 'cached_price_targets' in app
-    assert 'missing_target_symbols' in app
-    assert 'visible stock cards are queried' in app
+    assert 'def _hydrate_price_targets' in app
+    assert 'card_rows = _hydrate_price_targets(card_rows, visible_stock_symbols)' in app
+    assert 'table_df = _hydrate_price_targets(table_df, table_target_symbols)' in app
 
 
 def test_213_etf_universe_is_still_exact():

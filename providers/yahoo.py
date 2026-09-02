@@ -3,6 +3,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, Iterable, List
 from urllib.parse import urlparse, quote
+import time
 
 import pandas as pd
 import yfinance as yf
@@ -443,12 +444,20 @@ class YahooFinanceProvider(MarketDataProvider):
         }
         return result if any(result[k] is not None for k in ("low", "mean", "high")) else {}
 
-    def get_price_targets_many(self, symbols: Iterable[str], max_workers: int = 6) -> Dict[str, dict]:
+    def get_price_targets_many(self, symbols: Iterable[str], max_workers: int = 4) -> Dict[str, dict]:
+        """Fetch analyst target ranges with a low-concurrency pass plus individual retry.
+
+        Render/Yahoo can intermittently omit quote-summary modules when several
+        metadata calls run concurrently. A missing symbol is retried once
+        sequentially so valid Low / Mean / High targets are much less likely to
+        disappear from the durable snapshot or PDF enrichment path.
+        """
         symbols = self._clean_symbols(symbols)
         output: Dict[str, dict] = {}
         if not symbols:
             return output
-        with ThreadPoolExecutor(max_workers=min(max_workers, len(symbols))) as pool:
+        workers = max(1, min(int(max_workers or 1), 4, len(symbols)))
+        with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {pool.submit(self.get_price_targets, symbol): symbol for symbol in symbols}
             for future in as_completed(futures):
                 symbol = futures[future]
@@ -458,6 +467,16 @@ class YahooFinanceProvider(MarketDataProvider):
                     values = {}
                 if values:
                     output[symbol] = values
+
+        missing = [symbol for symbol in symbols if symbol not in output]
+        for symbol in missing:
+            try:
+                time.sleep(0.12)
+                values = self.get_price_targets(symbol)
+            except Exception:
+                values = {}
+            if values:
+                output[symbol] = values
         return output
 
 

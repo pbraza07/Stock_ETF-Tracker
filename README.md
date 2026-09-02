@@ -1,3 +1,11 @@
+# MarketScope v5.9.64 - Analyst Price Target Restore
+
+MarketScope now hydrates stock analyst **Low / Average-Consensus / High** price targets through one shared data path used by Card View, Market Table, Comparison, Portfolio Simulator saves, and saved-PDF rebuilds. Older saved PDFs are forced through the v23 enrichment contract so the Portfolio Instrument Snapshot no longer shows target placeholders when Yahoo/yfinance has a valid range.
+
+# MarketScope v5.9.63 — 20Y $160K Annual-Withdrawal Top 250
+
+Portfolio Simulator now includes a **20-year / $300K start / $160K yearly withdrawal / Top 250** ranking family for Rebalanced and Not-Rebalanced strategies. Every portfolio uses four stocks from four different sectors and each ticker is capped at ten appearances across each Top 250 list.
+
 # MarketScope v5.9.62 — Responsive Yearly Withdrawal + Compact Simulator KPIs
 
 Yearly Withdrawal now uses the same responsive five-card visual system as Monthly Withdrawal, including a full RB/NR **Withdrawals Funded** card. The main Portfolio Simulator totals (Portfolio Invested, Ending Value, Profit/Loss, Return) are also responsive compact cards instead of oversized stacked native metrics on mobile.

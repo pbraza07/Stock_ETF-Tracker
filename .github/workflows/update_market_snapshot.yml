@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.62)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.64)
 # Automatic daily refresh owns the full dynamically growing completed-year adjusted-history window
 # and the matching dynamic-history actual-monthly dataset used by withdrawal simulations.
 
@@ -25,6 +25,9 @@ on:
       - 'data/top100_rebalanced_withdrawal_10y_160k_max5.csv'
       - 'data/top100_not_rebalanced_withdrawal_10y_160k_max5.csv'
       - 'data/annual_performance_160k_source.csv'
+      - 'data/annual_performance_20y_160k_source.csv'
+      - 'data/top250_rebalanced_withdrawal_20y_160k_max10.csv'
+      - 'data/top250_not_rebalanced_withdrawal_20y_160k_max10.csv'
       - 'data/top100_not_rebalanced_withdrawal_10y.csv'
       - 'data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
       - 'data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
