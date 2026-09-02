@@ -1,3 +1,9 @@
+# MarketScope v5.9.73 — Annual Reset Performance
+
+Portfolio Simulator now includes a dedicated **Annual Reset Performance** workspace tab. Each calendar-year row starts with the same original investment and current portfolio allocation, applies only that year's actual saved annual returns, calculates the one-year ending value and profit/loss, and then resets the principal before the next year. No profit or loss rolls forward between rows.
+
+Only completed calendar years where every selected instrument has a valid annual return are displayed.
+
 # MarketScope v5.9.72 — Annual Positive Years
 
 Yearly Withdrawal summaries now mirror the Monthly Withdrawal positive-period metric. The fifth KPI no longer displays **Withdrawals Funded**; it displays **Positive Years — RB x/y | NR x/y**, calculated from each strategy's actual annual portfolio return. The same Positive Years metric appears in the live yearly-withdrawal summary, Save / Manage, Saved Simulation cards, and PDF page 1.

@@ -113,3 +113,13 @@ A completed calendar year is positive when:
 The numerator is the number of positive completed years. The denominator is the number of completed annual rows actually modeled for that strategy. YTD partial rows are excluded.
 
 This metric is descriptive only; it does not replace the underlying withdrawal-funding and depletion calculations.
+
+## v5.9.73 annual reset performance
+
+Annual Reset Performance is an independent one-year experiment, not a compounded return series.
+
+For every shared completed calendar year, MarketScope restores the same initial investment and selected target weights, calculates that year's allocation-weighted portfolio return, and reports the corresponding one-year ending value and profit/loss.
+
+No balance, profit, loss, or weight drift from one row is used by any other row.
+
+A year is excluded unless every selected instrument has a valid annual return.

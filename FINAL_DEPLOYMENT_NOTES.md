@@ -1,3 +1,9 @@
+# v5.9.73 deployment note
+
+Deploy over the existing repository and preserve the live saved Portfolio Simulation JSON/PDF library.
+
+No data migration is required. The Annual Reset Performance tab reads the same annual-return columns already used by MarketScope and automatically limits rows to completed years shared by every selected instrument.
+
 # v5.9.72 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state.
