@@ -32,7 +32,7 @@ def _make_archive(path: Path) -> Path:
 
 
 def test_release_version_5956():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.73"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.74"
 
 
 def test_verifier_compares_actual_year_end_returns(tmp_path):

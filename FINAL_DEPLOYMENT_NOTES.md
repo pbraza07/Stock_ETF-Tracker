@@ -1,3 +1,9 @@
+# v5.9.74 deployment note
+
+Deploy over the existing repository and preserve all live saved Portfolio Simulation JSON/PDF files.
+
+No migration is required. Annual Reset is now inside Build Simulation and appears as the fourth tab of the yearly-withdrawal comparison whenever Yearly Withdrawal is enabled and successfully calculated.
+
 # v5.9.73 deployment note
 
 Deploy over the existing repository and preserve the live saved Portfolio Simulation JSON/PDF library.

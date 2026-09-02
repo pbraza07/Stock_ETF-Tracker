@@ -123,3 +123,23 @@ For every shared completed calendar year, MarketScope restores the same initial 
 No balance, profit, loss, or weight drift from one row is used by any other row.
 
 A year is excluded unless every selected instrument has a valid annual return.
+
+## v5.9.74 annual reset with withdrawal
+
+Annual Reset is an independent one-year withdrawal test.
+
+For each eligible completed calendar year:
+
+`Annual Return = Σ(target weight × stock annual return)`
+
+`Gain/Loss = Reset Starting Balance × Annual Return`
+
+`Before Withdrawal = Reset Starting Balance + Gain/Loss`
+
+`Actual Withdrawal = min(Requested Annual Withdrawal, max(Before Withdrawal, 0))`
+
+`Remaining After Withdrawal = max(Before Withdrawal − Actual Withdrawal, 0)`
+
+The starting balance is then reset before the next calendar year. No balance, profit, loss, or allocation drift carries between rows.
+
+The Annual Reset tab is restricted to the current completed-year Portfolio Simulator window and excludes any year where one or more selected instruments lacks a valid annual return.

@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.73"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.74"
 
 
 def test_withdrawal_engine_supports_rebalancing():
@@ -18,7 +18,10 @@ def test_withdrawal_engine_supports_rebalancing():
 def test_ui_renders_both_withdrawal_strategies():
     src = (ROOT / "app.py").read_text(encoding="utf-8")
     assert "ANNUAL WITHDRAWAL — REBALANCED VS NOT REBALANCED" in src
-    assert 'st.tabs(["↻ Rebalanced annually", "↝ Not rebalanced", "⚖ Side-by-side"])' in src
+    assert '"↻ Rebalanced annually"' in src
+    assert '"↝ Not rebalanced"' in src
+    assert '"⚖ Side-by-side"' in src
+    assert '"📅 Annual Reset"' in src
     assert "Rebalanced remaining" in src
     assert "Not rebalanced remaining" in src
     assert "Rebalance difference" in src

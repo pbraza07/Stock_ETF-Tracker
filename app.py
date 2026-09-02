@@ -1071,7 +1071,7 @@ def load_universe_change_history() -> list[dict]:
 
 
 def _current_metadata_change_events(metadata: dict) -> list[dict]:
-    """Bridge the most recent pre-v5.9.73 metadata change into the history view."""
+    """Bridge the most recent pre-v5.9.74 metadata change into the history view."""
     if not isinstance(metadata, dict):
         return []
     stamp = str(metadata.get("refreshed_at_et") or "").strip()
@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v31 - v5.9.73 annual reset performance + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v32 - v5.9.74 annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2572,7 +2572,7 @@ with market_tab:
         if six_month_history.empty:
             st.info(
                 "No recorded Nasdaq universe or analyst-rating changes fall within the last six months yet. "
-                "v5.9.73 begins durable history collection and migrates the latest change still present in universe metadata."
+                "v5.9.74 begins durable history collection and migrates the latest change still present in universe metadata."
             )
         else:
             history_counts = six_month_history["Change Type"].value_counts()
@@ -2967,66 +2967,79 @@ def _portfolio_annual_reset_dataframe(
     symbols: list[str],
     weights: dict[str, float],
     total_investment: float,
+    annual_withdrawal: float = 0.0,
+    calendar_years: list[str] | None = None,
 ) -> pd.DataFrame:
-    """Calculate independent one-year portfolio outcomes with the principal reset every year.
+    """Independent one-year reset test with the current annual withdrawal applied.
 
-    Every displayed row begins with exactly the same total investment and target
-    allocation. No ending value, gain, loss, or weight drift from one calendar
-    year is carried into another. A year is included only when every selected
-    instrument has a finite annual return for that completed calendar year.
+    Every displayed calendar year begins with the exact same initial investment
+    and target allocation. The year's saved annual returns are applied, then the
+    requested annual withdrawal is taken. Nothing carries into the next row.
+
+    A year is included only when every selected instrument has a finite annual
+    return. If ``calendar_years`` is supplied, the table is restricted to that
+    current Portfolio Simulator completed-year window.
     """
-    columns = [
+    base_columns = [
         "Year",
-        "Initial Investment ($)",
-        "Portfolio Return (%)",
-        "Ending Value ($)",
-        "Profit / Loss ($)",
-        "Result",
+        "Starting Balance ($)",
+        "Annual Return (%)",
+        "Gain / Loss ($)",
+        "Before Withdrawal ($)",
+        "Withdrawal ($)",
+        "Remaining After Withdrawal ($)",
+        "Withdrawal Status",
     ]
     clean = list(dict.fromkeys(str(sym).upper().strip() for sym in symbols if str(sym).strip()))
     try:
         principal = float(total_investment)
+        requested_withdrawal = max(0.0, float(annual_withdrawal))
     except Exception:
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=base_columns)
+
     if not clean or principal <= 0 or not np.isfinite(principal):
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=base_columns)
 
     lookup = market_df.copy()
     lookup["Symbol"] = lookup["Symbol"].astype(str).str.upper().str.strip()
     lookup = lookup.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False)
     if any(sym not in lookup.index for sym in clean):
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=base_columns)
 
-    # The common-year helper is the eligibility gate: no partial portfolio years.
     common_years = _portfolio_common_calendar_years(
         market_df,
         clean,
         ANNUAL_HISTORY_YEARS,
     )
+    if calendar_years is not None:
+        requested_years = [str(year) for year in calendar_years]
+        common_set = set(common_years)
+        common_years = [year for year in requested_years if year in common_set]
     if not common_years:
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=base_columns)
 
     weight_values = {sym: float(weights.get(sym, 0.0) or 0.0) for sym in clean}
     weight_total = sum(weight_values.values())
     if weight_total <= 0 or abs(weight_total - 100.0) > 0.05:
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=base_columns)
 
     rows: list[dict] = []
-    # Oldest -> newest mirrors the annual withdrawal schedules and makes the
-    # historical reset experiment easy to read chronologically.
     for year in sorted(common_years, key=lambda value: int(value)):
         row_out: dict = {
             "Year": int(year),
-            "Initial Investment ($)": principal,
+            "Starting Balance ($)": principal,
         }
         weighted_return = 0.0
         year_valid = True
 
         for sym in clean:
-            row = lookup.loc[sym]
-            if isinstance(row, pd.DataFrame):
-                row = row.iloc[0]
-            raw = pd.to_numeric(pd.Series([row.get(str(year))]), errors="coerce").iloc[0]
+            source_row = lookup.loc[sym]
+            if isinstance(source_row, pd.DataFrame):
+                source_row = source_row.iloc[0]
+            raw = pd.to_numeric(
+                pd.Series([source_row.get(str(year))]),
+                errors="coerce",
+            ).iloc[0]
             if pd.isna(raw) or not np.isfinite(raw):
                 year_valid = False
                 break
@@ -3037,22 +3050,44 @@ def _portfolio_annual_reset_dataframe(
         if not year_valid:
             continue
 
-        ending_value = principal * (1.0 + weighted_return / 100.0)
-        profit_loss = ending_value - principal
+        gain_loss = principal * weighted_return / 100.0
+        before_withdrawal = principal + gain_loss
+        available = max(0.0, before_withdrawal)
+        actual_withdrawal = min(requested_withdrawal, available)
+        remaining = max(0.0, before_withdrawal - actual_withdrawal)
+
+        if requested_withdrawal <= 0:
+            withdrawal_status = "No withdrawal"
+        elif actual_withdrawal >= requested_withdrawal - 0.005:
+            withdrawal_status = "Funded"
+        elif actual_withdrawal > 0:
+            withdrawal_status = "Partial"
+        else:
+            withdrawal_status = "Not funded"
+
         row_out.update({
-            "Portfolio Return (%)": weighted_return,
-            "Ending Value ($)": ending_value,
-            "Profit / Loss ($)": profit_loss,
-            "Result": "Positive" if weighted_return > 0 else ("Negative" if weighted_return < 0 else "Flat"),
+            "Annual Return (%)": weighted_return,
+            "Gain / Loss ($)": gain_loss,
+            "Before Withdrawal ($)": before_withdrawal,
+            "Withdrawal ($)": actual_withdrawal,
+            "Remaining After Withdrawal ($)": remaining,
+            "Withdrawal Status": withdrawal_status,
         })
         rows.append(row_out)
 
     if not rows:
-        return pd.DataFrame(columns=columns)
+        return pd.DataFrame(columns=base_columns)
 
-    ordered = ["Year", "Initial Investment ($)"]
+    ordered = ["Year", "Starting Balance ($)"]
     ordered.extend(f"{sym} Return (%)" for sym in clean)
-    ordered.extend(["Portfolio Return (%)", "Ending Value ($)", "Profit / Loss ($)", "Result"])
+    ordered.extend([
+        "Annual Return (%)",
+        "Gain / Loss ($)",
+        "Before Withdrawal ($)",
+        "Withdrawal ($)",
+        "Remaining After Withdrawal ($)",
+        "Withdrawal Status",
+    ])
     return pd.DataFrame(rows)[ordered]
 
 
@@ -3935,9 +3970,8 @@ with portfolio_tab:
     total_return = 0.0
     allocation_valid = False
 
-    portfolio_build_tab, portfolio_reset_tab, portfolio_manage_tab = st.tabs([
+    portfolio_build_tab, portfolio_manage_tab = st.tabs([
         "◆ Build Simulation",
-        "📅 Annual Reset Performance",
         "💾 Saved / Manage",
     ])
 
@@ -4638,7 +4672,12 @@ with portfolio_tab:
                                 })
                             return rows
 
-                        rb_tab, nr_tab, compare_tab = st.tabs(["↻ Rebalanced annually", "↝ Not rebalanced", "⚖ Side-by-side"])
+                        rb_tab, nr_tab, compare_tab, reset_tab = st.tabs([
+                            "↻ Rebalanced annually",
+                            "↝ Not rebalanced",
+                            "⚖ Side-by-side",
+                            "📅 Annual Reset",
+                        ])
                         with rb_tab:
                             st.caption("After each completed-year withdrawal, the remaining balance is restored to the original target weights.")
                             rb_rows = _withdrawal_table_rows(portfolio_withdrawal_rebalanced_result)
@@ -4668,6 +4707,79 @@ with portfolio_tab:
                                 })
                             if compare_rows:
                                 st.dataframe(pd.DataFrame(compare_rows), use_container_width=True, hide_index=True, height=min(560, 56 + 36 * len(compare_rows)))
+
+                        with reset_tab:
+                            st.caption(
+                                "Independent annual reset test using the same current starting investment, target allocation, "
+                                "and annual withdrawal. Every row starts fresh; no ending balance or profit/loss rolls into the next year."
+                            )
+                            annual_reset_df = _portfolio_annual_reset_dataframe(
+                                market,
+                                list(selected_portfolio_symbols),
+                                dict(portfolio_weights),
+                                float(portfolio_total),
+                                float(portfolio_annual_withdrawal),
+                                list(effective_portfolio_years),
+                            )
+
+                            if annual_reset_df.empty:
+                                st.warning(
+                                    "No completed year in the current simulation window has valid annual-return data for every selected instrument. "
+                                    "Annual Reset never fills or invents a missing stock/ETF return."
+                                )
+                            else:
+                                reset_year_count = len(annual_reset_df)
+                                positive_year_count = int((annual_reset_df["Annual Return (%)"] > 0).sum())
+                                funded_year_count = int((annual_reset_df["Withdrawal Status"] == "Funded").sum())
+                                best_idx = annual_reset_df["Annual Return (%)"].idxmax()
+                                worst_idx = annual_reset_df["Annual Return (%)"].idxmin()
+                                best_year = int(annual_reset_df.loc[best_idx, "Year"])
+                                best_return = float(annual_reset_df.loc[best_idx, "Annual Return (%)"])
+                                worst_year = int(annual_reset_df.loc[worst_idx, "Year"])
+                                worst_return = float(annual_reset_df.loc[worst_idx, "Annual Return (%)"])
+
+                                reset_kpis = st.columns(6)
+                                reset_kpis[0].metric("Reset start each year", f"${float(portfolio_total):,.2f}")
+                                reset_kpis[1].metric("Annual withdrawal", f"${float(portfolio_annual_withdrawal):,.2f}")
+                                reset_kpis[2].metric("Eligible years", f"{reset_year_count}")
+                                reset_kpis[3].metric("Positive years", f"{positive_year_count}/{reset_year_count}")
+                                reset_kpis[4].metric("Withdrawal funded", f"{funded_year_count}/{reset_year_count}")
+                                reset_kpis[5].metric("Best / Worst", f"{best_return:+.2f}% / {worst_return:+.2f}%")
+
+                                allocation_text = " • ".join(
+                                    f"{sym} {float(portfolio_weights.get(sym, 0.0)):.2f}%"
+                                    for sym in selected_portfolio_symbols
+                                )
+                                st.caption(
+                                    f"Allocation reset every year: {allocation_text}. Best year: {best_year} ({best_return:+.2f}%). "
+                                    f"Worst year: {worst_year} ({worst_return:+.2f}%). "
+                                    "Withdrawal occurs after that year's return. A partial/failed withdrawal in one row does not affect any later row."
+                                )
+
+                                reset_column_config = {
+                                    "Year": st.column_config.NumberColumn("Year", format="%d"),
+                                    "Starting Balance ($)": st.column_config.NumberColumn("Starting Balance", format="$%.2f"),
+                                    "Annual Return (%)": st.column_config.NumberColumn("Annual Return", format="%+.2f%%"),
+                                    "Gain / Loss ($)": st.column_config.NumberColumn("Gain / Loss", format="$%+.2f"),
+                                    "Before Withdrawal ($)": st.column_config.NumberColumn("Before Withdrawal", format="$%.2f"),
+                                    "Withdrawal ($)": st.column_config.NumberColumn("Withdrawal", format="$%.2f"),
+                                    "Remaining After Withdrawal ($)": st.column_config.NumberColumn("Remaining After Withdrawal", format="$%.2f"),
+                                    "Withdrawal Status": st.column_config.TextColumn("Withdrawal Status"),
+                                }
+                                for _sym in selected_portfolio_symbols:
+                                    reset_column_config[f"{_sym} Return (%)"] = st.column_config.NumberColumn(
+                                        f"{_sym} Return",
+                                        format="%+.2f%%",
+                                    )
+
+                                st.dataframe(
+                                    annual_reset_df,
+                                    use_container_width=True,
+                                    hide_index=True,
+                                    height=min(660, 56 + 36 * len(annual_reset_df)),
+                                    column_config=reset_column_config,
+                                    key="portfolio_annual_reset_performance_table",
+                                )
 
                         for label, result in (("Rebalanced", portfolio_withdrawal_rebalanced_result), ("Not rebalanced", portfolio_withdrawal_not_rebalanced_result)):
                             if result.get("depleted_year"):
@@ -4844,91 +4956,6 @@ with portfolio_tab:
         else:
             st.info("Select two or more instruments to simulate a split portfolio.")
 
-    with portfolio_reset_tab:
-        st.markdown(
-            "<div class='simulation-save-title'>ANNUAL RESET PERFORMANCE</div>",
-            unsafe_allow_html=True,
-        )
-        st.caption(
-            "Independent calendar-year test: every row starts over with the same original investment "
-            "and the current portfolio allocation. The prior year's ending value never rolls into the "
-            "next year. Only completed years where every selected instrument has an annual return are shown."
-        )
-
-        if not selected_portfolio_symbols:
-            st.info("Select two or more instruments in Build Simulation to populate the Annual Reset Performance table.")
-        elif float(portfolio_total or 0.0) <= 0:
-            st.info("Enter an investment amount in Build Simulation to calculate the annual reset table.")
-        elif not allocation_valid:
-            st.warning("The current custom allocation must total 100% before Annual Reset Performance can be calculated.")
-        else:
-            annual_reset_df = _portfolio_annual_reset_dataframe(
-                market,
-                list(selected_portfolio_symbols),
-                dict(portfolio_weights),
-                float(portfolio_total),
-            )
-
-            if annual_reset_df.empty:
-                st.warning(
-                    "No completed calendar year has valid annual-return data for every selected instrument. "
-                    "The reset table never fills missing stock/ETF returns."
-                )
-            else:
-                reset_year_count = len(annual_reset_df)
-                positive_year_count = int((annual_reset_df["Portfolio Return (%)"] > 0).sum())
-                avg_return = float(annual_reset_df["Portfolio Return (%)"].mean())
-                best_idx = annual_reset_df["Portfolio Return (%)"].idxmax()
-                worst_idx = annual_reset_df["Portfolio Return (%)"].idxmin()
-                best_year = int(annual_reset_df.loc[best_idx, "Year"])
-                best_return = float(annual_reset_df.loc[best_idx, "Portfolio Return (%)"])
-                worst_year = int(annual_reset_df.loc[worst_idx, "Year"])
-                worst_return = float(annual_reset_df.loc[worst_idx, "Portfolio Return (%)"])
-
-                reset_kpis = st.columns(5)
-                reset_kpis[0].metric("Reset start each year", f"${float(portfolio_total):,.2f}")
-                reset_kpis[1].metric("Eligible years", f"{reset_year_count}")
-                reset_kpis[2].metric("Positive years", f"{positive_year_count}/{reset_year_count}")
-                reset_kpis[3].metric("Best year", f"{best_year}  {best_return:+.2f}%")
-                reset_kpis[4].metric("Worst year", f"{worst_year}  {worst_return:+.2f}%")
-
-                allocation_text = " • ".join(
-                    f"{sym} {float(portfolio_weights.get(sym, 0.0)):.2f}%"
-                    for sym in selected_portfolio_symbols
-                )
-                st.caption(
-                    f"Allocation used every year: {allocation_text}. "
-                    f"Average independent one-year portfolio return: {avg_return:+.2f}%. "
-                    "This average is descriptive; it is not a compounded multi-year return."
-                )
-
-                reset_column_config = {
-                    "Year": st.column_config.NumberColumn("Year", format="%d"),
-                    "Initial Investment ($)": st.column_config.NumberColumn("Initial Investment", format="$%.2f"),
-                    "Portfolio Return (%)": st.column_config.NumberColumn("Portfolio Return", format="%+.2f%%"),
-                    "Ending Value ($)": st.column_config.NumberColumn("Ending Value", format="$%.2f"),
-                    "Profit / Loss ($)": st.column_config.NumberColumn("Profit / Loss", format="$%+.2f"),
-                    "Result": st.column_config.TextColumn("Result"),
-                }
-                for _sym in selected_portfolio_symbols:
-                    reset_column_config[f"{_sym} Return (%)"] = st.column_config.NumberColumn(
-                        f"{_sym} Return",
-                        format="%+.2f%%",
-                    )
-
-                st.dataframe(
-                    annual_reset_df,
-                    use_container_width=True,
-                    hide_index=True,
-                    height=min(760, 78 + 35 * len(annual_reset_df)),
-                    column_config=reset_column_config,
-                    key="portfolio_annual_reset_performance_table",
-                )
-                st.caption(
-                    "Example: with a $300,000 portfolio, every row begins at $300,000 again. "
-                    "A $420,000 ending value in one year does not make the following year's starting value $420,000."
-                )
-
     # Save / Manage portfolio simulations lives inside the dedicated Portfolio workspace.
     _saved_count_preview = len(cached_saved_simulations())
     with portfolio_manage_tab:
@@ -4941,7 +4968,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.73: repeat the active withdrawal outcome here so the income
+        # v5.9.74: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -5202,7 +5229,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v31 - v5.9.73 annual reset performance + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v32 - v5.9.74 annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5421,7 +5448,7 @@ with market_tab:
             unsafe_allow_html=True,
         )
 
-        # v5.9.73: use the same searchable dropdown interaction as Portfolio
+        # v5.9.74: use the same searchable dropdown interaction as Portfolio
         # Simulator / Comparison rather than a plain free-text filter.
         _card_search_rows = filtered.copy()
         _card_search_rows["Symbol"] = _card_search_rows["Symbol"].astype(str).str.upper().str.strip()
@@ -6486,7 +6513,7 @@ with market_tab:
             "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
         ]
-        # v5.9.73: Table View uses the same searchable multiselect dropdown
+        # v5.9.74: Table View uses the same searchable multiselect dropdown
         # behavior as Portfolio Simulator / Stock & ETF Comparison.
         _table_search_rows = table_df.copy()
         _table_search_rows["Symbol"] = _table_search_rows["Symbol"].astype(str).str.upper().str.strip()

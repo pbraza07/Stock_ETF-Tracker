@@ -52,7 +52,7 @@ def _verify_top100(path: Path, strategy_prefix: str):
 
 
 def test_release_version_5961():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.73"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.74"
     assert "v5.9.66" in APP
 
 
@@ -136,5 +136,5 @@ def test_withdrawal_table_exposes_diversification_and_depletion_fields():
 
 
 def test_pdf_contract_bumped_to_v20():
-    marker = 'MarketScope Portfolio Split Simulator v31 - v5.9.73 annual reset performance + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v32 - v5.9.74 annual reset inside withdrawal tabs + annual reset withdrawal factor + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2

@@ -1,3 +1,11 @@
+# MarketScope v5.9.74 — Annual Reset Inside Yearly Withdrawal Tabs
+
+The **📅 Annual Reset** view now sits exactly beside **⚖ Side-by-Side** inside the Build Simulation yearly-withdrawal section:
+
+**↻ Rebalanced annually | ↝ Not rebalanced | ⚖ Side-by-side | 📅 Annual Reset**
+
+The separate top-level Annual Reset workspace introduced in v5.9.73 has been removed. Annual Reset now uses the current starting investment, selected portfolio allocation, current completed-year simulation window, and current annual withdrawal. Every calendar-year row is independent and resets the starting principal before the next row.
+
 # MarketScope v5.9.73 — Annual Reset Performance
 
 Portfolio Simulator now includes a dedicated **Annual Reset Performance** workspace tab. Each calendar-year row starts with the same original investment and current portfolio allocation, applies only that year's actual saved annual returns, calculates the one-year ending value and profit/loss, and then resets the principal before the next year. No profit or loss rolls forward between rows.

@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_version_5920():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.73"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.74"
 
 
 def test_buy_signal_alerts_are_collapsible_button():
@@ -15,7 +15,8 @@ def test_buy_signal_alerts_are_collapsible_button():
 
 
 def test_portfolio_workspace_uses_build_and_manage_tabs():
-    assert 'portfolio_build_tab, portfolio_reset_tab, portfolio_manage_tab = st.tabs' in APP
+    assert 'portfolio_build_tab, portfolio_manage_tab = st.tabs' in APP
+    assert 'portfolio_reset_tab' not in APP
     assert '◆ Build Simulation' in APP
     assert '💾 Saved / Manage' in APP
     assert 'toggle_portfolio_simulator' not in APP
