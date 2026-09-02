@@ -1,3 +1,11 @@
+# MarketScope v5.9.72 — Annual Positive Years
+
+Yearly Withdrawal summaries now mirror the Monthly Withdrawal positive-period metric. The fifth KPI no longer displays **Withdrawals Funded**; it displays **Positive Years — RB x/y | NR x/y**, calculated from each strategy's actual annual portfolio return. The same Positive Years metric appears in the live yearly-withdrawal summary, Save / Manage, Saved Simulation cards, and PDF page 1.
+
+# MarketScope v5.9.71 — Display Mode Searchable Dropdowns
+
+Card View and Table View under **Display Mode** now use the same searchable multiselect-dropdown interaction as Portfolio Simulator and Stock & ETF Comparison. Type a ticker or company/ETF name, select one or several matches, and the selected view filters immediately. Empty selection shows the full currently-filtered universe.
+
 # MarketScope v5.9.70 — 6-Month Nasdaq Change History
 
 Market Navigator now includes a **6-Month Change History** button beside the manual Nasdaq refresh. MarketScope permanently retains every recorded Nasdaq >$100B stock addition/removal and analyst-rating change in an append-only history file, while the button displays only the most recent six months.

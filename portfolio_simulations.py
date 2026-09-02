@@ -394,24 +394,48 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
             rb_schedule = [dict(x) for x in (record.get("withdrawal_rebalanced_schedule") or rb.get("schedule") or []) if isinstance(x, dict)]
             nr_schedule = [dict(x) for x in (record.get("withdrawal_not_rebalanced_schedule") or nr.get("schedule") or []) if isinstance(x, dict)]
 
-            def _funded(saved_key, target_key, schedule):
+            def _positive_years(saved_key, modeled_key, result, schedule):
                 saved = record.get(saved_key)
-                target = record.get(target_key)
-                funded = int(saved) if saved is not None else sum(1 for row in schedule if float(row.get("withdrawal") or 0.0) >= amount - 0.005)
-                if target is not None:
-                    target_count = int(target)
-                elif record.get("effective_calendar_years"):
-                    target_count = len(record.get("effective_calendar_years") or [])
+                modeled = record.get(modeled_key)
+                if saved is not None:
+                    positive = int(saved)
+                elif result.get("positive_years") is not None:
+                    positive = int(result.get("positive_years"))
                 else:
-                    target_count = len(schedule)
-                return funded, target_count
+                    positive = sum(
+                        1
+                        for row in schedule
+                        if str(row.get("year") or "").strip().lower() != "ytd (partial)"
+                        and float(row.get("portfolio_return_pct") or 0.0) > 0.0
+                    )
+                if modeled is not None:
+                    total = int(modeled)
+                elif result.get("years_modeled") is not None:
+                    total = int(result.get("years_modeled"))
+                else:
+                    total = sum(
+                        1
+                        for row in schedule
+                        if str(row.get("year") or "").strip().lower() != "ytd (partial)"
+                    )
+                return positive, total
 
-            rb_funded, rb_target = _funded("annual_withdrawals_funded_rebalanced", "annual_withdrawals_targeted_rebalanced", rb_schedule)
-            nr_funded, nr_target = _funded("annual_withdrawals_funded_not_rebalanced", "annual_withdrawals_targeted_not_rebalanced", nr_schedule)
+            rb_pos, rb_years = _positive_years(
+                "annual_positive_years_rebalanced",
+                "annual_years_modeled_rebalanced",
+                rb,
+                rb_schedule,
+            )
+            nr_pos, nr_years = _positive_years(
+                "annual_positive_years_not_rebalanced",
+                "annual_years_modeled_not_rebalanced",
+                nr,
+                nr_schedule,
+            )
             return [
                 f"ANNUAL WITHDRAWAL {_money(amount)}",
                 f"REBALANCED {_money(rb_end)}  |  NOT-REBAL {_money(nr_end)}",
-                f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  FUNDED RB {rb_funded}/{rb_target} NR {nr_funded}/{nr_target}",
+                f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  POSITIVE YRS RB {rb_pos}/{rb_years} NR {nr_pos}/{nr_years}",
             ]
         return []
 

@@ -11,15 +11,15 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 MARKER = (
-    "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + "
-    "saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + "
+    "MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + "
+    "display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + "
     "required instrument market data on page 1"
 )
 
 
 def test_release_version_5968():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
-    assert "v5.9.70" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.72"
+    assert "v5.9.72" in APP
 
 
 def test_pdf_contract_bumped_to_v26():
@@ -31,7 +31,7 @@ def test_pdf_total_invested_box_contains_annual_withdrawal_summary():
         "def _page1_withdrawal_lines()",
         'f"ANNUAL WITHDRAWAL {_money(amount)}"',
         'f"REBALANCED {_money(rb_end)}  |  NOT-REBAL {_money(nr_end)}"',
-        'f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  FUNDED RB {rb_funded}/{rb_target} NR {nr_funded}/{nr_target}"',
+        'f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  POSITIVE YRS RB {rb_pos}/{rb_years} NR {nr_pos}/{nr_years}"',
         "box_h = 70 if withdrawal_lines else 54",
         "if i == 0 and withdrawal_lines:",
     ]:

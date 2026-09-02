@@ -1443,7 +1443,7 @@ button[data-baseweb="tab"] {
 .portfolio-summary-kpi-card {
   min-height: 92px;
 }
-.annual-funded-card .positive-month-lines b {
+.annual-positive-years-card .positive-month-lines b {
   overflow: visible;
   text-overflow: clip;
   white-space: normal;

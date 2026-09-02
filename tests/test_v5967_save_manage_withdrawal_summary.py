@@ -9,7 +9,7 @@ CSS = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 
 def test_release_version_5967():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.72"
 
 
 def test_save_manage_repeats_active_annual_withdrawal_kpis():
@@ -18,7 +18,7 @@ def test_save_manage_repeats_active_annual_withdrawal_kpis():
     assert "_annual_withdrawal_kpi_grid(" in section
     assert "portfolio_withdrawal_rebalanced_result" in section
     assert "portfolio_withdrawal_not_rebalanced_result" in section
-    assert "_annual_withdrawal_funding_counts(" in section
+    assert "_annual_withdrawal_positive_year_counts(" in section
 
 
 def test_save_manage_repeats_active_monthly_withdrawal_kpis():
@@ -43,12 +43,12 @@ def test_saved_library_renders_withdrawal_summary_inside_each_saved_card():
     assert "saved-withdrawal-summary-title" not in APP
 
 
-def test_new_annual_saved_records_persist_funded_and_targeted_counts_for_both_paths():
+def test_new_annual_saved_records_persist_positive_years_for_both_paths():
     for field in [
-        '"annual_withdrawals_funded_rebalanced"',
-        '"annual_withdrawals_targeted_rebalanced"',
-        '"annual_withdrawals_funded_not_rebalanced"',
-        '"annual_withdrawals_targeted_not_rebalanced"',
+        '"annual_positive_years_rebalanced"',
+        '"annual_positive_years_not_rebalanced"',
+        '"annual_years_modeled_rebalanced"',
+        '"annual_years_modeled_not_rebalanced"',
     ]:
         assert field in APP
 
@@ -59,7 +59,7 @@ def test_saved_summary_helper_supports_legacy_schedule_derived_counts():
         node for node in tree.body
         if isinstance(node, ast.FunctionDef)
         and node.name in {
-            "_annual_withdrawal_funding_counts",
+            "_annual_withdrawal_positive_year_counts",
             "_saved_simulation_withdrawal_values",
             "_saved_simulation_withdrawal_kpi",
         }
@@ -83,21 +83,21 @@ def test_saved_summary_helper_supports_legacy_schedule_derived_counts():
         "withdrawal_rebalanced": {
             "ending_balance": 322183.27,
             "schedule": [
-                {"year": "2006", "withdrawal": 160000.0},
-                {"year": "2007", "withdrawal": 160000.0},
+                {"year": "2006", "portfolio_return_pct": 12.0},
+                {"year": "2007", "portfolio_return_pct": -2.0},
             ],
         },
         "withdrawal_not_rebalanced": {
             "ending_balance": 2471190.68,
             "schedule": [
-                {"year": "2006", "withdrawal": 160000.0},
-                {"year": "2007", "withdrawal": 160000.0},
+                {"year": "2006", "portfolio_return_pct": 8.0},
+                {"year": "2007", "portfolio_return_pct": 5.0},
             ],
         },
     }
     title, html = ns["_saved_simulation_withdrawal_kpi"](annual)
     assert title == "ANNUAL WITHDRAWAL SUMMARY"
-    assert "2/2:2/2" in html
+    assert "1/2:2/2" in html
 
     monthly = {
         "monthly_withdrawals_enabled": True,

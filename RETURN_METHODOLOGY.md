@@ -101,3 +101,15 @@ Each ticker is capped at five appearances across each complete Top-100 list.
 The 20Y ranking uses completed annual returns from 2006 through 2025. Rebalanced portfolios apply the equal-weight portfolio return, take the annual withdrawal, then restore equal weights if capital remains. Not-Rebalanced portfolios apply each holding's return to drifted weights, take the withdrawal proportionally, and preserve drift.
 
 Ranking order is full withdrawals funded, total cash delivered, then ending balance. Each ticker can appear no more than ten times in the complete Top 250 strategy list.
+
+## v5.9.72 annual positive-year metric
+
+For Yearly Withdrawal summaries, Positive Years is calculated independently for Rebalanced and Not-Rebalanced schedules.
+
+A completed calendar year is positive when:
+
+`portfolio_return_pct > 0`
+
+The numerator is the number of positive completed years. The denominator is the number of completed annual rows actually modeled for that strategy. YTD partial rows are excluded.
+
+This metric is descriptive only; it does not replace the underlying withdrawal-funding and depletion calculations.

@@ -11,7 +11,7 @@ YAHOO = (ROOT / "providers" / "yahoo.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5960():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.72"
     assert "v5.9.66" in APP
 
 
@@ -82,7 +82,7 @@ def test_card_view_still_passes_resolved_logo_urls():
 
 
 def test_pdf_contract_bumped_to_v19_for_current_version_on_rebuild():
-    marker = "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     assert APP.count(marker) >= 2
 
 

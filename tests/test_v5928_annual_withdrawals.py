@@ -18,7 +18,7 @@ def _load_schedule_function():
 
 
 def test_release_version_is_5928():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.70"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.9.72"
 
 
 def test_withdrawal_ui_and_persistence_contract_present():
@@ -28,7 +28,7 @@ def test_withdrawal_ui_and_persistence_contract_present():
     assert '"Remaining After Withdrawal"' in APP
     assert '"annual_withdrawals_enabled"' in APP
     assert '"withdrawal_schedule"' in APP
-    assert 'MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1' in APP
+    assert 'MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1' in APP
     assert 'ANNUAL WITHDRAWALS - STRATEGY COMPARISON' in PDF
 
 

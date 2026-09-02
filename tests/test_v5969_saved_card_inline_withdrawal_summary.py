@@ -11,7 +11,7 @@ CSS = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 def _helpers():
     names = {
-        "_annual_withdrawal_funding_counts",
+        "_annual_withdrawal_positive_year_counts",
         "_saved_simulation_withdrawal_values",
         "_saved_simulation_withdrawal_inline_html",
     }
@@ -29,8 +29,8 @@ def _namespace():
 
 
 def test_release_version_5969():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
-    assert "v5.9.70" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.72"
+    assert "v5.9.72" in APP
 
 
 def test_saved_withdrawal_strip_is_inside_same_library_card():
@@ -58,10 +58,10 @@ def test_inline_yearly_values_match_requested_fields():
     record = {
         "annual_withdrawals_enabled": True,
         "annual_withdrawal_amount": 160000.0,
-        "annual_withdrawals_funded_rebalanced": 20,
-        "annual_withdrawals_targeted_rebalanced": 20,
-        "annual_withdrawals_funded_not_rebalanced": 20,
-        "annual_withdrawals_targeted_not_rebalanced": 20,
+        "annual_positive_years_rebalanced": 15,
+        "annual_years_modeled_rebalanced": 17,
+        "annual_positive_years_not_rebalanced": 14,
+        "annual_years_modeled_not_rebalanced": 17,
         "withdrawal_rebalanced": {"ending_balance": 322183.27},
         "withdrawal_not_rebalanced": {"ending_balance": 2471190.68},
     }
@@ -74,9 +74,9 @@ def test_inline_yearly_values_match_requested_fields():
     assert "$2,471,190.68" in html
     assert "REBALANCE DIFFERENCE" in html
     assert "$-2,149,007.41" in html
-    assert "WITHDRAWALS FUNDED" in html
-    assert "RB</em> 20/20" in html
-    assert "NR</em> 20/20" in html
+    assert "POSITIVE YEARS" in html
+    assert "RB</em> 15/17" in html
+    assert "NR</em> 14/17" in html
 
 
 def test_inline_monthly_values_match_requested_fields():
@@ -118,8 +118,8 @@ def test_inline_strip_matches_red_arrow_location_under_primary_metrics():
 
 def test_pdf_contract_bumped_to_v27():
     marker = (
-        "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + "
-        "saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + "
+        "MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + "
+        "display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + "
         "required instrument market data on page 1"
     )
     assert APP.count(marker) >= 2

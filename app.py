@@ -1071,7 +1071,7 @@ def load_universe_change_history() -> list[dict]:
 
 
 def _current_metadata_change_events(metadata: dict) -> list[dict]:
-    """Bridge the most recent pre-v5.9.70 metadata change into the history view."""
+    """Bridge the most recent pre-v5.9.72 metadata change into the history view."""
     if not isinstance(metadata, dict):
         return []
     stamp = str(metadata.get("refreshed_at_et") or "").strip()
@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2572,7 +2572,7 @@ with market_tab:
         if six_month_history.empty:
             st.info(
                 "No recorded Nasdaq universe or analyst-rating changes fall within the last six months yet. "
-                "v5.9.70 begins durable history collection and migrates the latest change still present in universe metadata."
+                "v5.9.72 begins durable history collection and migrates the latest change still present in universe metadata."
             )
         else:
             history_counts = six_month_history["Change Type"].value_counts()
@@ -3236,11 +3236,18 @@ def _portfolio_annual_withdrawal_schedule(
         for row in completed_withdrawal_rows
         if float(row.get("withdrawal") or 0.0) >= withdrawal_requested - 0.005
     )
+    positive_years = sum(
+        1
+        for row in completed_withdrawal_rows
+        if float(row.get("portfolio_return_pct") or 0.0) > 0.0
+    )
     return {
         "unavailable": False,
         "annual_withdrawal_requested": withdrawal_requested,
         "withdrawals_targeted": len(selected_years),
         "withdrawals_funded": withdrawals_funded,
+        "positive_years": int(positive_years),
+        "years_modeled": int(len(completed_withdrawal_rows)),
         "total_withdrawn": total_withdrawn,
         "ending_balance": remaining,
         "depleted_year": depleted_year,
@@ -3561,16 +3568,33 @@ def _annual_withdrawal_funding_counts(result: dict, requested: float) -> tuple[i
     return funded, target
 
 
+def _annual_withdrawal_positive_year_counts(result: dict) -> tuple[int, int]:
+    """Return positive completed calendar years / annual years actually modeled."""
+    rows = [
+        row for row in (result.get("schedule") or [])
+        if str(row.get("year") or "").strip().lower() != "ytd (partial)"
+    ]
+    stored_positive = result.get("positive_years")
+    stored_years = result.get("years_modeled")
+    positive = (
+        int(stored_positive)
+        if stored_positive is not None
+        else sum(1 for row in rows if float(row.get("portfolio_return_pct") or 0.0) > 0.0)
+    )
+    modeled = int(stored_years) if stored_years is not None else len(rows)
+    return positive, modeled
+
+
 def _annual_withdrawal_kpi_grid(
     annual_withdrawal: float,
     rb_end: float,
     nr_end: float,
-    rb_funded: int,
-    rb_target: int,
-    nr_funded: int,
-    nr_target: int,
+    rb_positive: int,
+    rb_years: int,
+    nr_positive: int,
+    nr_years: int,
 ) -> str:
-    """Yearly Withdrawal summary with the exact same five-card visual system as monthly."""
+    """Yearly Withdrawal summary using Positive Years just like monthly uses Positive Months."""
     diff = float(rb_end) - float(nr_end)
     cards = [
         ("Annual withdrawal", f"${float(annual_withdrawal):,.2f}", ""),
@@ -3587,11 +3611,11 @@ def _annual_withdrawal_kpi_grid(
             '</div>'
         )
     html.append(
-        '<div class="monthly-withdrawal-kpi-card monthly-positive-months-card annual-funded-card">'
-        '<span>Withdrawals funded</span>'
+        '<div class="monthly-withdrawal-kpi-card monthly-positive-months-card annual-positive-years-card">'
+        '<span>Positive years</span>'
         '<div class="positive-month-lines">'
-        f'<b><em>RB</em> {int(rb_funded)}/{int(rb_target)}</b>'
-        f'<b><em>NR</em> {int(nr_funded)}/{int(nr_target)}</b>'
+        f'<b><em>RB</em> {int(rb_positive)}/{int(rb_years)}</b>'
+        f'<b><em>NR</em> {int(nr_positive)}/{int(nr_years)}</b>'
         '</div>'
         '</div>'
     )
@@ -3657,12 +3681,28 @@ def _saved_simulation_withdrawal_values(record: dict) -> dict | None:
             if nr.get("ending_balance") is not None
             else (record.get("withdrawal_ending_balance") or 0.0)
         )
-        rb_funded, rb_target = _annual_withdrawal_funding_counts(rb, amount)
-        nr_funded, nr_target = _annual_withdrawal_funding_counts(nr, amount)
-        rb_funded = int(record.get("annual_withdrawals_funded_rebalanced") or rb_funded)
-        nr_funded = int(record.get("annual_withdrawals_funded_not_rebalanced") or nr_funded)
-        rb_target = int(record.get("annual_withdrawals_targeted_rebalanced") or rb_target)
-        nr_target = int(record.get("annual_withdrawals_targeted_not_rebalanced") or nr_target)
+        rb_positive, rb_years = _annual_withdrawal_positive_year_counts(rb)
+        nr_positive, nr_years = _annual_withdrawal_positive_year_counts(nr)
+        rb_positive = int(
+            record.get("annual_positive_years_rebalanced")
+            if record.get("annual_positive_years_rebalanced") is not None
+            else rb_positive
+        )
+        nr_positive = int(
+            record.get("annual_positive_years_not_rebalanced")
+            if record.get("annual_positive_years_not_rebalanced") is not None
+            else nr_positive
+        )
+        rb_years = int(
+            record.get("annual_years_modeled_rebalanced")
+            if record.get("annual_years_modeled_rebalanced") is not None
+            else rb_years
+        )
+        nr_years = int(
+            record.get("annual_years_modeled_not_rebalanced")
+            if record.get("annual_years_modeled_not_rebalanced") is not None
+            else nr_years
+        )
         return {
             "mode": "annual",
             "amount_label": "ANNUAL WITHDRAWAL",
@@ -3670,11 +3710,11 @@ def _saved_simulation_withdrawal_values(record: dict) -> dict | None:
             "rb_end": rb_end,
             "nr_end": nr_end,
             "difference": rb_end - nr_end,
-            "final_label": "WITHDRAWALS FUNDED",
-            "rb_count": rb_funded,
-            "rb_total": rb_target,
-            "nr_count": nr_funded,
-            "nr_total": nr_target,
+            "final_label": "POSITIVE YEARS",
+            "rb_count": rb_positive,
+            "rb_total": rb_years,
+            "nr_count": nr_positive,
+            "nr_total": nr_years,
         }
 
     return None
@@ -4467,23 +4507,21 @@ with portfolio_tab:
                         )
                         rb_end = float(portfolio_withdrawal_rebalanced_result.get("ending_balance") or 0)
                         nr_end = float(portfolio_withdrawal_not_rebalanced_result.get("ending_balance") or 0)
-                        rb_funded, rb_target = _annual_withdrawal_funding_counts(
-                            portfolio_withdrawal_rebalanced_result,
-                            float(portfolio_annual_withdrawal),
+                        rb_positive, rb_years = _annual_withdrawal_positive_year_counts(
+                            portfolio_withdrawal_rebalanced_result
                         )
-                        nr_funded, nr_target = _annual_withdrawal_funding_counts(
-                            portfolio_withdrawal_not_rebalanced_result,
-                            float(portfolio_annual_withdrawal),
+                        nr_positive, nr_years = _annual_withdrawal_positive_year_counts(
+                            portfolio_withdrawal_not_rebalanced_result
                         )
                         st.markdown(
                             _annual_withdrawal_kpi_grid(
                                 float(portfolio_annual_withdrawal),
                                 rb_end,
                                 nr_end,
-                                rb_funded,
-                                rb_target,
-                                nr_funded,
-                                nr_target,
+                                rb_positive,
+                                rb_years,
+                                nr_positive,
+                                nr_years,
                             ),
                             unsafe_allow_html=True,
                         )
@@ -4720,7 +4758,7 @@ with portfolio_tab:
 
         st.markdown("<div class='simulation-save-title'>SAVE / MANAGE PORTFOLIO SIMULATIONS</div>", unsafe_allow_html=True)
 
-        # v5.9.70: repeat the active withdrawal outcome here so the income
+        # v5.9.72: repeat the active withdrawal outcome here so the income
         # assumptions/results remain visible at the exact point where the user
         # names, saves or manages the simulation.
         if (
@@ -4733,11 +4771,11 @@ with portfolio_tab:
         ):
             _manage_rb_end = float(portfolio_withdrawal_rebalanced_result.get("ending_balance") or 0.0)
             _manage_nr_end = float(portfolio_withdrawal_not_rebalanced_result.get("ending_balance") or 0.0)
-            _manage_rb_funded, _manage_rb_target = _annual_withdrawal_funding_counts(
-                portfolio_withdrawal_rebalanced_result, float(portfolio_annual_withdrawal)
+            _manage_rb_positive, _manage_rb_years = _annual_withdrawal_positive_year_counts(
+                portfolio_withdrawal_rebalanced_result
             )
-            _manage_nr_funded, _manage_nr_target = _annual_withdrawal_funding_counts(
-                portfolio_withdrawal_not_rebalanced_result, float(portfolio_annual_withdrawal)
+            _manage_nr_positive, _manage_nr_years = _annual_withdrawal_positive_year_counts(
+                portfolio_withdrawal_not_rebalanced_result
             )
             st.markdown(
                 "<div class='portfolio-analytics-title save-manage-withdrawal-title'>ACTIVE ANNUAL WITHDRAWAL SUMMARY</div>",
@@ -4748,10 +4786,10 @@ with portfolio_tab:
                     float(portfolio_annual_withdrawal),
                     _manage_rb_end,
                     _manage_nr_end,
-                    _manage_rb_funded,
-                    _manage_rb_target,
-                    _manage_nr_funded,
-                    _manage_nr_target,
+                    _manage_rb_positive,
+                    _manage_rb_years,
+                    _manage_nr_positive,
+                    _manage_nr_years,
                 ),
                 unsafe_allow_html=True,
             )
@@ -4927,6 +4965,22 @@ with portfolio_tab:
                 "monthly_months_modeled_not_rebalanced": int(portfolio_monthly_withdrawal_not_rebalanced_result.get("months_modeled") or 0) if portfolio_monthly_withdrawals_enabled else None,
                 "annual_withdrawals_enabled": bool(portfolio_withdrawals_enabled),
                 "annual_withdrawal_amount": float(portfolio_annual_withdrawal or 0) if portfolio_withdrawals_enabled else 0.0,
+                "annual_positive_years_rebalanced": (
+                    _annual_withdrawal_positive_year_counts(portfolio_withdrawal_rebalanced_result)[0]
+                    if portfolio_withdrawals_enabled else None
+                ),
+                "annual_positive_years_not_rebalanced": (
+                    _annual_withdrawal_positive_year_counts(portfolio_withdrawal_not_rebalanced_result)[0]
+                    if portfolio_withdrawals_enabled else None
+                ),
+                "annual_years_modeled_rebalanced": (
+                    _annual_withdrawal_positive_year_counts(portfolio_withdrawal_rebalanced_result)[1]
+                    if portfolio_withdrawals_enabled else None
+                ),
+                "annual_years_modeled_not_rebalanced": (
+                    _annual_withdrawal_positive_year_counts(portfolio_withdrawal_not_rebalanced_result)[1]
+                    if portfolio_withdrawals_enabled else None
+                ),
                 "annual_withdrawals_funded_rebalanced": (
                     _annual_withdrawal_funding_counts(portfolio_withdrawal_rebalanced_result, float(portfolio_annual_withdrawal or 0))[0]
                     if portfolio_withdrawals_enabled else None
@@ -4965,7 +5019,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -5184,30 +5238,50 @@ with market_tab:
             unsafe_allow_html=True,
         )
 
-        # v5.9.13: Card View search retained; card-render execution scope repaired.
-        card_local_search = st.text_input(
-            "Search stock / ETF",
-            key="card_local_search",
-            placeholder="Ticker or company / ETF name...",
-            help="Filters Card View by symbol, name, stock/ETF type, sector, industry, or analyst rating.",
+        # v5.9.72: use the same searchable dropdown interaction as Portfolio
+        # Simulator / Comparison rather than a plain free-text filter.
+        _card_search_rows = filtered.copy()
+        _card_search_rows["Symbol"] = _card_search_rows["Symbol"].astype(str).str.upper().str.strip()
+        _card_search_rows = _card_search_rows.drop_duplicates("Symbol", keep="last")
+        _card_search_options = sorted(_card_search_rows["Symbol"].tolist())
+        _card_search_lookup = (
+            _card_search_rows.set_index("Symbol").to_dict(orient="index")
+            if not _card_search_rows.empty else {}
         )
-        if card_local_search and card_local_search.strip():
-            _card_query = card_local_search.strip().lower()
-            _card_search_columns = ["Symbol", "Name", "Type", "Sector", "Industry", "Analyst Rating", "History Verification"]
-            _card_search_mask = pd.Series(False, index=filtered.index)
-            for _search_col in _card_search_columns:
-                if _search_col in filtered.columns:
-                    _card_search_mask |= (
-                        filtered[_search_col]
-                        .fillna("")
-                        .astype(str)
-                        .str.lower()
-                        .str.contains(_card_query, regex=False, na=False)
-                    )
-            filtered = filtered.loc[_card_search_mask].copy()
+        _card_valid_set = set(_card_search_options)
+        _card_saved_selection = [
+            str(symbol).upper()
+            for symbol in st.session_state.get("card_local_search_selector", [])
+            if str(symbol).upper() in _card_valid_set
+        ]
+        if _card_saved_selection != list(st.session_state.get("card_local_search_selector", [])):
+            st.session_state.card_local_search_selector = _card_saved_selection
+
+        card_local_selection = st.multiselect(
+            "Search / select stocks & ETFs",
+            options=_card_search_options,
+            key="card_local_search_selector",
+            format_func=lambda symbol: (
+                f"{symbol} — {_card_search_lookup.get(symbol, {}).get('Name', symbol)}"
+                + (f" • {_card_search_lookup.get(symbol, {}).get('Type')}"
+                   if str(_card_search_lookup.get(symbol, {}).get('Type') or '').strip() not in {'', 'Unknown', 'nan'} else "")
+                + (f" • {_card_search_lookup.get(symbol, {}).get('Sector')}"
+                   if str(_card_search_lookup.get(symbol, {}).get('Sector') or '').strip() not in {'', 'Unknown', 'nan'} else "")
+            ),
+            placeholder="Search ticker, company / ETF name, type, or sector…",
+            help=(
+                "Type inside the dropdown to search the currently filtered universe, then select one or more "
+                "stocks/ETFs. Leave it empty to show every currently filtered Card View instrument."
+            ),
+        )
+        _card_selected_symbols = list(dict.fromkeys(str(symbol).upper() for symbol in card_local_selection))
+        if _card_selected_symbols:
+            filtered = filtered.loc[
+                filtered["Symbol"].astype(str).str.upper().isin(_card_selected_symbols)
+            ].copy()
             st.caption(
-                f"Card search: {len(filtered):,} match(es) for ‘{card_local_search.strip()}’. "
-                "Clear the search box to show all currently-filtered instruments."
+                f"Card View selection: {len(_card_selected_symbols):,} instrument(s). "
+                "Remove selections from the dropdown to return to the full filtered Card View universe."
             )
 
         def _investment_projection_for_sort(row: pd.Series, principal: float, include_ytd: bool, years_requested: int) -> dict | None:
@@ -6229,9 +6303,26 @@ with market_tab:
             "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
         ]
-        # v5.9.13: Table View search retained; Card View uses the same search behavior.
-        # It accepts ticker, company/fund name, type, sector, industry, or analyst rating.
-        ts1, ts_search, ts2, ts3 = st.columns([2.1, 2.2, 1.6, 3.1])
+        # v5.9.72: Table View uses the same searchable multiselect dropdown
+        # behavior as Portfolio Simulator / Stock & ETF Comparison.
+        _table_search_rows = table_df.copy()
+        _table_search_rows["Symbol"] = _table_search_rows["Symbol"].astype(str).str.upper().str.strip()
+        _table_search_rows = _table_search_rows.drop_duplicates("Symbol", keep="last")
+        _table_search_options = sorted(_table_search_rows["Symbol"].tolist())
+        _table_search_lookup = (
+            _table_search_rows.set_index("Symbol").to_dict(orient="index")
+            if not _table_search_rows.empty else {}
+        )
+        _table_valid_set = set(_table_search_options)
+        _table_saved_selection = [
+            str(symbol).upper()
+            for symbol in st.session_state.get("table_local_search_selector", [])
+            if str(symbol).upper() in _table_valid_set
+        ]
+        if _table_saved_selection != list(st.session_state.get("table_local_search_selector", [])):
+            st.session_state.table_local_search_selector = _table_saved_selection
+
+        ts1, ts_search, ts2, ts3 = st.columns([2.0, 2.55, 1.5, 2.95])
         with ts1:
             table_sort_choice = st.selectbox(
                 "Sort table by",
@@ -6241,11 +6332,22 @@ with market_tab:
                 format_func=timeframe_display_label,
             )
         with ts_search:
-            table_local_search = st.text_input(
-                "Search stock / ETF",
-                key="table_local_search",
-                placeholder="Ticker or company / ETF name...",
-                help="Filters Table View by symbol, name, stock/ETF type, sector, industry, or analyst rating.",
+            table_local_selection = st.multiselect(
+                "Search / select stocks & ETFs",
+                options=_table_search_options,
+                key="table_local_search_selector",
+                format_func=lambda symbol: (
+                    f"{symbol} — {_table_search_lookup.get(symbol, {}).get('Name', symbol)}"
+                    + (f" • {_table_search_lookup.get(symbol, {}).get('Type')}"
+                       if str(_table_search_lookup.get(symbol, {}).get('Type') or '').strip() not in {'', 'Unknown', 'nan'} else "")
+                    + (f" • {_table_search_lookup.get(symbol, {}).get('Sector')}"
+                       if str(_table_search_lookup.get(symbol, {}).get('Sector') or '').strip() not in {'', 'Unknown', 'nan'} else "")
+                ),
+                placeholder="Search ticker, company / ETF name, type, or sector…",
+                help=(
+                    "Type directly in this dropdown and select one or more stocks/ETFs. "
+                    "Leave it empty to show every currently filtered Table View instrument."
+                ),
             )
         with ts2:
             table_sort_direction = st.segmented_control(
@@ -6265,21 +6367,15 @@ with market_tab:
                 )
             )
 
-        if table_local_search and table_local_search.strip():
-            _table_query = table_local_search.strip().lower()
-            _table_search_columns = ["Symbol", "Name", "Type", "Sector", "Industry", "Analyst Rating", "History Verification"]
-            _table_search_mask = pd.Series(False, index=table_df.index)
-            for _search_col in _table_search_columns:
-                if _search_col in table_df.columns:
-                    _table_search_mask |= (
-                        table_df[_search_col]
-                        .fillna("")
-                        .astype(str)
-                        .str.lower()
-                        .str.contains(_table_query, regex=False, na=False)
-                    )
-            table_df = table_df.loc[_table_search_mask].copy()
-            st.caption(f"Table search: {len(table_df):,} match(es) for ‘{table_local_search.strip()}’. Clear the search box to show all filtered instruments.")
+        _table_selected_symbols = list(dict.fromkeys(str(symbol).upper() for symbol in table_local_selection))
+        if _table_selected_symbols:
+            table_df = table_df.loc[
+                table_df["Symbol"].astype(str).str.upper().isin(_table_selected_symbols)
+            ].copy()
+            st.caption(
+                f"Table View selection: {len(_table_selected_symbols):,} instrument(s). "
+                "Remove selections from the dropdown to return to the full filtered Table View universe."
+            )
 
         _table_ascending = table_sort_direction == "Low → High"
         if table_sort_choice == "Analyst Rating":

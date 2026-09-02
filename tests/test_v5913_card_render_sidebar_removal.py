@@ -19,8 +19,8 @@ def test_card_fragment_and_rendering_are_in_card_tab_scope():
     assert rows_line.startswith("        rows = ")
 
 def test_both_view_searches_retained():
-    assert 'key="card_local_search"' in APP
-    assert 'key="table_local_search"' in APP
+    assert 'key="card_local_search_selector"' in APP
+    assert 'key="table_local_search_selector"' in APP
 
 def test_all_instrument_fallback():
     assert 'instrument_filter = instrument_filter or "All"' in APP

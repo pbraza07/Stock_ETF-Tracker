@@ -1,3 +1,17 @@
+# v5.9.72 deployment note
+
+Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF state.
+
+No migration is required. Existing yearly-withdrawal simulations automatically derive Positive Years from their saved annual schedules. Newly saved records also persist the explicit Rebalanced and Not-Rebalanced Positive Years counts.
+
+PDF layout v30 forces rebuilt saved PDFs to use the new Positive Years page-1 summary.
+
+# v5.9.71 deployment note
+
+Deploy over the existing repository and preserve all live saved Portfolio Simulation JSON/PDF data. No data migration is required.
+
+After deployment, Market Navigator → Display Mode → Card View and Table View will show searchable stock/ETF multiselect dropdowns instead of free-text search boxes.
+
 # v5.9.70 deployment note
 
 Deploy over the existing GitHub repository and preserve all live MarketScope data.

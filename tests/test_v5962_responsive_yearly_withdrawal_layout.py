@@ -22,8 +22,8 @@ def _load_functions(*names):
 
 
 def test_release_version_5962():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.70"
-    assert "v5.9.66" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.72"
+    assert "v5.9.72" in APP
 
 
 def test_main_portfolio_summary_no_longer_uses_native_metrics():
@@ -57,32 +57,32 @@ def test_yearly_withdrawal_uses_same_responsive_card_system_as_monthly():
     assert "monthly-withdrawal-kpi-card" in APP
 
 
-def test_yearly_funded_count_excludes_partial_ytd_and_requires_full_payment():
-    ns = _load_functions("_annual_withdrawal_funding_counts")
+def test_yearly_positive_year_count_excludes_partial_ytd_and_uses_actual_portfolio_return():
+    ns = _load_functions("_annual_withdrawal_positive_year_counts")
     result = {
-        "withdrawals_targeted": 10,
-        "withdrawals_funded": 2,
         "schedule": [
-            {"year": "2024", "withdrawal": 160000.0},
-            {"year": "2025", "withdrawal": 159999.999},
-            {"year": "YTD (partial)", "withdrawal": 0.0},
+            {"year": "2023", "portfolio_return_pct": 12.5},
+            {"year": "2024", "portfolio_return_pct": -3.0},
+            {"year": "2025", "portfolio_return_pct": 0.0},
+            {"year": "YTD (partial)", "portfolio_return_pct": 20.0},
         ],
     }
-    funded, target = ns["_annual_withdrawal_funding_counts"](result, 160000.0)
-    assert (funded, target) == (2, 10)
+    positive, modeled = ns["_annual_withdrawal_positive_year_counts"](result)
+    assert (positive, modeled) == (1, 3)
 
 
-def test_yearly_renderer_displays_full_rb_nr_funded_counts():
+def test_yearly_renderer_displays_positive_years_like_monthly_positive_months():
     ns = _load_functions("_annual_withdrawal_kpi_grid")
     html = ns["_annual_withdrawal_kpi_grid"](
-        160000.0, 5618589.40, 1556195.26, 10, 10, 8, 10
+        160000.0, 5618589.40, 1556195.26, 8, 10, 7, 10
     )
     assert "$160,000.00" in html
     assert "$5,618,589.40" in html
     assert "$1,556,195.26" in html
-    assert "Withdrawals funded" in html
-    assert "RB</em> 10/10" in html
-    assert "NR</em> 8/10" in html
+    assert "Positive years" in html
+    assert "Withdrawals funded" not in html
+    assert "RB</em> 8/10" in html
+    assert "NR</em> 7/10" in html
 
 
 def test_mobile_css_is_compact_and_responsive():
@@ -97,5 +97,5 @@ def test_mobile_css_is_compact_and_responsive():
 
 
 def test_pdf_contract_bumped_to_v21():
-    marker = "MarketScope Portfolio Split Simulator v28 - v5.9.70 six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v30 - v5.9.72 annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     assert APP.count(marker) >= 2
