@@ -18,6 +18,7 @@ DEFAULT_BRANCH = os.getenv("MARKETSCOPE_GITHUB_BRANCH", "main")
 SNAPSHOT_PATH = "data/market_snapshot.csv"
 METADATA_PATH = "data/snapshot_metadata.json"
 UNIVERSE_METADATA_PATH = "data/universe_metadata.json"
+UNIVERSE_PATH = "data/default_universe.csv"
 
 
 def now_et() -> datetime:
@@ -102,6 +103,40 @@ def _put_text_file(path: str, text: str, message: str, token: str) -> Tuple[bool
         return True, "Saved to GitHub"
     except Exception as exc:
         return False, f"GitHub persistence error: {exc}"
+
+
+def persist_universe_refresh(universe_path: Path, metadata_path: Path) -> Tuple[bool, str]:
+    """Persist a manual Nasdaq-universe refresh locally and durably in GitHub.
+
+    The updater writes both files locally first. This helper mirrors those exact
+    generated files to GitHub using the existing Contents read/write token, so
+    the manual button does not require GitHub Actions permissions.
+    """
+    try:
+        universe_text = universe_path.read_text(encoding="utf-8")
+        metadata_text = metadata_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        return False, f"Universe refresh completed locally, but persistence files could not be read: {exc}"
+
+    token = os.getenv("MARKETSCOPE_GITHUB_TOKEN", "").strip()
+    if not token:
+        return False, (
+            "Nasdaq universe refreshed on the current Render server. Durable GitHub persistence requires "
+            "MARKETSCOPE_GITHUB_TOKEN with repository Contents read/write permission."
+        )
+
+    stamp = format_et(now_et())
+    ok, msg = _put_text_file(
+        UNIVERSE_PATH, universe_text, f"data: manual Nasdaq universe refresh {stamp}", token
+    )
+    if not ok:
+        return False, msg
+    ok, msg = _put_text_file(
+        UNIVERSE_METADATA_PATH, metadata_text, f"data: manual Nasdaq universe metadata {stamp}", token
+    )
+    if not ok:
+        return False, msg
+    return True, "Nasdaq universe and refresh metadata saved permanently to GitHub and locally on Render."
 
 
 def persist_snapshot(df: pd.DataFrame, local_path: Path, source: str, updated_count: int) -> Tuple[bool, str]:

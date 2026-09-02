@@ -9,7 +9,7 @@ PERSISTENCE = (ROOT / "persistence.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.64"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
 
 
 def test_app_tracks_dynamic_completed_years_and_oldest_five():
@@ -45,7 +45,7 @@ def test_workflow_runs_dynamic_history_before_rankings():
     monthly_pos = WORKFLOW.index("python scripts/build_actual_monthly_rankings.py")
     assert audit_pos < monthly_pos
     assert 'MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01' in WORKFLOW
-    assert 'name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.64)' in WORKFLOW
+    assert 'name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.9.65)' in WORKFLOW
 
 
 def test_validator_schema_is_dynamic():
@@ -62,7 +62,7 @@ def test_manual_persistence_metadata_records_annual_coverage():
 
 
 def test_pdf_layout_v17_rebuilds_from_dynamic_snapshot():
-    marker = "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + 20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1"
     assert APP.count(marker) >= 2
 
 

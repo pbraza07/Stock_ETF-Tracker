@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 from html import escape
 from typing import Dict, List
@@ -37,6 +39,7 @@ from persistence import (
     load_remote_universe_metadata,
     now_et,
     persist_snapshot,
+    persist_universe_refresh,
 )
 from portfolio_simulations import (
     add_simulation,
@@ -66,7 +69,7 @@ def _marketscope_version() -> str:
         return "unknown"
 
 MARKETSCOPE_VERSION = _marketscope_version()
-# v5.9.64: monthly-withdrawal PDF yearly cash-flow reconciliation.
+# v5.9.65: manual Nasdaq-universe refresh + durable refresh timestamp recovery.
 SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.csv"
 BOOTSTRAP_SNAPSHOT_FILE = BASE_DIR / "data" / "market_snapshot.bootstrap.csv"
 SNAPSHOT_META_FILE = BASE_DIR / "data" / "snapshot_metadata.json"
@@ -222,6 +225,8 @@ if "persistence_message" not in st.session_state:
     st.session_state.persistence_message = None
 if "last_refresh_summary" not in st.session_state:
     st.session_state.last_refresh_summary = None
+if "universe_refresh_message" not in st.session_state:
+    st.session_state.universe_refresh_message = None
 if "selected_symbol" not in st.session_state:
     st.session_state.selected_symbol = None
 if "card_page" not in st.session_state:
@@ -885,6 +890,53 @@ def _read_metadata_file(path: Path) -> dict:
     return {}
 
 
+def _run_manual_universe_refresh() -> tuple[bool, bool, str, dict]:
+    """Run the same Nasdaq universe generator used by the scheduled workflow.
+
+    Returns (local_success, durable_success, message, metadata). This intentionally
+    refreshes universe membership + Nasdaq analyst ratings only; the existing
+    full market refresh remains responsible for Yahoo history/prices and rankings.
+    """
+    script = BASE_DIR / "scripts" / "update_universe.py"
+    if not script.exists():
+        return False, False, "Nasdaq universe refresh script is missing.", {}
+    try:
+        completed = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+            timeout=300,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False, False, "Nasdaq universe refresh timed out after 5 minutes.", {}
+    except Exception as exc:
+        return False, False, f"Nasdaq universe refresh could not start: {exc}", {}
+
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "unknown error").strip()
+        return False, False, f"Nasdaq universe refresh failed: {detail[-800:]}", {}
+
+    generated_universe = BASE_DIR / "data" / "default_universe.csv"
+    generated_metadata = BASE_DIR / "data" / "universe_metadata.json"
+    metadata_payload = _read_metadata_file(generated_metadata)
+    if not generated_universe.exists() or not metadata_payload:
+        return False, False, "Nasdaq universe refresh finished but did not produce the expected generated files.", {}
+
+    durable_ok, durable_message = persist_universe_refresh(generated_universe, generated_metadata)
+    stock_count = int(metadata_payload.get("stock_count") or 0)
+    etf_count = int(metadata_payload.get("etf_count") or 0)
+    added_count = int(metadata_payload.get("added_count") or 0)
+    removed_count = int(metadata_payload.get("removed_count") or 0)
+    stamp = _valid_status_text(metadata_payload.get("refreshed_at_display_et")) or format_et(now_et())
+    summary = (
+        f"Nasdaq universe refreshed at {stamp}: {stock_count:,} stocks >$100B + {etf_count:,} ETFs; "
+        f"membership changes +{added_count}/-{removed_count}. {durable_message}"
+    )
+    return True, durable_ok, summary, metadata_payload
+
+
 @st.cache_data(ttl=60, show_spinner=False)
 def load_snapshot_metadata() -> dict:
     # Prefer a real generated/remote timestamp; bootstrap metadata is last resort.
@@ -1264,7 +1316,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + 20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -2041,7 +2093,7 @@ market = apply_live_overlay(market_base, st.session_state.live_prices)
 # Nasdaq universe membership audit strip. The scheduled 6 PM ET workflow writes
 # the refresh timestamp plus exact symbols crossing the >$100B screening boundary.
 raw_universe_stamp = universe_metadata.get("refreshed_at_et")
-universe_refreshed = "Pending first scheduled refresh"
+universe_refreshed = "Pending first successful universe refresh"
 try:
     parsed_universe_stamp = pd.to_datetime(raw_universe_stamp, errors="coerce")
     if pd.notna(parsed_universe_stamp):
@@ -2140,6 +2192,42 @@ with market_tab:
         '</div>',
         unsafe_allow_html=True,
     )
+
+    universe_refresh_col, universe_help_col = st.columns([1.55, 4.45])
+    with universe_refresh_col:
+        refresh_universe_now = st.button(
+            "↻ Refresh Nasdaq Universe Now",
+            key="refresh_nasdaq_universe_now",
+            use_container_width=True,
+            help=(
+                "Refresh Nasdaq >$100B stock membership and Nasdaq analyst ratings immediately. "
+                "This uses the same universe generator as the scheduled workflow."
+            ),
+        )
+    with universe_help_col:
+        st.caption(
+            "Updates the Nasdaq >$100B membership, added/removed symbols, analyst-rating changes, and this Last Refreshed timestamp. "
+            "The existing full market refresh below continues to update Yahoo prices/history; the scheduled cloud job also rebuilds ranking datasets."
+        )
+
+    if refresh_universe_now:
+        with st.spinner("Refreshing Nasdaq >$100B universe and analyst ratings..."):
+            local_ok, durable_ok, refresh_message, _ = _run_manual_universe_refresh()
+        st.session_state.universe_refresh_message = (local_ok, durable_ok, refresh_message)
+        if local_ok:
+            load_universe_metadata.clear()
+            load_snapshot_metadata.clear()
+        st.rerun()
+
+    if st.session_state.universe_refresh_message:
+        local_ok, durable_ok, message = st.session_state.universe_refresh_message
+        if local_ok and durable_ok:
+            st.success(message)
+        elif local_ok:
+            st.warning(message)
+        else:
+            st.error(message)
+        st.session_state.universe_refresh_message = None
 
     # v5.9.13: Sidebar market controls/search removed for a cleaner full-width workspace.
 
@@ -4283,7 +4371,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + 20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
@@ -4349,7 +4437,7 @@ with portfolio_tab:
                     action_cols = st.columns([1.35, 1.15, 1.0, 3.7])
                     pdf_record = _enrich_pdf_record_with_current_market(rec, market)
                     record_json = json.dumps(pdf_record, sort_keys=True, separators=(",", ":"))
-                    # v5.9.64 forces the first open of an older saved PDF through the current
+                    # v5.9.65 forces the first open of an older saved PDF through the current
                     # page-1 contract so current price/rating/low/avg/high targets are present.
                     pdf_bytes = cached_simulation_pdf(record_json)
                     with action_cols[0]:

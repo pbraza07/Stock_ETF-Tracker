@@ -9,7 +9,7 @@ WORKFLOW = (ROOT / '.github' / 'workflows' / 'update_market_snapshot.yml').read_
 
 
 def test_release_version_5951():
-    assert (ROOT / 'VERSION.txt').read_text().strip() == '5.9.64'
+    assert (ROOT / 'VERSION.txt').read_text().strip() == '5.9.65'
 
 
 def test_rankings_are_hidden_in_respective_popover_buttons():

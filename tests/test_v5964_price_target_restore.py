@@ -13,8 +13,8 @@ SNAPSHOT = (ROOT / "scripts" / "update_snapshot.py").read_text(encoding="utf-8")
 PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 MARKER = (
-    "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + "
-    "20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + "
+    "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + "
+    "price-target restore + responsive withdrawal KPI layout + "
     "required instrument market data on page 1"
 )
 
@@ -48,8 +48,8 @@ def _hydrate_function():
 
 
 def test_release_version_5964():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.64"
-    assert "v5.9.64" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
+    assert "v5.9.65" in APP
 
 
 def test_shared_hydrator_fills_low_average_high_and_preserves_other_rows():
@@ -116,7 +116,7 @@ def test_all_major_app_surfaces_use_shared_target_hydration():
     assert "lookup_source = _hydrate_price_targets(market_df, symbols)" in APP
 
 
-def test_pdf_saved_record_keeps_all_three_target_fields_and_forces_v23_rebuild():
+def test_pdf_saved_record_keeps_all_three_target_fields_and_forces_current_rebuild():
     assert APP.count(MARKER) >= 2
     for token in [
         '"price_target_low"',

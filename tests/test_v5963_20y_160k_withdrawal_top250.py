@@ -52,8 +52,8 @@ def _verify(path: Path, strategy_prefix: str):
 
 
 def test_release_version_5963():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.64"
-    assert "v5.9.64" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.65"
+    assert "v5.9.65" in APP
 
 
 def test_20y_source_contains_exact_2006_2025_completed_year_window():
@@ -135,5 +135,5 @@ def test_static_ranking_assets_do_not_retrigger_market_refresh():
 
 
 def test_pdf_contract_bumped_to_v22():
-    marker = "MarketScope Portfolio Split Simulator v23 - v5.9.64 price-target restore + 20Y 160K Top250 + responsive yearly withdrawal + dynamic annual history + required instrument market data on page 1"
+    marker = "MarketScope Portfolio Split Simulator v24 - v5.9.65 manual universe refresh + price-target restore + responsive withdrawal KPI layout + required instrument market data on page 1"
     assert APP.count(marker) >= 2

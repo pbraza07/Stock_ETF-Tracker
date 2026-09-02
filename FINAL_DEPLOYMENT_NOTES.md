@@ -1,3 +1,9 @@
+# v5.9.65 deployment note
+
+Deploy over the existing repository. Keep `MARKETSCOPE_GITHUB_TOKEN` configured with repository Contents read/write permission. The new manual Nasdaq universe button uses that same permission; it does not require GitHub Actions write access.
+
+After deployment, pressing **Refresh Nasdaq Universe Now** should replace the Pending universe timestamp immediately after the Nasdaq refresh completes. The scheduled workflow now persists the same universe metadata before starting the long historical-data stages.
+
 # v5.9.64 deployment note
 
 Deploy over the existing repository. Do not delete live saved Portfolio Simulation JSON/PDF state. After deployment, existing saved PDFs are rebuilt on open against the current market row and the shared target hydrator. The normal scheduled snapshot refresh also persists Low / Average / High target values with lower-concurrency Yahoo retries.

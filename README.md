@@ -1,3 +1,7 @@
+# MarketScope v5.9.65 — Manual Nasdaq Universe Refresh
+
+Market Navigator now has a dedicated **Refresh Nasdaq Universe Now** button. It refreshes >$100B Nasdaq stock membership, analyst ratings, added/removed symbols, and the universe timestamp immediately. The scheduled workflow also persists universe metadata before the longer Yahoo/history pipeline, preventing later data-job failures from leaving the universe status stuck at Pending.
+
 # MarketScope v5.9.64 - Analyst Price Target Restore
 
 MarketScope now hydrates stock analyst **Low / Average-Consensus / High** price targets through one shared data path used by Card View, Market Table, Comparison, Portfolio Simulator saves, and saved-PDF rebuilds. Older saved PDFs are forced through the v23 enrichment contract so the Portfolio Instrument Snapshot no longer shows target placeholders when Yahoo/yfinance has a valid range.
