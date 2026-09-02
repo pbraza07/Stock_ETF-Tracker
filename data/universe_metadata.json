@@ -1,23 +1,24 @@
 {
-  "refreshed_at_et": "2026-09-02T09:38:28.067333-04:00",
-  "refreshed_at_display_et": "Sep 02, 2026 09:38:28 AM EDT",
+  "refreshed_at_et": "2026-09-02T11:23:46.007765-04:00",
+  "refreshed_at_display_et": "Sep 02, 2026 11:23:46 AM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 171,
+  "stock_count": 172,
   "etf_count": 213,
-  "added_count": 2,
+  "added_count": 3,
   "removed_count": 6,
   "added_symbols": [
+    "MELI",
     "PSX",
     "VLO"
   ],
   "removed_symbols": [
-    "AEM",
     "BN",
     "CEG",
     "DASH",
     "GD",
+    "NET",
     "VRT"
   ],
   "analyst_rating_change_count": 2,
