@@ -14,8 +14,8 @@ WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_
 
 
 def test_release_version_5970():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.79"
-    assert "v5.9.79" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.80"
+    assert "v5.9.80" in APP
 
 
 def test_append_only_history_file_is_packaged():
@@ -201,5 +201,5 @@ def test_workflow_persists_history_immediately_and_ignores_generated_commits():
 
 
 def test_pdf_contract_bumped_to_v28():
-    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.80 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2

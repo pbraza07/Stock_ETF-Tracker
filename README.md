@@ -1,3 +1,9 @@
+# MarketScope v5.9.80 — Refresh Workflow Recovery
+
+The scheduled/push-triggered refresh now runs every persistence checkpoint through `bash`, eliminating the exit-code-126 failure caused when the packaged helper loses its executable file mode. The workflow can once again progress from the Nasdaq universe refresh into annual/monthly history and ranking generation.
+
+Actual-monthly Rebalanced and Not-Rebalanced Top 100 files are checkpointed immediately after generation, before the independent recession-ranking stage. A later ranking failure can no longer erase completed monthly results.
+
 # MarketScope v5.9.79 — Monthly Reset + Monthly Start-Year Paths
 
 Monthly Withdrawal now mirrors the full yearly-withdrawal analysis structure: persistent Rebalanced, Not-Rebalanced, Side-by-Side, Monthly Reset, Monthly Start-Year Rebalanced, and Monthly Start-Year Not-Rebalanced tabs. Monthly start-year cohorts use actual adjusted month-end returns, take the selected withdrawal every month, and carry the remaining balance continuously into every subsequent month and year without an annual reset.

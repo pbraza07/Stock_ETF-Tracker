@@ -53,8 +53,8 @@ def _market_for_one_percent_monthly():
 
 
 def test_release_version_5979():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.79"
-    assert "v5.9.79" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.80"
+    assert "v5.9.80" in APP
 
 
 def test_monthly_start_year_path_carries_balance_across_year_boundary():
@@ -141,7 +141,7 @@ def test_monthly_start_year_dashboard_keeps_five_kpis_and_two_depletion_cards():
 
 def test_pdf_contract_bumped_to_v37():
     marker = (
-        "MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + "
+        "MarketScope Portfolio Split Simulator v37 - v5.9.80 monthly reset + monthly start-year RB/NR depletion dashboard + "
         "continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + "
         "persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + "
         "display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + "

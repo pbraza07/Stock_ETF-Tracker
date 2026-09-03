@@ -32,8 +32,8 @@ def _load_helpers():
 
 
 def test_release_version_5977():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.79"
-    assert "v5.9.79" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.80"
+    assert "v5.9.80" in APP
 
 
 def test_start_year_strategies_are_separate_tabs():
@@ -150,5 +150,5 @@ def test_fallback_keeps_both_start_year_tabs_visible():
 
 
 def test_pdf_contract_bumped_to_v35():
-    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.80 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2

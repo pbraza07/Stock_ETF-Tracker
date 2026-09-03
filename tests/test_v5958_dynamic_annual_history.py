@@ -24,7 +24,7 @@ ET = ZoneInfo("America/New_York")
 
 
 def test_release_version_5958():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.79"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.80"
 
 
 def test_dynamic_year_count_grows_without_code_change():
@@ -103,7 +103,7 @@ def test_pdf_dynamically_paginates_annual_history():
 
 
 def test_pdf_contract_is_v17():
-    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.79 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
+    marker = 'MarketScope Portfolio Split Simulator v37 - v5.9.80 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1'
     assert APP.count(marker) >= 2
 
 
