@@ -1,0 +1,154 @@
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.10.0)
+# Automatic daily refresh owns the full dynamically growing completed-year adjusted-history window
+# and the matching dynamic-history actual-monthly dataset used by withdrawal simulations.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'data/default_universe.csv'
+      - 'data/market_snapshot.csv'
+      - 'data/snapshot_metadata.json'
+      - 'data/universe_metadata.json'
+      - 'data/universe_change_history.json'
+      - 'data/saved_portfolio_simulations.json'
+      - 'data/generated_pdfs/**'
+      - 'static/generated_pdfs/**'
+      - 'data/monthly_returns_10y.csv'
+      - 'data/monthly_returns_25y.csv'
+      - 'data/monthly_returns_full_history.csv'
+      - 'data/top200_profit_generators_5y.csv'
+      - 'data/top200_best_worst_year_5y.csv'
+      - 'data/top200_profit_generators_10y.csv'
+      - 'data/top200_best_worst_year_10y.csv'
+      - 'data/top100_rebalanced_withdrawal_10y.csv'
+      - 'data/top100_rebalanced_withdrawal_10y_160k_max5.csv'
+      - 'data/top100_not_rebalanced_withdrawal_10y_160k_max5.csv'
+      - 'data/annual_performance_160k_source.csv'
+      - 'data/annual_performance_20y_160k_source.csv'
+      - 'data/top250_rebalanced_withdrawal_20y_160k_max10.csv'
+      - 'data/top250_not_rebalanced_withdrawal_20y_160k_max10.csv'
+      - 'data/top100_not_rebalanced_withdrawal_10y.csv'
+      - 'data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
+      - 'data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv'
+      - 'data/top100_recession_balanced_rebalanced_10y.csv'
+      - 'data/top100_recession_balanced_not_rebalanced_10y.csv'
+  schedule:
+    - cron: '0 18 * * *'
+      timezone: 'America/New_York'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: marketscope-daily-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Refresh Nasdaq >$100B universe and analyst ratings
+        run: python scripts/update_universe.py
+
+      # v5.9.66: save universe membership immediately. A later Yahoo/history,
+      # verification, or ranking failure must not leave the dashboard saying
+      # the Nasdaq universe has never refreshed.
+      - name: Persist Nasdaq universe refresh immediately
+        run: |
+          bash scripts/persist_generated_files.sh \
+            "chore: persist Nasdaq universe refresh" \
+            data/default_universe.csv \
+            data/universe_metadata.json \
+            data/universe_change_history.json
+
+      - name: Build dynamic annual returns and matching actual monthly history
+        env:
+          MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01
+          MARKETSCOPE_BATCH_SIZE: 80
+          MARKETSCOPE_BATCH_PAUSE: 0.35
+        run: python scripts/update_snapshot.py
+
+      - name: Audit dynamic annual-return coverage
+        run: python scripts/validate_25y_snapshot.py
+
+      - name: Reconcile dynamic actual-monthly history to Market Table annual returns
+        run: python scripts/validate_25y_monthly.py
+
+      - name: Build Stooq verification cache key
+        id: stooq-cache-key
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache independent Stooq U.S. bulk history
+        uses: actions/cache@v4
+        with:
+          path: .cache/stooq/d_us_txt.zip
+          key: marketscope-stooq-us-${{ steps.stooq-cache-key.outputs.week }}
+
+      - name: Cross-check dynamic annual returns against Stooq
+        env:
+          MARKETSCOPE_STOOQ_ARCHIVE_PATH: .cache/stooq/d_us_txt.zip
+          MARKETSCOPE_VERIFICATION_TOLERANCE_PP: "0.25"
+        run: python scripts/verify_annual_returns.py
+
+      # Persist annual and monthly source-of-truth data before the slower ranking jobs.
+      - name: Persist verified dynamic market snapshot and monthly history
+        run: |
+          bash scripts/persist_generated_files.sh \
+            "chore: persist verified MarketScope dynamic annual history" \
+            data/default_universe.csv \
+            data/market_snapshot.csv \
+            data/snapshot_metadata.json \
+            data/universe_metadata.json \
+            data/universe_change_history.json \
+            data/monthly_returns_10y.csv \
+            data/monthly_returns_full_history.csv
+
+      - name: Refresh rolling 5Y and 10Y annual ranking products when stale
+        run: python scripts/build_dynamic_annual_rankings.py
+
+      - name: Build actual 10Y monthly withdrawal rankings
+        run: python scripts/build_actual_monthly_rankings.py
+
+      # Save the monthly Top 100 immediately. A later independent ranking failure
+      # must not discard these completed files or leave the app warning visible.
+      - name: Persist actual 10Y monthly withdrawal rankings immediately
+        run: |
+          bash scripts/persist_generated_files.sh \
+            "chore: refresh MarketScope actual-monthly ranking datasets" \
+            data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv \
+            data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv
+
+      - name: Build recession-balanced 10Y rankings
+        run: python scripts/build_recession_rankings.py
+
+      - name: Persist refreshed ranking data
+        run: |
+          bash scripts/persist_generated_files.sh \
+            "chore: refresh MarketScope ranking datasets" \
+            data/top200_profit_generators_5y.csv \
+            data/top200_best_worst_year_5y.csv \
+            data/top200_profit_generators_10y.csv \
+            data/top200_best_worst_year_10y.csv \
+            data/top100_rebalanced_withdrawal_10y.csv \
+            data/top100_not_rebalanced_withdrawal_10y.csv \
+            data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv \
+            data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv \
+            data/top100_recession_balanced_rebalanced_10y.csv \
+            data/top100_recession_balanced_not_rebalanced_10y.csv
