@@ -7,7 +7,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.10.0"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.10.1"
 
 
 def test_app_uses_dynamic_completed_calendar_years():

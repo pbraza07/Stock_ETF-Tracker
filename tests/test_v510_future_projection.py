@@ -192,6 +192,14 @@ def test_14_duplicate_ticker_validation():
     assert any("different ticker" in message for message in errors)
 
 
+def test_14b_empty_holding_slots_are_validation_errors_not_keyerrors():
+    empty_errors, _ = validate_projection_inputs(base_inputs(holdings=["", "", "", ""]), market_fixture())
+    partial_errors, _ = validate_projection_inputs(base_inputs(holdings=["AAA", "BBB", "", ""]), market_fixture())
+    assert any("Select all four" in message for message in empty_errors)
+    assert any("Select all four" in message for message in partial_errors)
+    assert not any("different ticker" in message for message in empty_errors + partial_errors)
+
+
 def test_15_etf_can_be_mixed_with_stocks_and_keeps_fund_category():
     model = prepare_projection_model(market_fixture(), ["AAA", "BBB", "CCC", "DDD"], YEARS)
     etf = model.holding_assumptions.set_index("Ticker").loc["CCC"]

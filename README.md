@@ -1,3 +1,7 @@
+# MarketScope v5.10.1 — Future Projection Empty-Portfolio Fix
+
+Future Projection now safely validates its four default empty holding slots. Opening the tab before selecting stocks or ETFs displays the intended **Select all four Stock/ETF holdings** message instead of raising `KeyError: ''`. Partially filled portfolios behave the same way, and blank slots are no longer misidentified as duplicate tickers.
+
 # MarketScope v5.10.0 — Future Projection
 
 MarketScope now includes a top-level **Future Projection** workspace for four-stock/ETF portfolios. The source-backed, correlated Monte Carlo model supports yearly or actual-monthly projections; Bear, Normal, and Bull regimes; heavy-tailed shocks; rebalanced and non-rebalanced strategies; withdrawals, contributions, fees, depletion analysis, interactive probability charts, and detailed holding-level results.

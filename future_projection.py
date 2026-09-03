@@ -228,7 +228,8 @@ def validate_projection_inputs(inputs: dict, market: pd.DataFrame | None = None)
     holdings = value["holdings"]
     if len(holdings) != 4 or any(not symbol for symbol in holdings):
         errors.append("Select all four Stock/ETF holdings before running the projection.")
-    if len(set(holdings)) != len(holdings):
+    selected_holdings = [symbol for symbol in holdings if symbol]
+    if len(set(selected_holdings)) != len(selected_holdings):
         errors.append("Each holding must use a different ticker; remove the duplicate ticker.")
     if len(holdings) == 4:
         allocation_total = sum(_number(value["allocations"].get(symbol), 0.0) for symbol in holdings)
@@ -251,7 +252,15 @@ def validate_projection_inputs(inputs: dict, market: pd.DataFrame | None = None)
             missing = [symbol for symbol in holdings if symbol and symbol not in lookup.index]
             if missing:
                 errors.append("These holdings are not in the currently loaded MarketScope universe: " + ", ".join(missing))
-            if len(holdings) == 4 and not missing:
+            # The form always has four slots, but unselected slots are empty strings.
+            # Do not index the market universe until all four real, unique tickers
+            # have been selected and confirmed present in the loaded dataset.
+            if (
+                len(holdings) == 4
+                and all(holdings)
+                and len(set(holdings)) == 4
+                and not missing
+            ):
                 completed_year_columns = [column for column in lookup.columns if str(column).isdigit()]
                 observed_periods = 0
                 for symbol in holdings:

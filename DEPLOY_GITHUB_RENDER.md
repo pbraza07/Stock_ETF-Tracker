@@ -1,4 +1,8 @@
-# Deploy MarketScope v5.10.0 to GitHub + Render
+# Deploy MarketScope v5.10.1 to GitHub + Render
+
+## v5.10.1 — Empty Future Projection portfolio fix
+
+Upload the v5.10.1 files over the existing repository and push to `main`. No data migration, dependency change, or environment-variable change is required. The fix affects only pre-run Future Projection validation and does not alter projection or historical simulator calculations.
 
 ## v5.10.0 — Future Projection
 

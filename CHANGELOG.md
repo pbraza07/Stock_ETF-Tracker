@@ -1,5 +1,12 @@
 # MarketScope Changelog
 
+## 5.10.1 — 2026-09-03
+
+- Fixed `KeyError: ''` when Future Projection opened with its four default empty holding fields.
+- Restricted historical-data lookups to four nonempty, unique tickers that exist in the current MarketScope universe.
+- Removed the incorrect duplicate-ticker warning for blank or partially completed portfolios.
+- Added regression coverage for empty and partially completed holding selections.
+
 ## 5.10.0 — 2026-09-03
 
 - Added the top-level Future Projection workspace beside the existing simulators.

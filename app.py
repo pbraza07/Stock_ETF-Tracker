@@ -2570,6 +2570,7 @@ active_signal_count = int(active_signal_mask.sum())
 
 # v5.9.37: PDF Setup button removed from the app UI; server-side PDF persistence remains automatic.
 
+# v5.10.1 keeps Future Projection safe while its four holding slots are still empty.
 # v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
 # v5.9.24 compatibility contract previously used: market_tab, portfolio_tab, compare_tab, alerts_tab = st.tabs
 _top_tab_labels = [

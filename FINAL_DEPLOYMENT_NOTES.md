@@ -1,3 +1,7 @@
+# v5.10.1 deployment note
+
+Deploy over v5.10.0 and preserve live saved Portfolio Simulation JSON/PDF files. No data migration or environment-variable changes are required. After deployment, open Future Projection with no holdings selected and confirm the tab shows its normal four-holding validation guidance without a traceback.
+
 # v5.10.0 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF files. No data migration and no new environment variables are required. Render will install the new `plotly` and `openpyxl` requirements automatically.
