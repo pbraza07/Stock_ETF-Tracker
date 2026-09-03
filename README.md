@@ -1,3 +1,9 @@
+# MarketScope v5.9.81 — All Monthly Cohort Depletion Dates
+
+Both monthly rolling Start-Year depletion cards now show every modeled cohort inside the bordered box. Each row identifies the exact investment initiation month and its first depletion month, or shows the last modeled month when the cohort did not deplete.
+
+The original large earliest-depletion value remains at the top. Cohort details use a responsive two-column layout on wide screens and stack cleanly on smaller screens.
+
 # MarketScope v5.9.80 — Refresh Workflow Recovery
 
 The scheduled/push-triggered refresh now runs every persistence checkpoint through `bash`, eliminating the exit-code-126 failure caused when the packaged helper loses its executable file mode. The workflow can once again progress from the Nasdaq universe refresh into annual/monthly history and ranking generation.

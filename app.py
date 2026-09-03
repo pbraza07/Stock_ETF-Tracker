@@ -1646,7 +1646,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v37 - v5.9.80 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v37 - v5.9.81 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -3912,12 +3912,13 @@ def _portfolio_monthly_start_year_paths_dataframe(
 
 
 def _monthly_start_year_depletion_summary(paths_df: pd.DataFrame) -> dict:
-    """Return the earliest monthly depletion across rolling start-year cohorts."""
+    """Return every cohort's initiation/depletion month plus the earliest event."""
     empty = {
         "total_cohorts": 0,
         "depleted_cohorts": 0,
         "first_depletion_period": None,
         "first_depletion_start_year": None,
+        "cohort_outcomes": [],
     }
     if paths_df is None or paths_df.empty:
         return empty
@@ -3935,27 +3936,94 @@ def _monthly_start_year_depletion_summary(paths_df: pd.DataFrame) -> dict:
     if work.empty:
         return empty
 
-    total_cohorts = int(work["Start Year"].nunique())
-    depleted = work.loc[work["Remaining After Withdrawal ($)"] <= 0.005].copy()
-    if depleted.empty:
+    cohort_outcomes: list[dict] = []
+    first_events: list[dict] = []
+    for start_year, cohort in work.groupby("Start Year", sort=True):
+        cohort = cohort.sort_values("_month_order")
+        start_period = str(cohort.iloc[0]["Month"])
+        last_period = str(cohort.iloc[-1]["Month"])
+        depleted_rows = cohort.loc[cohort["Remaining After Withdrawal ($)"] <= 0.005]
+        depletion_period = None
+        if not depleted_rows.empty:
+            depletion_period = str(depleted_rows.iloc[0]["Month"])
+            first_events.append({
+                "start_year": int(start_year),
+                "depletion_period": depletion_period,
+                "_month_order": depleted_rows.iloc[0]["_month_order"],
+            })
+        cohort_outcomes.append({
+            "start_year": int(start_year),
+            "start_period": start_period,
+            "depletion_period": depletion_period,
+            "last_period": last_period,
+        })
+
+    total_cohorts = len(cohort_outcomes)
+    if not first_events:
         return {
             "total_cohorts": total_cohorts,
             "depleted_cohorts": 0,
             "first_depletion_period": None,
             "first_depletion_start_year": None,
+            "cohort_outcomes": cohort_outcomes,
         }
-    first_per_cohort = (
-        depleted.sort_values(["Start Year", "_month_order"])
-        .groupby("Start Year", as_index=False)
-        .first()
-    )
-    first_event = first_per_cohort.sort_values(["_month_order", "Start Year"]).iloc[0]
+    first_event = sorted(
+        first_events,
+        key=lambda event: (event["_month_order"], event["start_year"]),
+    )[0]
     return {
         "total_cohorts": total_cohorts,
-        "depleted_cohorts": int(first_per_cohort["Start Year"].nunique()),
-        "first_depletion_period": str(first_event["Month"]),
-        "first_depletion_start_year": int(first_event["Start Year"]),
+        "depleted_cohorts": len(first_events),
+        "first_depletion_period": str(first_event["depletion_period"]),
+        "first_depletion_start_year": int(first_event["start_year"]),
+        "cohort_outcomes": cohort_outcomes,
     }
+
+
+def _monthly_depletion_card_html(label: str, summary: dict) -> str:
+    """Render all monthly cohort initiation/depletion outcomes inside one card."""
+    period = summary.get("first_depletion_period")
+    start_year = summary.get("first_depletion_start_year")
+    depleted = int(summary.get("depleted_cohorts") or 0)
+    total = int(summary.get("total_cohorts") or 0)
+    outcomes = list(summary.get("cohort_outcomes") or [])
+
+    primary = str(period) if period is not None else "Not depleted"
+    if period is not None:
+        context = f"Earliest affected start cohort: {start_year} • Depleted cohorts: {depleted}/{total}"
+    else:
+        context = f"All modeled cohorts survived • Depleted cohorts: 0/{total}"
+
+    rows = []
+    for outcome in outcomes:
+        start_period = escape(str(outcome.get("start_period") or outcome.get("start_year") or "—"))
+        depletion_period = outcome.get("depletion_period")
+        if depletion_period:
+            outcome_class = "depleted"
+            outcome_text = f"Depleted <b>{escape(str(depletion_period))}</b>"
+        else:
+            outcome_class = "survived"
+            last_period = escape(str(outcome.get("last_period") or "—"))
+            outcome_text = f"Not depleted through <b>{last_period}</b>"
+        rows.append(
+            f'<div class="monthly-depletion-cohort-row {outcome_class}">'
+            f'<span>Initiated <b>{start_period}</b></span>'
+            f'<span>{outcome_text}</span>'
+            "</div>"
+        )
+
+    cohort_html = "".join(rows) or (
+        '<div class="monthly-depletion-cohort-empty">No monthly start-year cohorts available.</div>'
+    )
+    return (
+        '<div class="monthly-depletion-detail-card">'
+        f'<span class="monthly-depletion-card-label">{escape(str(label))}</span>'
+        f'<b class="monthly-depletion-card-value">{escape(primary)}</b>'
+        f'<small class="monthly-depletion-card-context">{escape(context)}</small>'
+        '<div class="monthly-depletion-cohort-title">ALL COHORT START AND DEPLETION MONTHS</div>'
+        f'<div class="monthly-depletion-cohort-grid">{cohort_html}</div>'
+        "</div>"
+    )
 
 
 def _finite_number(value):
@@ -5423,7 +5491,7 @@ with portfolio_tab:
                         else:
                             st.info(_annual_tab_message)
 
-                # v5.9.80 - keep the complete monthly strategy tab row visible and
+                # v5.9.81 - keep the complete monthly strategy tab row visible and
                 # apply the annual Reset/Start-Year requirements at monthly granularity.
                 monthly_withdrawal_tabs_rendered = False
 
@@ -5637,17 +5705,10 @@ with portfolio_tab:
                                 (dep_rb_col, "RB first depletion month", monthly_start_year_rb_depletion),
                                 (dep_nr_col, "NR first depletion month", monthly_start_year_nr_depletion),
                             ):
-                                _period = _summary.get("first_depletion_period")
-                                _start = _summary.get("first_depletion_start_year")
-                                _depleted = int(_summary.get("depleted_cohorts") or 0)
-                                _total = int(_summary.get("total_cohorts") or 0)
-                                _col.metric(_label, str(_period) if _period is not None else "Not depleted")
-                                if _period is not None:
-                                    _col.caption(
-                                        f"Earliest affected start cohort: {_start} • Depleted cohorts: {_depleted}/{_total}"
-                                    )
-                                else:
-                                    _col.caption(f"All modeled cohorts survived • Depleted cohorts: 0/{_total}")
+                                _col.markdown(
+                                    _monthly_depletion_card_html(_label, _summary),
+                                    unsafe_allow_html=True,
+                                )
 
                         def _render_monthly_start_year_paths_tab(
                             *, paths_df: pd.DataFrame, table_key: str, title: str, caption: str
@@ -6103,7 +6164,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v37 - v5.9.80 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v37 - v5.9.81 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile
