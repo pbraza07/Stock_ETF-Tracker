@@ -52,7 +52,7 @@ def _verify_top100(path: Path, strategy_prefix: str):
 
 
 def test_release_version_5961():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.9.82"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.10.0"
     assert "v5.9.66" in APP
 
 

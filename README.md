@@ -1,3 +1,11 @@
+# MarketScope v5.10.0 — Future Projection
+
+MarketScope now includes a top-level **Future Projection** workspace for four-stock/ETF portfolios. The source-backed, correlated Monte Carlo model supports yearly or actual-monthly projections; Bear, Normal, and Bull regimes; heavy-tailed shocks; rebalanced and non-rebalanced strategies; withdrawals, contributions, fees, depletion analysis, interactive probability charts, and detailed holding-level results.
+
+The new workspace loads holdings and cash-flow settings from the existing Portfolio Simulator without regenerating historical rankings. It includes deterministic seeded runs, explicit limited-history diagnostics, in-session caching, responsive results, and Excel, CSV, and PDF exports. Capital-market assumptions are governed separately in `future_projection_config.py`.
+
+Deployment requires the two new Python dependencies already listed in `requirements.txt`: `openpyxl` and `plotly`. No new environment variables or data migration are required. Preserve the existing live saved-simulation JSON/PDF paths when installing this release.
+
 # MarketScope v5.9.82 — All Annual Cohort Depletion Years
 
 The annual rolling Start-Year depletion dashboard now matches the detailed monthly design. Both Rebalanced and Not-Rebalanced cards list every cohort’s investment start year and first depletion year, or the last modeled year when the cohort survives.

@@ -1,4 +1,19 @@
-# Deploy MarketScope v5.8.1 to GitHub + Render
+# Deploy MarketScope v5.10.0 to GitHub + Render
+
+## v5.10.0 — Future Projection
+
+1. Extract the v5.10.0 ZIP and upload its contents over the current repository; do not delete the repository first.
+2. Preserve `data/saved_portfolio_simulations.json`, `data/generated_pdfs/`, and `static/generated_pdfs/` if they exist in the live repository. They are intentionally absent from the release ZIP.
+3. Commit and push to `main`. Render installs `plotly` and `openpyxl` from `requirements.txt` and auto-deploys using the existing `render.yaml` start command.
+4. Keep the existing `MARKETSCOPE_GITHUB_REPO`, `MARKETSCOPE_GITHUB_BRANCH`, and optional `MARKETSCOPE_GITHUB_TOKEN` settings. No new environment variables or data migration are required.
+5. After Render reports healthy, open **Future Projection**, load four holdings, run an Advanced projection, and verify the chart and Excel/CSV/PDF downloads.
+6. Run the existing **Refresh MarketScope universe, snapshot and actual monthly rankings (v5.10.0)** GitHub Action once only if the historical snapshot or actual-monthly files are stale.
+
+The Future Projection tab reads the existing MarketScope stock/ETF universe and historical files. Deploying it does not recalculate or overwrite existing historical simulator results or Top-50/Top-100/Top-250 rankings.
+
+## Earlier deployment history
+
+The original v5.8.1 instructions below are retained for upgrade history.
 
 Upload the v5.8.1 files **on top of the existing repository** and commit to `main`.
 

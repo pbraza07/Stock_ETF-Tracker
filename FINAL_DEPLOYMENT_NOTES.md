@@ -1,3 +1,9 @@
+# v5.10.0 deployment note
+
+Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF files. No data migration and no new environment variables are required. Render will install the new `plotly` and `openpyxl` requirements automatically.
+
+After deployment, confirm the header shows v5.10.0 and run one four-holding Advanced projection from the new **Future Projection** tab. Verify deterministic reruns with the same seed, the interactive chart, result subtabs, and Excel/CSV/PDF downloads. The existing Build Simulation withdrawal tabs and historical calculations remain unchanged.
+
 # v5.9.78 deployment note
 
 Deploy over the existing repository and preserve live saved Portfolio Simulation JSON/PDF files.

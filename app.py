@@ -57,6 +57,8 @@ from pdf_storage import (
     pdf_viewer_url,
     persist_pdf_artifact,
 )
+from future_projection import projection_payload_from_simulator
+from future_projection_ui import render_future_projection
 from providers import YahooFinanceProvider
 from providers.nasdaq import NasdaqScreenerProvider
 from universe import is_render_runtime, load_default_universe
@@ -277,6 +279,15 @@ if "combo_autoload_message" not in st.session_state:
 if "market_table_price_targets" not in st.session_state:
     # Exact in-session bridge from Market Table target values to PDF page 1.
     st.session_state.market_table_price_targets = {}
+
+
+def _queue_current_portfolio_for_future_projection() -> None:
+    """Bridge the current historical/ranked portfolio into Future Projection."""
+    payload = projection_payload_from_simulator(dict(st.session_state))
+    if len(payload.get("holdings") or []) != 4:
+        return
+    st.session_state.future_projection_pending_payload = payload
+    st.session_state.future_projection_focus = True
 
 
 @st.cache_data(show_spinner=False)
@@ -1389,6 +1400,88 @@ def cached_actual_monthly_returns(
     }
 
 
+@st.cache_data(ttl=6 * 60 * 60, show_spinner=False)
+def cached_future_projection_monthly_returns(
+    symbols: tuple[str, ...],
+    calendar_years: tuple[str, ...],
+) -> dict:
+    """Load every observed monthly return available, including partial histories.
+
+    The historical withdrawal simulator intentionally requires complete windows.
+    Future Projection has a different limited-history contract: it preserves all
+    observed post-IPO/post-inception months and explicitly imputes only the missing
+    periods. This separate loader avoids changing any existing simulator result.
+    """
+    clean_symbols = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
+    years = tuple(sorted({str(y) for y in calendar_years if str(y).isdigit()}, key=int))
+    labels = _actual_month_labels(years)
+    if not clean_symbols or not years:
+        return {"unavailable": True, "reason": "No holdings or completed years were supplied.", "returns": {}}
+
+    returns: dict[str, dict[str, float]] = {symbol: {} for symbol in clean_symbols}
+    sources: list[pd.DataFrame] = []
+    for local_path in (MONTHLY_RETURNS_FILE, MONTHLY_RETURNS_25Y_FILE, MONTHLY_RETURNS_FULL_FILE):
+        if local_path.exists():
+            try:
+                sources.append(pd.read_csv(local_path))
+            except Exception:
+                pass
+    for repo_path in (MONTHLY_RETURNS_REPO_PATH, MONTHLY_RETURNS_25Y_REPO_PATH, MONTHLY_RETURNS_FULL_REPO_PATH):
+        remote = load_remote_csv(repo_path, timeout=15)
+        if remote is not None and not remote.empty:
+            sources.append(remote)
+
+    for candidate in sources:
+        if candidate is None or candidate.empty or "Symbol" not in candidate.columns or not _monthly_csv_actual(candidate):
+            continue
+        frame = candidate.copy()
+        frame["Symbol"] = frame["Symbol"].astype(str).str.upper().str.strip()
+        frame = frame.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False)
+        for symbol in clean_symbols:
+            if symbol not in frame.index:
+                continue
+            row = frame.loc[symbol]
+            if isinstance(row, pd.DataFrame):
+                row = row.iloc[-1]
+            for label in labels:
+                value = pd.to_numeric(pd.Series([row.get(label)]), errors="coerce").iloc[0]
+                if pd.notna(value) and np.isfinite(value) and float(value) > -100.0:
+                    returns[symbol][label] = float(value) / 100.0
+
+    # Direct history fills all genuinely observed months while leaving pre-inception
+    # dates absent for the projection engine to identify and blend explicitly.
+    try:
+        histories = provider.download_daily_history_since(
+            list(clean_symbols),
+            start=ANNUAL_HISTORY_START,
+            chunk_size=min(10, max(1, len(clean_symbols))),
+        )
+    except Exception:
+        histories = {}
+    for symbol in clean_symbols:
+        hist = histories.get(symbol)
+        if hist is None or hist.empty:
+            continue
+        try:
+            calculated = calculate_monthly_returns(hist, min(int(y) for y in years), max(int(y) for y in years))
+        except Exception:
+            continue
+        for label, value in calculated.items():
+            if label in labels and value is not None and np.isfinite(value) and float(value) > -1.0:
+                returns[symbol][label] = float(value)
+
+    observed = {symbol: len(values) for symbol, values in returns.items()}
+    returns = {symbol: values for symbol, values in returns.items() if values}
+    return {
+        "unavailable": not bool(returns),
+        "reason": "No actual monthly observations could be loaded." if not returns else "",
+        "returns": returns,
+        "months": labels,
+        "observed_periods": observed,
+        "method": "Observed adjusted month-end returns; missing pre-inception periods remain explicit for calibrated imputation",
+    }
+
+
 @st.cache_data(ttl=30 * 60, show_spinner=False)
 def cached_card_two_year_histories(symbols: tuple[str, ...]) -> dict[str, pd.DataFrame]:
     """Batch-load two years of adjusted daily closes for visible market cards."""
@@ -2477,14 +2570,23 @@ active_signal_count = int(active_signal_mask.sum())
 
 # v5.9.37: PDF Setup button removed from the app UI; server-side PDF persistence remains automatic.
 
+# v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
 # v5.9.24 compatibility contract previously used: market_tab, portfolio_tab, compare_tab, alerts_tab = st.tabs
-market_tab, portfolio_tab, compare_tab, sector_tab, alerts_tab = st.tabs([
+_top_tab_labels = [
     "◈ Market Navigator",
     "◫ Portfolio Simulator",
+    "Future Projection",
     "⚖ Stock & ETF Comparison",
     "◈ Sector Performance",
     "🔔 Alerts & Help",
-])
+]
+if bool(st.session_state.pop("future_projection_focus", False)):
+    market_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(
+        _top_tab_labels,
+        default="Future Projection",
+    )
+else:
+    market_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(_top_tab_labels)
 
 
 with alerts_tab:
@@ -4924,6 +5026,14 @@ with portfolio_tab:
                     "is enforced across the entire Top 250 list."
                 )
 
+        st.button(
+            "Project Future - Ranked Portfolio",
+            key="project_future_ranked_portfolio",
+            on_click=_queue_current_portfolio_for_future_projection,
+            disabled=len(st.session_state.get("portfolio_symbols") or []) != 4,
+            help="Open Future Projection with the four-stock/ETF ranked portfolio currently loaded above.",
+        )
+
         portfolio_total = st.number_input(
             "Total portfolio amount ($)",
             min_value=0.0,
@@ -4948,6 +5058,13 @@ with portfolio_tab:
             placeholder="Search and select stocks / ETFs...",
         )
         st.session_state.portfolio_symbols = list(selected_portfolio_symbols)
+        st.button(
+            "Project Future",
+            key="project_future_selected_portfolio",
+            on_click=_queue_current_portfolio_for_future_projection,
+            disabled=len(selected_portfolio_symbols) != 4,
+            help="Open Future Projection with these four holdings and the current amount, withdrawals, and allocation.",
+        )
 
         # v5.9.32 - keep every 1Y-{ANNUAL_HISTORY_YEARS}Y choice available. If a selected instrument did not exist
         # for the full requested span, begin at the first completed year shared by all selections.
@@ -6348,6 +6465,27 @@ with portfolio_tab:
                             if st.button("Cancel", key=f"cancel_delete_simulation_{rec_id}", use_container_width=True):
                                 st.session_state.pending_delete_simulation = None
                                 st.rerun()
+
+
+with future_tab:
+    _projection_data_as_of = _valid_status_text(metadata.get("updated_at_display_et"))
+    if not _projection_data_as_of and "Snapshot Updated ET" in market.columns:
+        _projection_data_as_of = _latest_display_timestamp(market["Snapshot Updated ET"].tolist())
+    _current_projection_payload = projection_payload_from_simulator(
+        dict(st.session_state),
+        list(selected_portfolio_symbols),
+    )
+    render_future_projection(
+        market=market,
+        annual_year_columns=list(YEAR_RETURN_COLS),
+        latest_completed_year=int(LATEST_COMPLETED_YEAR),
+        data_as_of=_projection_data_as_of or "Not available",
+        model_as_of=now_et().date().isoformat(),
+        monthly_loader=cached_future_projection_monthly_returns,
+        logo_loader=cached_logo_urls,
+        current_simulator_payload=_current_projection_payload,
+    )
+
 
 with market_tab:
     st.markdown("<div class='investment-title'>INVESTMENT SIMULATOR</div>", unsafe_allow_html=True)
