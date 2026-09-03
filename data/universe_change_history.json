@@ -118,5 +118,15 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-03T11:51:35.048510-04:00",
+    "occurred_at_display_et": "Sep 03, 2026 11:51:35 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "NET",
+    "name": "Cloudflare Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
