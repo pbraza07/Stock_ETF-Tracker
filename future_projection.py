@@ -1,9 +1,11 @@
-"""Compatibility layer for MarketScope Future Projection percentile enhancements.
+"""MarketScope Future Projection percentile enhancements.
 
-v5.10.2 preserves the v5.10.1 Monte Carlo engine in
-``future_projection_legacy.py`` and adds exact P25/P50/P75 output fields plus
-path-aware profit percentages.  The legacy engine remains the authoritative
-calculation source; these additions are derived from the same simulation paths.
+v5.10.3 preserves the v5.10.1 Monte Carlo engine in
+``future_projection_legacy.py`` and extends the v5.10.2 percentile output with
+year-by-year P25/P50/P75 annual return percentages and profit amounts.
+
+All added values are calculated from the exact same Monte Carlo paths already
+used by the existing Future Projection engine.
 """
 
 from __future__ import annotations
@@ -13,7 +15,7 @@ import numpy as np
 import future_projection_legacy as _legacy
 
 # Preserve the complete v5.10.1 module surface, including internal helpers used
-# by regression tests and exports.  Patched names below intentionally override
+# by regression tests and exports. Patched names below intentionally override
 # the copied references.
 for _name in dir(_legacy):
     if not _name.startswith("__"):
@@ -63,12 +65,20 @@ def _finish_output_period(
         cumulative_wealth - cumulative_contributions - float(starting_investment)
     )
     profit_pct = _profit_percent(total_wealth_profit, starting_investment)
+
+    # Gross profit is the exact path-level profit amount accumulated for the
+    # displayed period by the authoritative v5.10.1 engine.
     gross_profit = np.asarray(acc["gross"], dtype=float)
+
+    # portfolio_factor is accumulated across the displayed output period, so
+    # for annual output this is the path-level annual portfolio return.
+    period_return_pct = (np.asarray(acc["portfolio_factor"], dtype=float) - 1.0) * 100.0
 
     _original_finish_output_period(state, symbols, starting_investment, show_month)
 
     if not state.get("table_rows"):
         return
+
     row = state["table_rows"][-1]
     row.update(
         {
@@ -90,6 +100,23 @@ def _finish_output_period(
             "Profit %": _percentile(profit_pct, 50),
         }
     )
+
+    if show_month:
+        row.update(
+            {
+                "P25 Monthly Return": _percentile(period_return_pct, 25),
+                "P50 Monthly Return": _percentile(period_return_pct, 50),
+                "P75 Monthly Return": _percentile(period_return_pct, 75),
+            }
+        )
+    else:
+        row.update(
+            {
+                "P25 Annual Return": _percentile(period_return_pct, 25),
+                "P50 Annual Return": _percentile(period_return_pct, 50),
+                "P75 Annual Return": _percentile(period_return_pct, 75),
+            }
+        )
 
 
 def _finalize_strategy(
