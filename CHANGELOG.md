@@ -1,5 +1,18 @@
 # MarketScope Changelog
 
+## 5.11.2 - 2026-09-04
+
+- Added a permanent, append-only Favorite Picks ledger with a complete audit snapshot for every manual and scheduled Pick Fav run.
+- Added sector-level replacement events that explicitly identify the prior stock that dropped and the new stock entering the Top 2.
+- Added a governed Favorite **Risk Rating** and 0-100 Risk Score based on modeled P10/P25 downside, conditioned volatility, and current-data quality.
+- Added separate risk-rating transition events for picks that remain selected while their modeled risk category changes.
+- Added immutable **First Detected (ET)** timestamps. Unchanged picks carry forward their original selection/risk dates, and existing events are never re-dated or overwritten.
+- Added an optimistic GitHub merge-and-retry persistence path so simultaneous manual and scheduled updates retain both event streams instead of replacing one another.
+- Added an all-time **Pick Fav Change Trail** to Favorite Picks and the main Market Navigator, including replacement, add/remove, risk-change, and prior-run tables.
+- Added an all-time stock-universe and analyst-rating archive on the main page while preserving the existing six-month view. Historical additions, removals, and rating transitions keep their first-detected dates.
+- Added a daily GitHub Action step that recalculates Favorite Picks after the verified market snapshot, compares it with the prior saved run, and permanently commits the updated ledger.
+- Added regression coverage for unchanged-run behavior, replacement pairing, risk transitions, immutable dates, local/GitHub persistence, concurrent-ledger merging, workflow integration, and history UI; all 537 tests pass.
+
 ## 5.11.1 - 2026-09-04
 
 - Added the top-level **Favorite Picks** workspace and its **Pick Fav** action without moving or removing existing MarketScope tabs.

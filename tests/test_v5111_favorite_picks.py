@@ -145,7 +145,7 @@ def build_result(seed: int = 4242) -> dict:
 def test_release_and_main_navigation_include_favorite_picks():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     css = (ROOT / "styles.css").read_text(encoding="utf-8")
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.1"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.2"
     assert '"Favorite Picks"' in app
     assert '"Pick Fav"' in app
     assert "build_favorite_picks" in app

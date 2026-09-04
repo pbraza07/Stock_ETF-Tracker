@@ -250,6 +250,8 @@ def _metadata_events(metadata: dict, name_map: dict | None = None) -> list[dict]
         events.append({
             "occurred_at_et": stamp,
             "occurred_at_display_et": display,
+            "first_detected_at_et": stamp,
+            "first_detected_display_et": display,
             "change_type": "Stock Added",
             "symbol": sym,
             "name": str(info.get("Name") or sym),
@@ -266,6 +268,8 @@ def _metadata_events(metadata: dict, name_map: dict | None = None) -> list[dict]
         events.append({
             "occurred_at_et": stamp,
             "occurred_at_display_et": display,
+            "first_detected_at_et": stamp,
+            "first_detected_display_et": display,
             "change_type": "Stock Removed",
             "symbol": sym,
             "name": str(info.get("Name") or sym),
@@ -283,6 +287,8 @@ def _metadata_events(metadata: dict, name_map: dict | None = None) -> list[dict]
         events.append({
             "occurred_at_et": stamp,
             "occurred_at_display_et": display,
+            "first_detected_at_et": stamp,
+            "first_detected_display_et": display,
             "change_type": "Analyst Rating",
             "symbol": sym,
             "name": str(change.get("name") or (names.get(sym, {}) or {}).get("Name") or sym),

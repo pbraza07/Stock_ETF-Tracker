@@ -1,3 +1,19 @@
+# Deploy MarketScope v5.11.2 to GitHub + Render
+
+## v5.11.2 - Permanent Favorite Picks Change Trail
+
+1. Preserve v5.11.1 as the rollback package.
+2. Upload the extracted v5.11.2 contents directly to the GitHub repository root. Confirm `requirements.txt`, `app.py`, `render.yaml`, and `Procfile` remain at that root, and keep Render's **Root Directory** blank.
+3. Preserve the live `data/favorite_picks_history.json` file. The release intentionally contains only `data/favorite_picks_history.bootstrap.json` so an upgrade cannot erase earlier Pick Fav runs or first-detected dates.
+4. Continue preserving `data/universe_change_history.json`, `data/saved_portfolio_simulations.json`, `data/generated_pdfs/`, and `static/generated_pdfs/`.
+5. Keep `MARKETSCOPE_GITHUB_REPO`, `MARKETSCOPE_GITHUB_BRANCH`, and `MARKETSCOPE_GITHUB_TOKEN` unchanged. The token needs repository **Contents: Read and write** permission for manual Pick Fav runs to persist across Render restarts and devices.
+6. Commit and push to `main`. The workflow will update Favorite Picks after the verified market snapshot and commit `data/favorite_picks_history.json` even if nobody opens the app.
+7. After Render is healthy, select **Pick Fav** twice. The first run should establish initial events; the unchanged second run should add a run-audit record without duplicating change events.
+8. Open Market Navigator → **Pick Fav Change Trail** and verify replacement rows show Dropped Pick, New Pick, and the immutable First Detected timestamp.
+9. Open the existing six-month stock/analyst history and its all-time archive. Confirm earlier addition/removal/rating dates remain intact.
+
+No new dependencies or environment-variable names are required. The existing historical simulators and Future Projection calculation engine are unchanged.
+
 # Deploy MarketScope v5.11.1 to GitHub + Render
 
 ## v5.11.1 - Favorite Picks

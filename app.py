@@ -34,12 +34,14 @@ from history_config import (
 from persistence import (
     format_et,
     load_remote_csv,
+    load_remote_favorite_picks_history,
     load_remote_metadata,
     load_remote_snapshot,
     load_remote_universe_metadata,
     load_remote_universe_change_history,
     now_et,
     persist_snapshot,
+    persist_favorite_picks_history,
     persist_universe_refresh,
 )
 from portfolio_simulations import (
@@ -61,6 +63,12 @@ from future_projection import projection_payload_from_simulator
 from future_projection_live import fetch_live_projection_context
 from future_projection_ui import render_future_projection
 from favorite_picks import build_favorite_picks, favorite_candidate_symbols
+from favorite_picks_history import (
+    favorite_change_history_frame,
+    favorite_run_history_frame,
+    merge_favorite_picks_ledgers,
+    record_favorite_picks_run,
+)
 from providers import YahooFinanceProvider
 from providers.nasdaq import NasdaqScreenerProvider
 from universe import is_render_runtime, load_default_universe
@@ -82,6 +90,8 @@ BOOTSTRAP_META_FILE = BASE_DIR / "data" / "snapshot_metadata.bootstrap.json"
 UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.json"
 BOOTSTRAP_UNIVERSE_META_FILE = BASE_DIR / "data" / "universe_metadata.bootstrap.json"
 UNIVERSE_CHANGE_HISTORY_FILE = BASE_DIR / "data" / "universe_change_history.json"
+FAVORITE_PICKS_HISTORY_FILE = BASE_DIR / "data" / "favorite_picks_history.json"
+FAVORITE_PICKS_HISTORY_BOOTSTRAP_FILE = BASE_DIR / "data" / "favorite_picks_history.bootstrap.json"
 MONTHLY_RETURNS_FILE = BASE_DIR / "data" / "monthly_returns_10y.csv"
 MONTHLY_RETURNS_REPO_PATH = "data/monthly_returns_10y.csv"
 MONTHLY_RETURNS_FULL_FILE = BASE_DIR / "data" / "monthly_returns_full_history.csv"
@@ -235,6 +245,10 @@ if "universe_refresh_message" not in st.session_state:
     st.session_state.universe_refresh_message = None
 if "universe_change_history_open" not in st.session_state:
     st.session_state.universe_change_history_open = False
+if "favorite_picks_history_open" not in st.session_state:
+    st.session_state.favorite_picks_history_open = False
+if "favorite_picks_history_message" not in st.session_state:
+    st.session_state.favorite_picks_history_message = None
 if "selected_symbol" not in st.session_state:
     st.session_state.selected_symbol = None
 if "card_page" not in st.session_state:
@@ -1083,6 +1097,24 @@ def load_universe_change_history() -> list[dict]:
     return _merge_universe_change_history(local, remote)
 
 
+@st.cache_data(ttl=60, show_spinner=False)
+def load_favorite_picks_history() -> dict:
+    """Merge local, GitHub, and bootstrap ledgers while preserving first-event dates."""
+
+    payloads = []
+    for path in (FAVORITE_PICKS_HISTORY_FILE, FAVORITE_PICKS_HISTORY_BOOTSTRAP_FILE):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                payloads.append(payload)
+        except Exception:
+            pass
+    remote = load_remote_favorite_picks_history(timeout=10)
+    if isinstance(remote, dict) and remote:
+        payloads.append(remote)
+    return merge_favorite_picks_ledgers(*payloads)
+
+
 def _current_metadata_change_events(metadata: dict) -> list[dict]:
     """Bridge the most recent pre-v5.9.78 metadata change into the history view."""
     if not isinstance(metadata, dict):
@@ -1099,6 +1131,8 @@ def _current_metadata_change_events(metadata: dict) -> list[dict]:
             events.append({
                 "occurred_at_et": stamp,
                 "occurred_at_display_et": display,
+                "first_detected_at_et": stamp,
+                "first_detected_display_et": display,
                 "change_type": "Stock Added",
                 "symbol": sym,
                 "name": sym,
@@ -1112,6 +1146,8 @@ def _current_metadata_change_events(metadata: dict) -> list[dict]:
             events.append({
                 "occurred_at_et": stamp,
                 "occurred_at_display_et": display,
+                "first_detected_at_et": stamp,
+                "first_detected_display_et": display,
                 "change_type": "Stock Removed",
                 "symbol": sym,
                 "name": sym,
@@ -1127,6 +1163,8 @@ def _current_metadata_change_events(metadata: dict) -> list[dict]:
             events.append({
                 "occurred_at_et": stamp,
                 "occurred_at_display_et": display,
+                "first_detected_at_et": stamp,
+                "first_detected_display_et": display,
                 "change_type": "Analyst Rating",
                 "symbol": sym,
                 "name": str(change.get("name") or sym),
@@ -1137,8 +1175,8 @@ def _current_metadata_change_events(metadata: dict) -> list[dict]:
     return events
 
 
-def _six_month_universe_history_frame(history: list[dict], as_of=None) -> pd.DataFrame:
-    """Filter the view to six months while leaving the stored history untouched."""
+def _six_month_universe_history_frame(history: list[dict], as_of=None, months: int | None = 6) -> pd.DataFrame:
+    """Format universe history; optionally filter the view without touching storage."""
     columns = ["Date / Time (ET)", "Change Type", "Symbol", "Name", "Previous", "New", "Source"]
     if not history:
         return pd.DataFrame(columns=columns)
@@ -1148,22 +1186,22 @@ def _six_month_universe_history_frame(history: list[dict], as_of=None) -> pd.Dat
         now_value = now_value.tz_localize("America/New_York")
     else:
         now_value = now_value.tz_convert("America/New_York")
-    cutoff = now_value - pd.DateOffset(months=6)
+    cutoff = now_value - pd.DateOffset(months=int(months)) if months is not None else None
 
     rows = []
     for event in history:
         if not isinstance(event, dict):
             continue
-        occurred = pd.to_datetime(event.get("occurred_at_et"), errors="coerce")
+        occurred = pd.to_datetime(event.get("first_detected_at_et") or event.get("occurred_at_et"), errors="coerce")
         if pd.isna(occurred):
             continue
         if getattr(occurred, "tzinfo", None) is None:
             occurred = occurred.tz_localize("America/New_York")
         else:
             occurred = occurred.tz_convert("America/New_York")
-        if occurred < cutoff or occurred > now_value:
+        if (cutoff is not None and occurred < cutoff) or occurred > now_value:
             continue
-        display = str(event.get("occurred_at_display_et") or "").strip()
+        display = str(event.get("first_detected_display_et") or event.get("occurred_at_display_et") or "").strip()
         if not display:
             display = occurred.strftime("%b %d, %Y %I:%M:%S %p ET")
         rows.append({
@@ -2530,6 +2568,9 @@ universe_change_history = _merge_universe_change_history(
     load_universe_change_history(),
     _current_metadata_change_events(universe_metadata),
 )
+favorite_picks_history = load_favorite_picks_history()
+favorite_picks_change_frame = favorite_change_history_frame(favorite_picks_history)
+favorite_picks_run_frame = favorite_run_history_frame(favorite_picks_history)
 base_symbols = default_universe["Symbol"].astype(str).str.upper().tolist()
 snapshot_symbols = snapshot["Symbol"].tolist() if not snapshot.empty else []
 extra_symbols = [s for s in st.session_state.extra_symbols if s not in set(base_symbols)]
@@ -2592,6 +2633,7 @@ active_signal_count = int(active_signal_mask.sum())
 
 # v5.9.37: PDF Setup button removed from the app UI; server-side PDF persistence remains automatic.
 
+# v5.11.2 adds permanent first-detected Favorite Picks and risk change trails.
 # v5.11.1 adds the evidence-backed Favorite Picks sector ranking workspace.
 # v5.11.0 keeps Future Projection safe while its unlimited holding selector is empty.
 # v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
@@ -2657,7 +2699,8 @@ with market_tab:
     )
 
     six_month_history = _six_month_universe_history_frame(universe_change_history)
-    universe_refresh_col, universe_history_col, universe_help_col = st.columns([1.55, 1.65, 3.3])
+    all_time_universe_history = _six_month_universe_history_frame(universe_change_history, months=None)
+    universe_refresh_col, universe_history_col, favorite_history_col, universe_help_col = st.columns([1.45, 1.45, 1.45, 2.65])
     with universe_refresh_col:
         refresh_universe_now = st.button(
             "↻ Refresh Nasdaq Universe Now",
@@ -2684,10 +2727,26 @@ with market_tab:
         ):
             st.session_state.universe_change_history_open = not st.session_state.universe_change_history_open
             st.rerun()
+    with favorite_history_col:
+        if st.button(
+            (
+                f"★ Pick Fav Change Trail ({len(favorite_picks_change_frame)})"
+                if not st.session_state.favorite_picks_history_open
+                else "★ Hide Pick Fav Trail"
+            ),
+            key="toggle_favorite_picks_history",
+            use_container_width=True,
+            help=(
+                "Show the permanent, all-time Pick Fav replacement and risk-rating history. "
+                "Each row keeps the date the change was first detected."
+            ),
+        ):
+            st.session_state.favorite_picks_history_open = not st.session_state.favorite_picks_history_open
+            st.rerun()
     with universe_help_col:
         st.caption(
-            "Refresh updates Nasdaq >$100B membership and analyst ratings. Change History is append-only: "
-            "the button displays the latest six months, while older records remain stored permanently."
+            "Both ledgers are append-only. Stock additions/removals, analyst changes, Pick Fav replacements, "
+            "and Favorite risk-rating changes keep their original first-detected date permanently."
         )
 
     if st.session_state.universe_change_history_open:
@@ -2713,8 +2772,63 @@ with market_tab:
                 use_container_width=True,
                 hide_index=True,
                 height=min(600, 72 + max(1, len(six_month_history)) * 35),
+                column_config={"Date / Time (ET)": "First Detected (ET)"},
                 key="nasdaq_six_month_change_history",
             )
+        with st.expander(f"All-time stock and analyst archive ({len(all_time_universe_history):,} events retained)"):
+            st.caption(
+                "This permanent archive keeps every recorded stock addition, stock removal, and analyst-rating "
+                "transition with its original First Detected date. Later refreshes do not replace that date."
+            )
+            if all_time_universe_history.empty:
+                st.info("No permanent stock or analyst changes have been recorded yet.")
+            else:
+                st.dataframe(
+                    all_time_universe_history,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=min(650, 72 + max(1, len(all_time_universe_history)) * 35),
+                    column_config={"Date / Time (ET)": "First Detected (ET)"},
+                    key="nasdaq_all_time_change_history",
+                )
+
+    if st.session_state.favorite_picks_history_open:
+        st.markdown("### ★ Favorite Picks Permanent Change Trail · All Time")
+        st.caption(
+            "A replacement row identifies the stock that dropped and the new sector favorite. Risk changes are "
+            "logged separately. Existing rows and their First Detected dates are never overwritten by later runs."
+        )
+        if favorite_picks_change_frame.empty:
+            st.info(
+                "No Favorite Picks history has been recorded yet. Select Pick Fav in the Favorite Picks tab, "
+                "or allow the daily GitHub workflow to complete its first v5.11.2 run."
+            )
+        else:
+            favorite_history_counts = favorite_picks_change_frame["Change Type"].value_counts()
+            fh1, fh2, fh3, fh4 = st.columns(4)
+            fh1.metric("Total retained events", f"{len(favorite_picks_change_frame):,}")
+            fh2.metric("Replacements", f"{int(favorite_history_counts.get('Favorite Pick Replaced', 0)):,}")
+            fh3.metric(
+                "Adds / removals",
+                f"{int(favorite_history_counts.get('Favorite Pick Added', 0) + favorite_history_counts.get('Initial Favorite Pick', 0)):,} / "
+                f"{int(favorite_history_counts.get('Favorite Pick Removed', 0)):,}",
+            )
+            fh4.metric("Risk changes", f"{int(favorite_history_counts.get('Favorite Risk Rating Changed', 0)):,}")
+            st.dataframe(
+                favorite_picks_change_frame,
+                use_container_width=True,
+                hide_index=True,
+                height=min(720, 72 + max(1, len(favorite_picks_change_frame)) * 35),
+                key="favorite_picks_permanent_change_history",
+            )
+            with st.expander(f"Favorite Picks run audit ({len(favorite_picks_run_frame):,} runs retained)"):
+                st.dataframe(
+                    favorite_picks_run_frame,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=min(520, 72 + max(1, len(favorite_picks_run_frame)) * 35),
+                    key="favorite_picks_run_history_main",
+                )
 
     if refresh_universe_now:
         with st.spinner("Refreshing Nasdaq >$100B universe and analyst ratings..."):
@@ -6565,8 +6679,42 @@ with favorite_tab:
                         data_as_of=_favorite_data_as_of or "Not available",
                     )
                     st.session_state.favorite_picks_result = favorite_result
+                    st.write("Comparing this run with the last permanently saved sector picks and risk ratings.")
+                    latest_history = merge_favorite_picks_ledgers(
+                        favorite_picks_history,
+                        load_remote_favorite_picks_history(timeout=12),
+                    )
+                    favorite_picks_history, favorite_change_events = record_favorite_picks_run(
+                        latest_history,
+                        favorite_result["table"],
+                        observed_at=now_et(),
+                        data_as_of=favorite_result.get("data_as_of") or "Latest available",
+                        random_seed=favorite_result.get("random_seed"),
+                    )
+                    durable_history_ok, history_message = persist_favorite_picks_history(
+                        favorite_picks_history,
+                        FAVORITE_PICKS_HISTORY_FILE,
+                    )
+                    st.session_state.favorite_picks_history_message = (
+                        durable_history_ok,
+                        history_message,
+                        len(favorite_change_events),
+                    )
+                    try:
+                        favorite_picks_history = merge_favorite_picks_ledgers(
+                            favorite_picks_history,
+                            json.loads(FAVORITE_PICKS_HISTORY_FILE.read_text(encoding="utf-8")),
+                        )
+                    except Exception:
+                        pass
+                    load_favorite_picks_history.clear()
+                    favorite_picks_change_frame = favorite_change_history_frame(favorite_picks_history)
+                    favorite_picks_run_frame = favorite_run_history_frame(favorite_picks_history)
                     favorite_status.update(
-                        label=f"Favorite Picks complete — {favorite_result['pick_count']} stocks across {favorite_result['sector_count']} sectors",
+                        label=(
+                            f"Favorite Picks complete — {favorite_result['pick_count']} stocks across "
+                            f"{favorite_result['sector_count']} sectors; {len(favorite_change_events)} new change event(s)"
+                        ),
                         state="complete",
                         expanded=False,
                     )
@@ -6614,6 +6762,7 @@ with favorite_tab:
         favorite_column_config = {
             "Sector Rank": st.column_config.NumberColumn("Sector Rank", format="%d"),
             "Favorite Score": st.column_config.ProgressColumn("Favorite Score", min_value=0.0, max_value=100.0, format="%.1f"),
+            "Risk Score": st.column_config.ProgressColumn("Risk Score", min_value=0.0, max_value=100.0, format="%.1f"),
             "Current Price": st.column_config.NumberColumn("Current Price", format="$%.2f"),
             "Expected Annual Return %": st.column_config.NumberColumn("Expected Return", format="%.2f%%"),
             "Historical CAGR %": st.column_config.NumberColumn("Historical CAGR", format="%.2f%%"),
@@ -6639,7 +6788,7 @@ with favorite_tab:
             key="favorite_picks_results_table",
         )
         download_columns = [
-            "Sector", "Sector Rank", "Symbol", "Name", "Favorite Score", "Model Confidence",
+            "Sector", "Sector Rank", "Symbol", "Name", "Favorite Score", "Model Confidence", "Risk Rating", "Risk Score",
             "Expected Annual Return %", *favorite_percentile_columns, "Historical CAGR %", "Positive Years %",
             "Historical Worst Year", "Conditioned Volatility %", "6M", "Fundamental Score", "Valuation Score",
             "Trend Score", "Observed Years", "Live Data Quality", "Why Selected", "Key Risk", "Data As Of",
@@ -6682,6 +6831,40 @@ with favorite_tab:
             else:
                 st.success("No supplemental data warnings were reported for this ranking run.")
         st.caption("To test any Favorite Pick in a portfolio, open Future Projection and select one or more of the ranked tickers.")
+
+    if st.session_state.favorite_picks_history_message:
+        history_ok, history_message, history_change_count = st.session_state.favorite_picks_history_message
+        if history_ok:
+            st.success(f"Change trail saved permanently. {history_change_count} new first-detected event(s) were added. {history_message}")
+        else:
+            st.warning(
+                f"The ranking completed and {history_change_count} change event(s) were recorded locally. {history_message}"
+            )
+        st.session_state.favorite_picks_history_message = None
+
+    st.markdown("### Pick Fav Change Trail")
+    st.caption(
+        "This audit table is append-only. It compares each manual or scheduled run with the prior saved Top 2 in every "
+        "sector and permanently keeps the date each replacement or Favorite risk-rating change was first detected."
+    )
+    if favorite_picks_change_frame.empty:
+        st.info("No changes have been recorded yet. The first completed run establishes the initial sector favorites.")
+    else:
+        st.dataframe(
+            favorite_picks_change_frame,
+            use_container_width=True,
+            hide_index=True,
+            height=min(620, 72 + max(1, len(favorite_picks_change_frame)) * 35),
+            key="favorite_picks_change_history_tab",
+        )
+        with st.expander(f"Previous Pick Fav runs ({len(favorite_picks_run_frame):,})"):
+            st.dataframe(
+                favorite_picks_run_frame,
+                use_container_width=True,
+                hide_index=True,
+                height=min(480, 72 + max(1, len(favorite_picks_run_frame)) * 35),
+                key="favorite_picks_run_history_tab",
+            )
 
 
 with market_tab:

@@ -11,7 +11,7 @@ YAHOO = (ROOT / "providers" / "yahoo.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5960():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.1"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.2"
     assert "v5.9.66" in APP
 
 

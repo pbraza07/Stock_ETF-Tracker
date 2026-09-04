@@ -1,3 +1,17 @@
+# MarketScope v5.11.2 - Permanent Favorite Picks Change Trail
+
+MarketScope now retains a permanent history of every Favorite Picks run. Each new run is compared with the previously saved Top 2 stocks in every sector. When membership changes, the log shows the stock that dropped, the new stock that replaced it, the sector, and the exact U.S. Eastern time the change was first detected.
+
+Favorite Picks now also displays a model-based **Risk Rating** and 0-100 Risk Score. If a selected stock remains in the Top 2 but its risk category changes, MarketScope records a separate risk-rating event. Repeating a run with unchanged picks creates an audit-run record but does not create duplicate change events or replace the original dates.
+
+The Favorite Picks tab includes the complete all-time change trail and prior-run audit. The main Market Navigator includes both the Favorite Picks permanent trail and an all-time archive for stock additions/removals and analyst-rating transitions, alongside the existing six-month view.
+
+The scheduled GitHub workflow recalculates the picks after each verified daily market refresh, so changes can be captured even when no user opens the app. Manual **Pick Fav** runs save immediately on the Render server and persist to GitHub when the existing `MARKETSCOPE_GITHUB_TOKEN` has repository Contents read/write access. Concurrent workflow and browser saves merge and retry instead of overwriting prior events.
+
+The live ledger is `data/favorite_picks_history.json`. Preserve it during every future upgrade. The release ships only `data/favorite_picks_history.bootstrap.json`, so installing the package over the existing repository does not erase the live audit trail.
+
+No new dependencies or environment-variable names are required. Existing historical simulators and Future Projection calculations remain unchanged.
+
 # MarketScope v5.11.1 - Favorite Picks
 
 The main page now includes a top-level **Favorite Picks** tab. Select **Pick Fav** to screen the currently loaded MarketScope stock universe and identify up to two stocks within every eligible sector. The feature is dynamic: it uses the saved completed-year stock history, the current MarketScope snapshot, and the same live-adaptive projection inputs used by Future Projection.

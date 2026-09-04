@@ -265,6 +265,35 @@ def _confidence_label(observed_years: int, data_quality: str) -> str:
     return "Low"
 
 
+def _risk_rating(row: pd.Series, projection_years: int) -> tuple[float, str]:
+    """Convert modeled downside, volatility, and data quality into a bounded label."""
+
+    downside = max(0.0, -_number(row.get(f"P10 {projection_years}Y CAGR %"), 0.0))
+    volatility = _number(row.get("Conditioned Volatility %"), 25.0)
+    p25 = _number(row.get(f"P25 {projection_years}Y CAGR %"), 0.0)
+    quality_penalty = {"High": 0.0, "Medium": 7.5, "Low": 15.0}.get(
+        str(row.get("Live Data Quality") or "Low"),
+        15.0,
+    )
+    score = float(np.clip(
+        min(50.0, downside * 2.0)
+        + min(35.0, max(0.0, volatility - 15.0) * 1.4)
+        + (8.0 if p25 < 0.0 else 0.0)
+        + quality_penalty,
+        0.0,
+        100.0,
+    ))
+    if score >= 75.0:
+        label = "Very High"
+    elif score >= 50.0:
+        label = "High"
+    elif score >= 25.0:
+        label = "Moderate"
+    else:
+        label = "Low"
+    return score, label
+
+
 def _selection_reason(row: pd.Series, projection_years: int) -> str:
     facts = [
         (row.get("Projection Downside Rank", 0), f"P10 {projection_years}Y CAGR {row.get(f'P10 {projection_years}Y CAGR %', 0):+.1f}%"),
@@ -430,6 +459,9 @@ def build_favorite_picks(
         _confidence_label(int(years_observed), quality)
         for years_observed, quality in zip(picks["Observed Years"], picks["Live Data Quality"])
     ]
+    risk_values = picks.apply(lambda row: _risk_rating(row, projection_years), axis=1)
+    picks["Risk Score"] = [value[0] for value in risk_values]
+    picks["Risk Rating"] = [value[1] for value in risk_values]
     picks["Why Selected"] = picks.apply(lambda row: _selection_reason(row, projection_years), axis=1)
     picks["Key Risk"] = picks.apply(lambda row: _key_risk(row, projection_years), axis=1)
     picks["Historical Worst Year"] = picks.apply(
@@ -440,6 +472,7 @@ def build_favorite_picks(
 
     output_columns = [
         "Sector", "Sector Rank", "Symbol", "Name", "Favorite Score", "Model Confidence",
+        "Risk Rating", "Risk Score",
         "Current Price", "Analyst Rating", "Expected Annual Return %",
         *[f"P{percentile} {projection_years}Y CAGR %" for percentile in PERCENTILES],
         "Historical CAGR %", "Positive Years %", "Historical Worst Year",

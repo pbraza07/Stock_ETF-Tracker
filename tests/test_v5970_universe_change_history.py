@@ -14,8 +14,8 @@ WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_
 
 
 def test_release_version_5970():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.1"
-    assert "v5.11.1" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.2"
+    assert "v5.11.2" in APP
 
 
 def test_append_only_history_file_is_packaged():
