@@ -1,3 +1,18 @@
+# Deploy MarketScope v5.11.1 to GitHub + Render
+
+## v5.11.1 - Favorite Picks
+
+1. Preserve v5.11.0 as the rollback package.
+2. Extract the v5.11.1 repository-root ZIP. Upload the ZIP's **contents** directly to the root of `pbraza07/Stock_ETF-Tracker`; do not place the application inside a `data/` folder or an extra enclosing release folder.
+3. Confirm `requirements.txt`, `app.py`, `render.yaml`, and `Procfile` are visible at the GitHub repository root. This prevents Render's `Could not open requirements file` build failure.
+4. Preserve `data/saved_portfolio_simulations.json`, `data/generated_pdfs/`, and `static/generated_pdfs/` from the live repository.
+5. In Render, leave **Root Directory** blank for this flattened package. If the repository is intentionally still nested under `data/`, set Root Directory to `data` only until the repository is corrected.
+6. Keep the existing build command `python -m pip install --upgrade pip && pip install -r requirements.txt` and the existing Streamlit start command. No new environment variables or dependencies are required.
+7. Commit and push to `main`. After Render is healthy, open **Favorite Picks**, select **Pick Fav**, and verify the Top 2 table, regime panel, explanations, data dates, warnings, and CSV download.
+8. Run the existing Future Projection and Portfolio Simulator smoke checks to confirm this release did not change their calculations.
+
+The Favorite Picks calculation may retrieve supplemental live/recent data through the same providers as Future Projection. If a supplemental source is unavailable, the table uses labeled historical assumptions and continues rather than failing the whole app.
+
 # Deploy MarketScope v5.11.0 to GitHub + Render
 
 ## v5.11.0 - Live Adaptive Future Projection

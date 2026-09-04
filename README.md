@@ -1,3 +1,13 @@
+# MarketScope v5.11.1 - Favorite Picks
+
+The main page now includes a top-level **Favorite Picks** tab. Select **Pick Fav** to screen the currently loaded MarketScope stock universe and identify up to two stocks within every eligible sector. The feature is dynamic: it uses the saved completed-year stock history, the current MarketScope snapshot, and the same live-adaptive projection inputs used by Future Projection.
+
+Each finalist is evaluated with the existing expected-return shrinkage, Bear/Normal/Bull regime conditioning, Student-t risk simulation, adaptive volatility and correlations, historical block bootstrap, Factor/CMA cross-check, and no-look-ahead walk-forward ensemble calibration. The results show only P10, P25, P50, P75, and P90 five-year annualized outcomes in ascending order. Ranking weight is deliberately concentrated on downside and central outcomes, fundamentals/valuation, historical consistency, risk-adjusted return, and data quality—not on maximum modeled upside.
+
+The evidence table includes the stock's sector rank, Favorite Score, current price, analyst rating, expected return, percentile range, historical CAGR and positive-year rate, worst observed year, modeled volatility, six-month return, distance from the 52-week high, fundamental/valuation/trend scores, history depth, data quality, selection reasons, and key risks. ETFs are not ranked because Favorite Picks is specifically a stock-by-sector feature. Missing supplemental data is labeled and falls back to the historical projection assumptions instead of being interpreted as zero.
+
+No new dependencies, data migrations, or environment variables are required. Existing historical simulators and Future Projection calculations are unchanged.
+
 # MarketScope v5.11.0 - Live Adaptive Future Projection
 
 Future Projection now supports one or any larger number of stocks and ETFs through one searchable selector. Equal allocation automatically assigns 100% across the selected count, custom allocations remain exact, the projection start year is user-selectable, and responsive cards grow with their content.

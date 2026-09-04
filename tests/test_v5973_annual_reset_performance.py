@@ -31,8 +31,8 @@ def _load_reset_helpers():
 
 
 def test_release_version_5974():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.0"
-    assert "v5.11.0" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.1"
+    assert "v5.11.1" in APP
 
 
 def test_annual_reset_is_inside_build_annual_withdrawal_tabs_not_top_level():

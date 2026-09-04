@@ -1,5 +1,16 @@
 # MarketScope Changelog
 
+## 5.11.1 - 2026-09-04
+
+- Added the top-level **Favorite Picks** workspace and its **Pick Fav** action without moving or removing existing MarketScope tabs.
+- Added an evidence-backed stock-only screen across the currently loaded MarketScope universe. It excludes ETFs and unclassified or insufficient-history securities, then retains a diverse finalist set within every eligible sector.
+- Reused the Future Projection model stack for finalists: expected-return shrinkage, current Bear/Normal/Bull starting probabilities, live valuation and fundamental conditioning, adaptive volatility/correlation, Student-t shocks, historical block bootstrap, Factor/CMA cross-check, and no-look-ahead walk-forward ensemble weights.
+- Added deterministic five-year P10, P25, P50, P75, and P90 CAGR estimates in ascending order. The ranking favors downside resilience and calibrated central outcomes instead of selecting the largest upside forecast.
+- Added a Top 2 table for each eligible stock sector with score, sector rank, current/historical facts, modeled risk, confidence, data date, plain-language selection evidence, and key-risk explanations.
+- Added current-market regime cards, data-freshness/fallback warnings, methodology and ensemble-weight disclosure, and a downloadable Favorite Picks CSV.
+- Added responsive layouts that grow and wrap on desktop/mobile instead of clipping ranking facts.
+- Added Favorite Picks regression coverage for stock eligibility, Top 2 enforcement, deterministic output, governed percentile ordering, live conditioning, historical fallback, evidence fields, and one-stock sector handling.
+
 ## 5.11.0 - 2026-09-04
 
 - Rebuilt Future Projection from the preserved v5.10.1 baseline while leaving every historical simulator calculation and tab unchanged.

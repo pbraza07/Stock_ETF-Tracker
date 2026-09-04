@@ -60,6 +60,7 @@ from pdf_storage import (
 from future_projection import projection_payload_from_simulator
 from future_projection_live import fetch_live_projection_context
 from future_projection_ui import render_future_projection
+from favorite_picks import build_favorite_picks, favorite_candidate_symbols
 from providers import YahooFinanceProvider
 from providers.nasdaq import NasdaqScreenerProvider
 from universe import is_render_runtime, load_default_universe
@@ -2591,11 +2592,13 @@ active_signal_count = int(active_signal_mask.sum())
 
 # v5.9.37: PDF Setup button removed from the app UI; server-side PDF persistence remains automatic.
 
+# v5.11.1 adds the evidence-backed Favorite Picks sector ranking workspace.
 # v5.11.0 keeps Future Projection safe while its unlimited holding selector is empty.
 # v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
 # v5.9.24 compatibility contract previously used: market_tab, portfolio_tab, compare_tab, alerts_tab = st.tabs
 _top_tab_labels = [
     "◈ Market Navigator",
+    "Favorite Picks",
     "◫ Portfolio Simulator",
     "Future Projection",
     "⚖ Stock & ETF Comparison",
@@ -2603,12 +2606,12 @@ _top_tab_labels = [
     "🔔 Alerts & Help",
 ]
 if bool(st.session_state.pop("future_projection_focus", False)):
-    market_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(
         _top_tab_labels,
         default="Future Projection",
     )
 else:
-    market_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(_top_tab_labels)
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(_top_tab_labels)
 
 
 with alerts_tab:
@@ -6508,6 +6511,177 @@ with future_tab:
         logo_loader=cached_logo_urls,
         current_simulator_payload=_current_projection_payload,
     )
+
+
+with favorite_tab:
+    _favorite_data_as_of = _valid_status_text(metadata.get("updated_at_display_et"))
+    if not _favorite_data_as_of and "Snapshot Updated ET" in market.columns:
+        _favorite_data_as_of = _latest_display_timestamp(market["Snapshot Updated ET"].tolist())
+    st.markdown("<div class='favorite-picks-title'>FAVORITE PICKS</div>", unsafe_allow_html=True)
+    st.markdown(
+        "MarketScope screens every eligible stock, then applies the Future Projection engine's "
+        "historical shrinkage, current market regime, valuation, fundamentals, volatility, trend, "
+        "and three-model ensemble to select up to **two stocks from each sector**."
+    )
+    st.info(
+        "Favorite Picks are probabilistic research rankings, not guaranteed results or individualized investment advice. "
+        "P25-P75 is the most useful planning range; P10 is the downside case and P50 is the central estimate."
+    )
+    pick_controls = st.columns([1.1, 2.9])
+    with pick_controls[0]:
+        run_favorite_picks = st.button(
+            "Pick Fav",
+            key="run_favorite_picks",
+            type="primary",
+            use_container_width=True,
+            help="Refresh the finalist inputs and calculate the current Top 2 stocks within every eligible sector.",
+        )
+    with pick_controls[1]:
+        st.caption(
+            "The click performs a fresh ranking using the current MarketScope snapshot and the latest available "
+            "supplemental data. Missing live inputs fall back to labeled historical assumptions instead of zero."
+        )
+
+    if run_favorite_picks:
+        favorite_symbols = favorite_candidate_symbols(market, YEAR_RETURN_COLS)
+        if not favorite_symbols:
+            st.error(
+                "Favorite Picks could not find stocks with a valid sector and at least three completed years of history. "
+                "Refresh the MarketScope dataset, then try again."
+            )
+        else:
+            with st.status("Building Favorite Picks…", expanded=True) as favorite_status:
+                try:
+                    st.write(f"Screened the MarketScope stock universe; enriching {len(favorite_symbols):,} sector finalists.")
+                    favorite_live_context = cached_future_projection_live_context(tuple(favorite_symbols), market)
+                    st.write("Conditioning expected returns, volatility, and the starting market regime.")
+                    favorite_result = build_favorite_picks(
+                        market=market,
+                        annual_year_columns=YEAR_RETURN_COLS,
+                        live_context=favorite_live_context,
+                        projection_years=5,
+                        simulations=5_000,
+                        random_seed=20260904,
+                        data_as_of=_favorite_data_as_of or "Not available",
+                    )
+                    st.session_state.favorite_picks_result = favorite_result
+                    favorite_status.update(
+                        label=f"Favorite Picks complete — {favorite_result['pick_count']} stocks across {favorite_result['sector_count']} sectors",
+                        state="complete",
+                        expanded=False,
+                    )
+                except Exception:
+                    favorite_status.update(label="Favorite Picks could not be completed", state="error", expanded=True)
+                    st.error(
+                        "The ranking could not be completed with the currently loaded data. Refresh MarketScope and try again; "
+                        "no portfolio or historical simulator values were changed."
+                    )
+
+    favorite_result = st.session_state.get("favorite_picks_result")
+    if not isinstance(favorite_result, dict) or favorite_result.get("table") is None:
+        st.markdown(
+            "<div class='favorite-empty'><b>Ready to rank</b><span>Select Pick Fav to calculate the latest sector-by-sector favorites.</span></div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        favorite_table = favorite_result["table"].copy()
+        favorite_state = favorite_result.get("market_state") or {}
+        favorite_probabilities = favorite_state.get("regime_probabilities") or {}
+        favorite_metrics = st.columns(5)
+        favorite_metrics[0].metric("Eligible stocks", f"{int(favorite_result.get('eligible_stock_count', 0)):,}")
+        favorite_metrics[1].metric("Sectors represented", f"{int(favorite_result.get('sector_count', 0)):,}")
+        favorite_metrics[2].metric("Favorite picks", f"{int(favorite_result.get('pick_count', 0)):,}")
+        favorite_metrics[3].metric("Market regime score", f"{float(favorite_state.get('regime_score', 50.0)):.1f}/100")
+        favorite_metrics[4].metric("Projection confidence", str(favorite_state.get("projection_confidence") or "Low"))
+        st.markdown(
+            "<div class='favorite-regime-grid'>"
+            f"<div><span>Bear probability</span><b>{float(favorite_probabilities.get('Bear', 0.0)):.2f}%</b></div>"
+            f"<div><span>Normal probability</span><b>{float(favorite_probabilities.get('Normal', 0.0)):.2f}%</b></div>"
+            f"<div><span>Bull probability</span><b>{float(favorite_probabilities.get('Bull', 0.0)):.2f}%</b></div>"
+            f"<div><span>Market trend</span><b>{escape(str(favorite_state.get('market_trend') or 'Unknown'))}</b></div>"
+            f"<div><span>Volatility</span><b>{escape(str(favorite_state.get('volatility_environment') or 'Historical'))}</b></div>"
+            f"<div><span>Data as of</span><b>{escape(str(favorite_result.get('data_as_of') or 'Latest available'))}</b></div>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("### Top 2 stocks by sector")
+        st.caption(
+            "P10, P25, P50, P75, and P90 are five-year annualized model outcomes and are displayed in ascending order. "
+            "The Why Selected and Key Risk columns explain the evidence behind each ranking."
+        )
+        favorite_percentile_columns = [f"P{percentile} 5Y CAGR %" for percentile in (10, 25, 50, 75, 90)]
+        favorite_column_config = {
+            "Sector Rank": st.column_config.NumberColumn("Sector Rank", format="%d"),
+            "Favorite Score": st.column_config.ProgressColumn("Favorite Score", min_value=0.0, max_value=100.0, format="%.1f"),
+            "Current Price": st.column_config.NumberColumn("Current Price", format="$%.2f"),
+            "Expected Annual Return %": st.column_config.NumberColumn("Expected Return", format="%.2f%%"),
+            "Historical CAGR %": st.column_config.NumberColumn("Historical CAGR", format="%.2f%%"),
+            "Positive Years %": st.column_config.NumberColumn("Positive Years", format="%.1f%%"),
+            "Conditioned Volatility %": st.column_config.NumberColumn("Modeled Volatility", format="%.2f%%"),
+            "6M": st.column_config.NumberColumn("6M Return", format="%.2f%%"),
+            "Distance From 52W High %": st.column_config.NumberColumn("From 52W High", format="%.2f%%"),
+            "Fundamental Score": st.column_config.ProgressColumn("Fundamentals", min_value=0.0, max_value=100.0, format="%.0f"),
+            "Valuation Score": st.column_config.ProgressColumn("Valuation", min_value=0.0, max_value=100.0, format="%.0f"),
+            "Trend Score": st.column_config.ProgressColumn("Trend", min_value=0.0, max_value=100.0, format="%.0f"),
+            **{
+                column: st.column_config.NumberColumn(column.replace(" 5Y CAGR", ""), format="%.2f%%")
+                for column in favorite_percentile_columns
+            },
+        }
+        st.dataframe(
+            favorite_table,
+            use_container_width=True,
+            hide_index=True,
+            height=min(920, 92 + 38 * len(favorite_table)),
+            column_config=favorite_column_config,
+            column_order=list(favorite_table.columns),
+            key="favorite_picks_results_table",
+        )
+        download_columns = [
+            "Sector", "Sector Rank", "Symbol", "Name", "Favorite Score", "Model Confidence",
+            "Expected Annual Return %", *favorite_percentile_columns, "Historical CAGR %", "Positive Years %",
+            "Historical Worst Year", "Conditioned Volatility %", "6M", "Fundamental Score", "Valuation Score",
+            "Trend Score", "Observed Years", "Live Data Quality", "Why Selected", "Key Risk", "Data As Of",
+        ]
+        st.download_button(
+            "Download Favorite Picks CSV",
+            data=favorite_table[download_columns].to_csv(index=False).encode("utf-8"),
+            file_name=f"MarketScope_Favorite_Picks_{now_et().date().isoformat()}.csv",
+            mime="text/csv",
+            key="download_favorite_picks_csv",
+        )
+        with st.expander("How Favorite Picks are calculated"):
+            st.write(favorite_result.get("methodology") or "Methodology unavailable.")
+            weights = favorite_result.get("ensemble_weights") or {}
+            if weights:
+                st.dataframe(
+                    pd.DataFrame(
+                        [{"Model": name, "Ensemble Weight %": float(weight) * 100.0} for name, weight in weights.items()]
+                    ),
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={"Ensemble Weight %": st.column_config.NumberColumn(format="%.2f%%")},
+                )
+            st.caption(
+                "The ranking favors calibrated probability ranges, downside resilience, data quality, and repeatable evidence. "
+                "It does not automatically add a stock to a portfolio or forecast a guaranteed future price."
+            )
+        with st.expander("Data freshness and ranking warnings"):
+            freshness = favorite_state.get("data_freshness") or {}
+            if freshness:
+                st.dataframe(
+                    pd.DataFrame([{"Dataset": name, **values} for name, values in freshness.items()]),
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            warnings = favorite_result.get("warnings") or []
+            if warnings:
+                for warning in warnings:
+                    st.warning(str(warning))
+            else:
+                st.success("No supplemental data warnings were reported for this ranking run.")
+        st.caption("To test any Favorite Pick in a portfolio, open Future Projection and select one or more of the ranked tickers.")
 
 
 with market_tab:
