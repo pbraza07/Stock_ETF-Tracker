@@ -1,6 +1,6 @@
 """MarketScope Future Projection UI enhancements.
 
-v5.10.3 keeps the v5.10.1 UI and v5.10.2 summary enhancements intact, then
+v5.10.4 keeps the v5.10.1 UI and v5.10.2 summary enhancements intact, then
 adds P25/P50/P75 annual profit amounts and annual return percentages to the
 year-by-year results table and a dedicated central-percentile graph.
 """
@@ -64,13 +64,15 @@ def _table_columns(frame: pd.DataFrame, monthly: bool, extended: bool) -> list[s
             "Month",
             "Beginning Balance",
             "P10 Gross Profit",
+            "P10 Monthly Return",
             "P25 Gross Profit",
-            "P50 Gross Profit",
-            "P75 Gross Profit",
-            "P90 Gross Profit",
             "P25 Monthly Return",
+            "P50 Gross Profit",
             "P50 Monthly Return",
+            "P75 Gross Profit",
             "P75 Monthly Return",
+            "P90 Gross Profit",
+            "P90 Monthly Return",
             "Requested Withdrawal",
             "Actual Withdrawal",
             "Withdrawal Shortfall",
@@ -91,13 +93,15 @@ def _table_columns(frame: pd.DataFrame, monthly: bool, extended: bool) -> list[s
             "Year",
             "Beginning Balance",
             "P10 Gross Profit",
+            "P10 Annual Return",
             "P25 Gross Profit",
-            "P50 Gross Profit",
-            "P75 Gross Profit",
-            "P90 Gross Profit",
             "P25 Annual Return",
+            "P50 Gross Profit",
             "P50 Annual Return",
+            "P75 Gross Profit",
             "P75 Annual Return",
+            "P90 Gross Profit",
+            "P90 Annual Return",
             "Requested Withdrawal",
             "Actual Withdrawal",
             "Withdrawal Shortfall",

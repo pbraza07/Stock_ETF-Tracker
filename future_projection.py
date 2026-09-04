@@ -1,6 +1,6 @@
 """MarketScope Future Projection percentile enhancements.
 
-v5.10.3 preserves the v5.10.1 Monte Carlo engine in
+v5.10.4 preserves the v5.10.1 Monte Carlo engine in
 ``future_projection_legacy.py`` and extends the v5.10.2 percentile output with
 year-by-year P25/P50/P75 annual return percentages and profit amounts.
 
@@ -104,17 +104,21 @@ def _finish_output_period(
     if show_month:
         row.update(
             {
+                "P10 Monthly Return": _percentile(period_return_pct, 10),
                 "P25 Monthly Return": _percentile(period_return_pct, 25),
                 "P50 Monthly Return": _percentile(period_return_pct, 50),
                 "P75 Monthly Return": _percentile(period_return_pct, 75),
+                "P90 Monthly Return": _percentile(period_return_pct, 90),
             }
         )
     else:
         row.update(
             {
+                "P10 Annual Return": _percentile(period_return_pct, 10),
                 "P25 Annual Return": _percentile(period_return_pct, 25),
                 "P50 Annual Return": _percentile(period_return_pct, 50),
                 "P75 Annual Return": _percentile(period_return_pct, 75),
+                "P90 Annual Return": _percentile(period_return_pct, 90),
             }
         )
 
