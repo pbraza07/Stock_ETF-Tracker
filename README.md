@@ -1,3 +1,15 @@
+# MarketScope v5.11.0 - Live Adaptive Future Projection
+
+Future Projection now supports one or any larger number of stocks and ETFs through one searchable selector. Equal allocation automatically assigns 100% across the selected count, custom allocations remain exact, the projection start year is user-selectable, and responsive cards grow with their content.
+
+The five governed outputs are **P10, P25, P50, P75, and P90**, always shown in ascending order. Each percentile has a distinct chart color and its own toggle. Available graph views are Portfolio Balance, Cumulative Wealth, Annual Profit, Annual Return %, Probability Range, and Model Comparison.
+
+Before a projection, MarketScope builds a recent-data Market State from the existing Yahoo/yfinance infrastructure and official macro series retrieved through FRED. It uses those inputs to condition - not replace - the existing Bear/Normal/Bull regime Monte Carlo model. Dynamic first-state regime probabilities, bounded expected-return adjustments, blended volatility, stress-aware correlations, and portfolio-specific risk all remain auditable. If supplemental data fails, MarketScope labels and uses the most recent cache, then falls back to the v5.10.1 historical engine rather than failing the projection.
+
+The final distribution is a walk-forward-calibrated ensemble of the primary Adaptive Regime Monte Carlo, a contiguous Historical Block Bootstrap, and a Factor/CMA cross-check. The model optimizes percentile calibration rather than the highest forecast. All projections retain deterministic seeds, actual-monthly history when available, withdrawal/depletion behavior, rebalanced/non-rebalanced paths, and the original historical simulators.
+
+No new environment variables are required. Existing GitHub/Render settings remain compatible.
+
 # MarketScope v5.10.1 — Future Projection Empty-Portfolio Fix
 
 Future Projection now safely validates its four default empty holding slots. Opening the tab before selecting stocks or ETFs displays the intended **Select all four Stock/ETF holdings** message instead of raising `KeyError: ''`. Partially filled portfolios behave the same way, and blank slots are no longer misidentified as duplicate tickers.

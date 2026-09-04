@@ -58,6 +58,7 @@ from pdf_storage import (
     persist_pdf_artifact,
 )
 from future_projection import projection_payload_from_simulator
+from future_projection_live import fetch_live_projection_context
 from future_projection_ui import render_future_projection
 from providers import YahooFinanceProvider
 from providers.nasdaq import NasdaqScreenerProvider
@@ -1483,6 +1484,26 @@ def cached_future_projection_monthly_returns(
 
 
 @st.cache_data(ttl=30 * 60, show_spinner=False)
+def cached_future_projection_live_context(
+    symbols: tuple[str, ...],
+    current_market: pd.DataFrame,
+) -> dict:
+    """Load recent projection-only inputs without altering MarketScope snapshots."""
+
+    try:
+        return fetch_live_projection_context(provider, symbols, current_market)
+    except Exception as exc:
+        return {
+            "retrieved_at": now_et().isoformat(),
+            "histories": {},
+            "prices": {},
+            "fundamentals": {},
+            "macro": {},
+            "failures": [f"Live adaptive context unavailable ({type(exc).__name__})."],
+        }
+
+
+@st.cache_data(ttl=30 * 60, show_spinner=False)
 def cached_card_two_year_histories(symbols: tuple[str, ...]) -> dict[str, pd.DataFrame]:
     """Batch-load two years of adjusted daily closes for visible market cards."""
     clean = tuple(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
@@ -2570,7 +2591,7 @@ active_signal_count = int(active_signal_mask.sum())
 
 # v5.9.37: PDF Setup button removed from the app UI; server-side PDF persistence remains automatic.
 
-# v5.10.1 keeps Future Projection safe while its four holding slots are still empty.
+# v5.11.0 keeps Future Projection safe while its unlimited holding selector is empty.
 # v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
 # v5.9.24 compatibility contract previously used: market_tab, portfolio_tab, compare_tab, alerts_tab = st.tabs
 _top_tab_labels = [
@@ -6483,6 +6504,7 @@ with future_tab:
         data_as_of=_projection_data_as_of or "Not available",
         model_as_of=now_et().date().isoformat(),
         monthly_loader=cached_future_projection_monthly_returns,
+        live_loader=lambda symbols: cached_future_projection_live_context(tuple(symbols), market),
         logo_loader=cached_logo_urls,
         current_simulator_payload=_current_projection_payload,
     )

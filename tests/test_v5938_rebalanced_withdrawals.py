@@ -5,7 +5,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.10.1"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.11.0"
 
 
 def test_withdrawal_engine_supports_rebalancing():

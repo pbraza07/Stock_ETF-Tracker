@@ -1,5 +1,20 @@
 # MarketScope Changelog
 
+## 5.11.0 - 2026-09-04
+
+- Rebuilt Future Projection from the preserved v5.10.1 baseline while leaving every historical simulator calculation and tab unchanged.
+- Replaced the four-slot holding form with one searchable, duplicate-safe stock/ETF selector that accepts one or any larger number of holdings from the current MarketScope universe.
+- Added dynamic equal weighting, scalable custom-allocation controls, unlimited simulator handoff, and responsive holding/result cards that grow instead of clipping long values.
+- Added a user-selectable Projection Start Year whose default remains the year after the latest completed historical year and whose dashboard/forecast labels update dynamically.
+- Standardized all Future Projection percentile outputs and graphs to P10, P25, P50, P75, and P90 in ascending order; added individual, distinctly colored graph toggles and six graph views.
+- Added a live/recent Market State using Yahoo/yfinance price, adjusted-history, volatility, breadth, trend, valuation, fundamental, and bounded analyst inputs plus official macro series retrieved through FRED.
+- Conditioned the existing Bear/Normal/Bull first-state probabilities, expected returns, volatility, and correlations while preserving Markov transitions, Student-t shocks, covariance shrinkage, cash flows, depletion logic, and deterministic seeds.
+- Added AUTO, Conservative, Balanced, Growth, and Stress Test projection profiles. Growth does not inflate expected returns; Stress Test increases Bear persistence, volatility, and correlations.
+- Added a three-model ensemble: primary Adaptive Regime Monte Carlo, contiguous Historical Block Bootstrap, and Factor/CMA validation model, with weights set by no-look-ahead walk-forward calibration.
+- Added a 0-100 Projection Calibration Score, confidence explanation, current-market dashboard, portfolio concentration diagnostics, data-freshness panel, explicit cached/historical fallbacks, and complete projection audit record.
+- Expanded Excel/PDF exports with live market state, freshness, model calibration, walk-forward observations, model comparison, and audit data.
+- Added v5.11.0 adaptive-projection regression coverage; the full 518-test suite passes.
+
 ## 5.10.1 — 2026-09-03
 
 - Fixed `KeyError: ''` when Future Projection opened with its four default empty holding fields.

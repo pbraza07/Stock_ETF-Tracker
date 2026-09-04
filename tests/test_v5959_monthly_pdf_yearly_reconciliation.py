@@ -6,7 +6,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5959():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.10.1"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.0"
 
 
 def test_pdf_contract_bumped_to_v18():

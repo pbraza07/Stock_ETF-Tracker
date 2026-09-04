@@ -5,6 +5,7 @@ from typing import Dict, Iterable, List
 from urllib.parse import urlparse, quote
 import time
 
+import numpy as np
 import pandas as pd
 import yfinance as yf
 
@@ -759,6 +760,114 @@ class YahooFinanceProvider(MarketDataProvider):
                     output[symbol] = future.result()
                 except Exception:
                     output[symbol] = {"symbol": symbol, "name": symbol, "sector": "Unknown", "industry": "Unknown"}
+        return output
+
+    def get_projection_fundamentals(self, symbol: str) -> dict:
+        """Return auditable, bounded inputs for Future Projection conditioning.
+
+        Missing Yahoo fields remain ``None``. The projection layer treats analyst
+        data as a secondary signal and never converts a price target into a future
+        stock price.
+        """
+
+        symbol = str(symbol).strip().upper()
+        if not symbol:
+            return {}
+        retrieved_at = pd.Timestamp.utcnow().isoformat()
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.get_info() or {}
+        except Exception:
+            ticker = None
+            info = {}
+
+        def numeric(key):
+            try:
+                value = float(info.get(key))
+            except (TypeError, ValueError):
+                return None
+            return value if pd.notna(value) else None
+
+        quote_type = str(info.get("quoteType") or "UNKNOWN").upper()
+        is_fund = quote_type in {"ETF", "MUTUALFUND"}
+        revision_direction = None
+        forward_eps_growth = None
+        target_revision_direction = None
+        if ticker is not None and not is_fund:
+            try:
+                revisions = ticker.get_eps_revisions()
+                if isinstance(revisions, pd.DataFrame) and not revisions.empty:
+                    numeric_values = revisions.select_dtypes(include="number")
+                    if not numeric_values.empty:
+                        recent = numeric_values.iloc[0].dropna().to_numpy(dtype=float)
+                        if recent.size:
+                            revision_direction = float(np.clip(np.nanmean(np.sign(recent)), -1.0, 1.0))
+            except Exception:
+                pass
+            try:
+                growth = ticker.get_growth_estimates()
+                if isinstance(growth, pd.DataFrame) and not growth.empty:
+                    candidates = growth.select_dtypes(include="number").to_numpy(dtype=float).ravel()
+                    candidates = candidates[np.isfinite(candidates)]
+                    if candidates.size:
+                        forward_eps_growth = float(np.median(candidates))
+            except Exception:
+                pass
+            try:
+                targets = ticker.get_analyst_price_targets() or {}
+                mean = float(targets.get("mean")) if targets.get("mean") is not None else None
+                current = numeric("currentPrice") or numeric("regularMarketPrice")
+                if mean is not None and current and current > 0:
+                    # Bounded direction only; never a price forecast.
+                    target_revision_direction = float(np.clip(mean / current - 1.0, -0.25, 0.25) / 0.25)
+            except Exception:
+                pass
+        if revision_direction is None:
+            revision_direction = target_revision_direction
+
+        return {
+            "symbol": symbol,
+            "instrument_type": "ETF" if is_fund else "Stock",
+            "quote_type": quote_type,
+            "current_price": numeric("currentPrice") or numeric("regularMarketPrice") or numeric("previousClose") or numeric("navPrice"),
+            "market_cap": numeric("marketCap"),
+            "beta": numeric("beta"),
+            "trailing_eps": numeric("trailingEps"),
+            "forward_eps": numeric("forwardEps"),
+            "trailing_pe": numeric("trailingPE"),
+            "forward_pe": numeric("forwardPE"),
+            "peg_ratio": numeric("pegRatio"),
+            "price_to_sales": numeric("priceToSalesTrailing12Months"),
+            "price_to_book": numeric("priceToBook"),
+            "revenue_growth": numeric("revenueGrowth"),
+            "earnings_growth": numeric("earningsGrowth"),
+            "earnings_quarterly_growth": numeric("earningsQuarterlyGrowth"),
+            "forward_eps_growth": forward_eps_growth,
+            "operating_margin": numeric("operatingMargins"),
+            "free_cash_flow": numeric("freeCashflow"),
+            "debt_to_equity": numeric("debtToEquity"),
+            "return_on_equity": numeric("returnOnEquity"),
+            "eps_revision_direction": revision_direction,
+            "analyst_target_direction": target_revision_direction,
+            "sector": info.get("sector"),
+            "category": info.get("category"),
+            "source": "Yahoo Finance quote-summary and analyst datasets via yfinance",
+            "retrieved_at": retrieved_at,
+        }
+
+    def get_projection_fundamentals_many(self, symbols: Iterable[str], max_workers: int = 4) -> Dict[str, dict]:
+        symbols = self._clean_symbols(symbols)
+        if not symbols:
+            return {}
+        output: Dict[str, dict] = {}
+        with ThreadPoolExecutor(max_workers=max(1, min(int(max_workers or 1), len(symbols), 6))) as pool:
+            futures = {pool.submit(self.get_projection_fundamentals, symbol): symbol for symbol in symbols}
+            for future in as_completed(futures):
+                symbol = futures[future]
+                try:
+                    output[symbol] = future.result() or {}
+                except Exception:
+                    output[symbol] = {}
         return output
 
 

@@ -22,8 +22,8 @@ def _load_functions(*names):
 
 
 def test_release_version_5962():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.10.1"
-    assert "v5.10.1" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.0"
+    assert "v5.11.0" in APP
 
 
 def test_main_portfolio_summary_no_longer_uses_native_metrics():

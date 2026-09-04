@@ -1,3 +1,17 @@
+# Deploy MarketScope v5.11.0 to GitHub + Render
+
+## v5.11.0 - Live Adaptive Future Projection
+
+1. Preserve the existing v5.10.1 package as the rollback copy.
+2. Extract the v5.11.0 ZIP and upload its contents over the existing `pbraza07/Stock_ETF-Tracker` repository. Do not delete live data files that are absent from the release.
+3. Preserve `data/saved_portfolio_simulations.json`, `data/generated_pdfs/`, and `static/generated_pdfs/`.
+4. Commit and push to `main`; the existing `render.yaml`, `Procfile`, and Streamlit health endpoint remain valid.
+5. Keep `MARKETSCOPE_GITHUB_REPO`, `MARKETSCOPE_GITHUB_BRANCH`, and `MARKETSCOPE_GITHUB_TOKEN` unchanged. There are no new required environment variables.
+6. After Render is healthy, open Future Projection, select at least one holding, confirm the start year, run an Advanced projection, and verify the market-state dashboard, P10/P25/P50/P75/P90 charts, tables, and downloads.
+7. Temporarily block a supplemental source or run offline and verify the projection shows a labeled cached or historical fallback rather than an unresolved loading state.
+
+The live adaptive cache is local and excluded from Git. It is rebuilt automatically and never replaces the durable historical snapshot. Existing historical portfolio simulators and ranking files are not recalculated by changing Future Projection inputs.
+
 # Deploy MarketScope v5.10.1 to GitHub + Render
 
 ## v5.10.1 — Empty Future Projection portfolio fix

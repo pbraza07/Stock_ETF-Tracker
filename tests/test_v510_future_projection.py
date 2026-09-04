@@ -195,8 +195,8 @@ def test_14_duplicate_ticker_validation():
 def test_14b_empty_holding_slots_are_validation_errors_not_keyerrors():
     empty_errors, _ = validate_projection_inputs(base_inputs(holdings=["", "", "", ""]), market_fixture())
     partial_errors, _ = validate_projection_inputs(base_inputs(holdings=["AAA", "BBB", "", ""]), market_fixture())
-    assert any("Select all four" in message for message in empty_errors)
-    assert any("Select all four" in message for message in partial_errors)
+    assert any("at least one" in message for message in empty_errors)
+    assert not partial_errors
     assert not any("different ticker" in message for message in empty_errors + partial_errors)
 
 
