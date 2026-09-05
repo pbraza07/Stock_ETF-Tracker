@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import logging
 from datetime import datetime, timezone
 import pandas as pd
 import numpy as np
@@ -11,6 +12,62 @@ from top12_history import load_ledger, current_table, record_run, persist_ledger
 from top12_exports import DISCLOSURES, LIMITATION
 from runtime_performance import ranking_exports
 from future_projection import run_future_projection
+from top12_jobs import EXECUTOR, calculate_rankings, save_histories
+
+
+def request_ranking(kind):
+    st.session_state.t12_input_view = kind
+    # The callback runs before the app recreates its lazy top-level tabs.
+    st.session_state.workspace_navigation = "Favorite Picks"
+
+
+def consume_completed_job():
+    job = st.session_state.get("t12_job")
+    if job and job["future"].done():
+        st.session_state.pop("t12_job")
+        try:
+            payload = job["future"].result()
+            st.session_state.t12_result = payload["result"]
+            st.session_state.t12_histories = payload["histories"]
+            st.session_state.t12_fingerprint = job["fingerprint"]
+            st.session_state.t12_portfolios = {}
+            st.session_state.t12_save_messages = []
+            st.session_state.t12_save_job = EXECUTOR.submit(
+                save_histories, payload["histories"]
+            )
+        except Exception as exc:
+            logging.getLogger(__name__).exception("Top 12 calculation failed")
+            st.session_state.t12_error = (
+                str(exc)
+                if isinstance(exc, ValueError)
+                else "Top 12 calculation failed. Your previous result is retained. Retry the button; technical details were recorded in the server log."
+            )
+    saved = st.session_state.get("t12_save_job")
+    if saved and saved.done():
+        st.session_state.pop("t12_save_job")
+        try:
+            st.session_state.t12_save_messages = saved.result()
+        except Exception:
+            st.session_state.t12_save_messages = [
+                (False, "History save failed; ranking results remain available.")
+            ]
+        cached_ledger.clear()
+
+
+@st.fragment(run_every="1s")
+def watch_ranking_jobs():
+    job = st.session_state.get("t12_job")
+    saved = st.session_state.get("t12_save_job")
+    if (job and job["future"].done()) or (saved and saved.done()):
+        consume_completed_job()
+        st.rerun()
+    if job:
+        st.info(
+            job["progress"]["stage"]
+            + ". You can leave this tab and return; calculation continues."
+        )
+    elif saved:
+        st.caption("Results ready. Saving the change history in the background…")
 
 
 @st.cache_data(ttl=60, max_entries=4, show_spinner=False)
@@ -64,10 +121,24 @@ def portfolio_inputs(table, kind, allocation, investment, years):
 
 
 def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader):
+    consume_completed_job()
     st.markdown("### Dynamic Top 12 Stock Rankings")
     c = st.columns(2)
-    rb = c[0].button("🛡 Top 12 Recession-Resilient Stocks", key="t12_recession")
-    mp = c[1].button("🚀 Top 12 Max-Profit High-Performance Stocks", key="t12_profit")
+    busy = bool(st.session_state.get("t12_job"))
+    rb = c[0].button(
+        "🛡 Top 12 Recession-Resilient Stocks",
+        key="t12_recession",
+        disabled=busy,
+        on_click=request_ranking,
+        args=("Recession",),
+    )
+    mp = c[1].button(
+        "🚀 Top 12 Max-Profit High-Performance Stocks",
+        key="t12_profit",
+        disabled=busy,
+        on_click=request_ranking,
+        args=("Max Profit",),
+    )
     threshold = st.number_input(
         "Replacement threshold (ranking points)",
         0.0,
@@ -83,52 +154,36 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         + str(data_as_of).encode()
     ).hexdigest()
     if rb or mp:
-        try:
-            with st.spinner(
-                "Evaluating every eligible stock and both regime scenarios…"
-            ):
-                previous = {
-                    kind: current_table(cached_ledger(kind)) for kind in DISCLOSURES
-                }
-                symbols = tuple(
-                    sorted(market.loc[market.Type.eq("Stock"), "Symbol"].tolist())
-                )
-                monthly_symbols = symbols + (
-                    ("SPY",)
-                    if "SPY" in set(market.Symbol) and "SPY" not in symbols
-                    else ()
-                )
-                monthly = monthly_loader(monthly_symbols, tuple(years))
-                try:
-                    live = live_loader(symbols)
-                except Exception:
-                    live = {}
-                result = cached_rankings(
-                    market, list(years), monthly, live, 5000, previous, threshold
-                )
-                result["metadata"]["Market Data Through"] = data_as_of
-                result["metadata"]["Monthly Data Through"] = max(
-                    (p for h in (monthly.get("returns") or {}).values() for p in h),
-                    default="Unavailable",
-                )
-                st.session_state.t12_result = result
-                st.session_state.t12_fingerprint = fingerprint
-                st.session_state.t12_portfolios = {}
-                for kind in DISCLOSURES:
-                    ledger = record_run(
-                        cached_ledger(kind), kind, result[kind], result["metadata"]
-                    )
-                    ok, msg = persist_ledger(kind, ledger)
-                    (st.success if ok else st.warning)(msg)
-                cached_ledger.clear()
-        except ValueError as e:
-            st.error(str(e))
-        except Exception:
-            st.error(
-                "Ranking could not be completed. Refresh the market dataset and try again; previous data is retained."
-            )
+        st.session_state.pop("t12_error", None)
+        progress = {"stage": "Starting ranking calculation"}
+        st.session_state.t12_job = {
+            "future": EXECUTOR.submit(
+                calculate_rankings,
+                market.copy(deep=True),
+                list(years),
+                data_as_of,
+                monthly_loader,
+                live_loader,
+                threshold,
+                progress,
+            ),
+            "fingerprint": fingerprint,
+            "progress": progress,
+        }
+    consume_completed_job()
+    if st.session_state.get("t12_job") or st.session_state.get("t12_save_job"):
+        watch_ranking_jobs()
+    if st.session_state.get("t12_error"):
+        st.error(st.session_state.t12_error)
+    for ok, message in st.session_state.get("t12_save_messages", []):
+        if not ok:
+            st.warning(message)
     result = st.session_state.get("t12_result")
     if not result:
+        if not st.session_state.get("t12_job") and not st.session_state.get(
+            "t12_error"
+        ):
+            st.info("Choose a Top 12 button to display its ranked table here.")
         return
     if st.session_state.get("t12_fingerprint") != fingerprint:
         st.warning(
@@ -138,7 +193,12 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         "Ranking view", list(DISCLOSURES), key="t12_input_view", horizontal=True
     )
     table = result[kind]
-    history = cached_ledger(kind)
+    history = st.session_state.get("t12_histories", {}).get(kind, {})
+    st.subheader(
+        "Top 12 Recession-Resilient Stocks"
+        if kind == "Recession"
+        else "Top 12 Max-Profit High-Performance Stocks"
+    )
     st.warning(DISCLOSURES[kind])
     st.caption(str(result["metadata"]))
     for warning in result.get("warnings", []):
@@ -314,7 +374,14 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
                 "Bear/stress portfolio: P10/P25/P50 and drawdown above use the governed Stress Test profile."
             )
     study = st.session_state.get("t12_study")
-    excel, pdf = ranking_exports(kind, table, result, portfolio, history, study)
+    try:
+        excel, pdf = ranking_exports(kind, table, result, portfolio, history, study)
+    except Exception:
+        logging.getLogger(__name__).exception("Top 12 export generation failed")
+        st.warning(
+            "Reports could not be generated. The ranked table above remains available; retry after checking the server log."
+        )
+        return
     st.download_button(
         "Download Excel",
         excel,

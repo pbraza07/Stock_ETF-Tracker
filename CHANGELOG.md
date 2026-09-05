@@ -1,5 +1,15 @@
 # MarketScope Changelog
 
+## 5.11.6 - 2026-09-05
+
+- Reworked both Top 12 buttons to retain calculation jobs across Streamlit reruns and tab navigation, with progress updates and duplicate-submission protection.
+- Button callbacks retain the Favorite Picks workspace and select the requested Recession or Max Profit results view.
+- Publish completed tables before background history persistence; optional history/event/export failures cannot discard calculated rankings.
+- Bound waits for supplemental monthly and recent-market inputs, with explicit annual/historical fallback warnings.
+- Retain prior tables on calculation errors and show a visible retry message instead of returning to an unexplained empty view.
+- Added Streamlit interaction regression tests for both buttons, pending jobs, failed saves/exports, tab navigation, timeouts and actual offline worker calculations. Ranking formulas and simulator math remain unchanged.
+
+
 ## 5.11.5 - 2026-09-05
 
 - Rebuilt dual Top 12 rankings from preserved 5.11.2 source: full eligible stock evaluation, maximum four per normalized sector, deterministic standard and Bear projections, score contributions and explicit data-quality evidence.

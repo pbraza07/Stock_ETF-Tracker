@@ -179,7 +179,7 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
     def footer(canvas, doc):
         canvas.saveState()
         canvas.setFont("Helvetica", 8)
-        canvas.drawString(40, 24, "MarketScope 5.11.5 | Probabilistic research report")
+        canvas.drawString(40, 24, "MarketScope 5.11.6 | Probabilistic research report")
         canvas.drawRightString(doc.pagesize[0] - 40, 24, str(doc.page))
         canvas.restoreState()
 

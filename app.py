@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.5: recovered dual Top 12 rankings and presentation performance release.
+# v5.11.6: recovered dual Top 12 rankings and presentation performance release.
 
 import json
 import os

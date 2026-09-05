@@ -1,4 +1,10 @@
-# MarketScope v5.11.5 - Dynamic Top 12 Rankings
+# MarketScope v5.11.6 - Top 12 Results Display Fix
+
+Both Top 12 buttons now retain their background calculation across reruns, select
+the correct table, and display results before history persistence. Progress and
+fallback messages remain visible. See [5.11.6 release notes](RELEASE_5_11_6.md).
+
+## v5.11.5 - Dynamic Top 12 Rankings
 
 Two new buttons under **Favorite Picks** rank the current eligible stock universe:
 **Top 12 Recession-Resilient Stocks** and **Top 12 Max-Profit High-Performance Stocks**.

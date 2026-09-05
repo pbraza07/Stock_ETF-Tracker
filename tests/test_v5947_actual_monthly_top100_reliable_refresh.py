@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 WORKFLOW = (ROOT / ".github" / "workflows" / "update_market_snapshot.yml").read_text(encoding="utf-8")
 
 def test_version_5947():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.5"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.6"
     assert "v5.9.66" in APP
 
 def test_monthly_dropdowns_explicitly_use_actual_return_rankings():

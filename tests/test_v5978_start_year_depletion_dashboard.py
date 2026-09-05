@@ -21,8 +21,8 @@ def _load_summary():
 
 
 def test_release_version_5978():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.5"
-    assert "v5.11.5" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.6"
+    assert "v5.11.6" in APP
 
 
 def test_depletion_summary_returns_earliest_calendar_depletion_and_start_cohort():

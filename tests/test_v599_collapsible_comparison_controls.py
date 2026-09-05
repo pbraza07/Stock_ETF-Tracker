@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_version_5920():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.5"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.6"
 
 
 def test_buy_signal_alerts_are_collapsible_button():
