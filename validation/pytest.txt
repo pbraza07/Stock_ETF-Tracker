@@ -1,0 +1,27 @@
+........................................................................ [ 13%]
+........................................................................ [ 26%]
+........................................................................ [ 39%]
+........................................................................ [ 52%]
+........................................................................ [ 65%]
+........................................................................ [ 78%]
+........................................................................ [ 91%]
+.............................................                            [100%]
+=============================== warnings summary ===============================
+tests/test_analytics.py::test_positive_returns
+tests/test_analytics.py::test_short_history_blanks_long_horizon
+tests/test_refresh_engine.py::test_history_has_required_metrics
+tests/test_v54_signals_and_layout.py::test_three_year_and_one_year_average_are_computed
+tests/test_v54_signals_and_layout.py::test_strong_buy_can_create_long_fundamental_signal
+tests/test_v55_futuristic_cards.py::test_all_annualized_horizons_1_to_10_exist
+  /workspace/scratch/cf609644dad1/release_final_v5.11.5/analytics.py:278: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`).Please use a specific unit instead.
+    ytd_base = _price_on_or_before(close, jan1 - pd.Timedelta(days=1))
+
+tests/test_analytics.py: 20 warnings
+tests/test_refresh_engine.py: 10 warnings
+tests/test_v54_signals_and_layout.py: 20 warnings
+tests/test_v55_futuristic_cards.py: 10 warnings
+  /workspace/scratch/cf609644dad1/release_final_v5.11.5/analytics.py:270: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`).Please use a specific unit instead.
+    inception_date <= target + pd.Timedelta(days=10)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+549 passed, 66 warnings in 15.14s
