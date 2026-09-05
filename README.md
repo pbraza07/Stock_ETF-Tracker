@@ -1,4 +1,9 @@
-# MarketScope v5.11.6 - Top 12 Results Display Fix
+# MarketScope v5.11.7 - Top 12 Click Handoff Fix
+
+This patch fixes lost button requests when the parent application reruns before
+the ranking workspace can start its job. See [5.11.7 notes](RELEASE_5_11_7.md).
+
+## v5.11.6 - Top 12 Results Display Fix
 
 Both Top 12 buttons now retain their background calculation across reruns, select
 the correct table, and display results before history persistence. Progress and

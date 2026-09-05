@@ -45,5 +45,3 @@ variable or dependency changes are required. Existing `render.yaml` settings app
 
 Main changed files: `top12_jobs.py`, `top12_ui.py`, version metadata, documentation
 and the new `tests/test_v5116_top12_results.py` interaction tests.
-
-Full release regression result: **557 passed**, 69 dependency deprecation warnings.

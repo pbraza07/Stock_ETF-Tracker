@@ -5,7 +5,7 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_v5935_version():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.11.6"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.11.7"
 
 
 def test_profit_timeframe_options_are_strict_numeric_1_to_25():

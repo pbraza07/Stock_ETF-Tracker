@@ -16,9 +16,13 @@ from top12_jobs import EXECUTOR, calculate_rankings, save_histories
 
 
 def request_ranking(kind):
+    # Persist intent in the callback itself. A tab/full-app rerun can consume
+    # Streamlit's one-run button pulse before this workspace renders again.
+    st.session_state.t12_pending_request = kind
     st.session_state.t12_input_view = kind
     # The callback runs before the app recreates its lazy top-level tabs.
-    st.session_state.workspace_navigation = "Favorite Picks"
+    if st.session_state.get("workspace_navigation") != "Favorite Picks":
+        st.session_state.workspace_navigation = "Favorite Picks"
 
 
 def consume_completed_job():
@@ -147,13 +151,13 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         0.25,
         key="t12_input_threshold",
     )
-    if rb or mp:
-        st.session_state.t12_input_view = "Recession" if rb else "Max Profit"
     fingerprint = hashlib.sha256(
         pd.util.hash_pandas_object(market, index=True).values.tobytes()
         + str(data_as_of).encode()
     ).hexdigest()
-    if rb or mp:
+    pending_request = st.session_state.get("t12_pending_request")
+    if pending_request and not st.session_state.get("t12_job"):
+        st.session_state.t12_input_view = pending_request
         st.session_state.pop("t12_error", None)
         progress = {"stage": "Starting ranking calculation"}
         st.session_state.t12_job = {
@@ -170,6 +174,9 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
             "fingerprint": fingerprint,
             "progress": progress,
         }
+        # Acknowledge only after the job exists. Never rely on rb/mp above to
+        # remember intent; those values are false after an intervening rerun.
+        st.session_state.pop("t12_pending_request", None)
     consume_completed_job()
     if st.session_state.get("t12_job") or st.session_state.get("t12_save_job"):
         watch_ranking_jobs()

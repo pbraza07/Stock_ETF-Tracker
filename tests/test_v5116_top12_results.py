@@ -168,3 +168,33 @@ def test_real_worker_calculates_both_tables_without_network():
     assert len(payload["result"]["Recession"]) == 12
     assert len(payload["result"]["Max Profit"]) == 12
     assert all(len(h["runs"]) == 1 for h in payload["histories"].values())
+
+
+@pytest.mark.parametrize("kind", ["Recession", "Max Profit"])
+def test_callback_request_survives_interrupted_run_without_button_pulse(payload, kind):
+    # Simulate an enclosing app stopping/rerunning after callbacks, before the
+    # Top 12 body is reached. The next run has no button=True event.
+    source = SOURCE.replace(
+        "preserve_navigation_state()",
+        """preserve_navigation_state()
+if st.session_state.pop('qa_interrupt_after_callback', False):
+    ui.request_ranking(st.session_state.qa_requested_kind)
+    st.stop()
+""",
+    )
+    executor = Executor(payload)
+    app = AppTest.from_string(source)
+    app.session_state.qa_executor = executor
+    app.session_state.qa_market = fixture()
+    app.session_state.qa_years = YEARS
+    app.session_state.qa_requested_kind = kind
+    app.session_state.qa_interrupt_after_callback = True
+    app.run()
+    assert executor.calls == 0
+    app.run()
+    assert not app.exception
+    assert executor.calls == 1
+    assert len(app.dataframe[0].value) == 12
+    assert kind + " Score" in app.dataframe[0].value.columns
+    app.run()
+    assert executor.calls == 1

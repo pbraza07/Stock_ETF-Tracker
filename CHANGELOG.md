@@ -1,5 +1,11 @@
 # MarketScope Changelog
 
+## 5.11.7 - 2026-09-05
+
+- Fixed a missed Top 12 callback-to-render handoff: button callbacks now persist a pending category request before any parent rerun can consume the transient button event.
+- The UI starts work from that saved request, not the one-run button return value, and acknowledges it only after creating the background job.
+- Avoided redundant top-tab assignments and added regression cases for each category with an interruption after callback but before rendering. Ranking formulas are unchanged.
+
 ## 5.11.6 - 2026-09-05
 
 - Reworked both Top 12 buttons to retain calculation jobs across Streamlit reruns and tab navigation, with progress updates and duplicate-submission protection.

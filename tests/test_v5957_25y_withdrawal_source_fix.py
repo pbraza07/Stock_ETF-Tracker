@@ -8,7 +8,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.6"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.7"
     assert "v5.9.66" in APP
 
 

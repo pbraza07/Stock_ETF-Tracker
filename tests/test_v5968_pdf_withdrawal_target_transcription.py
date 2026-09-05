@@ -16,8 +16,8 @@ MARKER = (
 
 
 def test_release_version_5968():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.6"
-    assert "v5.11.6" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.7"
+    assert "v5.11.7" in APP
 
 
 def test_pdf_contract_bumped_to_v26():
