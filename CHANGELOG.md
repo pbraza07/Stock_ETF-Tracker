@@ -1,4 +1,13 @@
-# 5.11.8 - 2026-09-06
+# 5.11.9 - 2026-09-06
+
+- Replaced Top 12 background polling with direct click-to-table calculation.
+- Added separate Recession-Resilient and Max-Profit ranked table render paths.
+- Removed the shared ranking-view radio control.
+- Prevented remote history and full-universe live downloads from blocking tables.
+- Added exact user-facing table labels and a normalized Future Projection Score.
+- Preserved existing ranking formulas, Future Projection and simulator calculations.
+
+# 5.11.9 - 2026-09-06
 
 - Bound remote ranking-history reads with a shared three-second deadline and local-history fallback.
 - Render completed stock tables inside the polling fragment; no full-app rerun is required.

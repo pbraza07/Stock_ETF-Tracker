@@ -9,7 +9,7 @@ PERSISTENCE = (ROOT / "persistence.py").read_text(encoding="utf-8")
 
 
 def test_release_version_current():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.8"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.9"
 
 
 def test_app_tracks_dynamic_completed_years_and_oldest_five():
@@ -46,7 +46,7 @@ def test_workflow_runs_dynamic_history_before_rankings():
     monthly_pos = WORKFLOW.index("python scripts/build_actual_monthly_rankings.py")
     assert audit_pos < monthly_pos
     assert 'MARKETSCOPE_ANNUAL_HISTORY_START: 2000-01-01' in WORKFLOW
-    assert 'name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.11.8)' in WORKFLOW
+    assert 'name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.11.9)' in WORKFLOW
 
 
 def test_validator_schema_is_dynamic():

@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.8: recovered dual Top 12 rankings and presentation performance release.
+# v5.11.9: recovered dual Top 12 rankings and presentation performance release.
 
 import json
 import os
@@ -6875,7 +6875,16 @@ if favorite_tab.open:
     
         from top12_ui import render_top12_rankings
         from top12_data import load_monthly as top12_monthly
-        render_top12_rankings(market, list(YEAR_RETURN_COLS), _favorite_data_as_of, top12_monthly, lambda symbols: cached_future_projection_live_context(tuple(symbols), market))
+        render_top12_rankings(
+            market,
+            list(YEAR_RETURN_COLS),
+            _favorite_data_as_of,
+            lambda symbols, years: top12_monthly(symbols, years, remote=False),
+            # The loaded MarketScope snapshot already supplies current price,
+            # sector, industry and recent relative strength. Full-universe live
+            # downloads must never block the click-to-table path.
+            lambda symbols: {},
+        )
 
 
 with market_tab:

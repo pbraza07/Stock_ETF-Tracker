@@ -24,26 +24,17 @@ def calculate_rankings(
 ):
     warnings = []
     progress["stage"] = "Loading saved selections and monthly evidence"
+    # Selection history is local-first. Remote history is merged only by the
+    # background persistence path and can never delay a ranking table.
     histories = {}
-    history_started = monotonic()
-    history_jobs = {
-        kind: INPUT_EXECUTOR.submit(load_ledger, kind)
-        for kind in ("Recession", "Max Profit")
-    }
     for kind in ("Recession", "Max Profit"):
         try:
-            histories[kind] = history_jobs[kind].result(
-                timeout=max(0, HISTORY_WAIT_SECONDS - (monotonic() - history_started))
-            )
+            histories[kind] = load_ledger(kind, remote=False)
         except Exception:
-            LOGGER.exception("Top 12 history load failed")
-            history_jobs[kind].cancel()
-            try:
-                histories[kind] = load_ledger(kind, remote=False)
-            except Exception:
-                histories[kind] = {}
+            LOGGER.exception("Top 12 local history load failed")
+            histories[kind] = {}
             warnings.append(
-                f"{kind} remote history unavailable; using locally saved selections when available."
+                f"{kind} local history unavailable; calculating without incumbent preference."
             )
     symbols = tuple(sorted(market.loc[market.Type.eq("Stock"), "Symbol"].tolist()))
     monthly_symbols = symbols + (

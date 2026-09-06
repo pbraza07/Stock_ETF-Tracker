@@ -1,4 +1,4 @@
-# MarketScope 5.11.8
+# MarketScope 5.11.9
 
 Fixes the Top 12 loading/completion path shown in the reported screenshot.
 Remote history loading now has a shared three-second overall wait, with local
@@ -18,6 +18,6 @@ The cloud browser blocked localhost access; live Render and visual browser
 verification have not been completed. This ZIP does not deploy itself.
 
 Deploy the extracted contents at the repository root, preserving existing data
-and server history. Redeploy Render and confirm the app shows 5.11.8. No new
+and server history. Redeploy Render and confirm the app shows 5.11.9. No new
 environment variables or dependencies are required. Earlier backtest validation
 limitations remain unchanged.

@@ -18,7 +18,7 @@ def _load_schedule_function():
 
 
 def test_release_version_is_5928():
-    assert (ROOT / "VERSION.txt").read_text().strip() == "5.11.8"
+    assert (ROOT / "VERSION.txt").read_text().strip() == "5.11.9"
 
 
 def test_withdrawal_ui_and_persistence_contract_present():

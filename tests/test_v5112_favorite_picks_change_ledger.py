@@ -43,7 +43,7 @@ def pick_table(technology=("AAA", "BBB"), bbb_risk="Moderate") -> pd.DataFrame:
 
 
 def test_release_version_and_bootstrap_history_contract():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.8"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.9"
     bootstrap = ROOT / "data" / "favorite_picks_history.bootstrap.json"
     assert bootstrap.exists()
     payload = json.loads(bootstrap.read_text(encoding="utf-8"))

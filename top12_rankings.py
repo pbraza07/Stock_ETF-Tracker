@@ -301,6 +301,9 @@ def score_universe(
     frame["Recent Performance Score"] = _percentile_rank(recent)
     frame["Future P50 Score"] = rank("P50 Future Return %")
     frame["Future P75 Score"] = rank("P75 Future Return %")
+    frame["Future Projection Score"] = (
+        20 * frame["Future P50 Score"] + 15 * frame["Future P75 Score"]
+    ) / 35
     adjustments = state.get("holding_adjustments") or {}
     frame["Fundamentals Score"] = [
         float((adjustments.get(s) or {}).get("fundamental_score", 50))
@@ -397,7 +400,7 @@ def build_top12_rankings(
             "Eligible Stocks": len(frame),
             "Excluded Stocks": len(market[market.Type.eq("Stock")]) - len(frame),
             "Historical Through": max(completed),
-            "Model Version": "5.11.8",
+            "Model Version": "5.11.9",
             "Seed": seed,
             "Simulations": simulations,
             "Replacement Threshold": threshold,

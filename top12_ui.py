@@ -109,21 +109,23 @@ def portfolio_inputs(table, kind, allocation, investment, years):
 
 
 def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader):
+    """Calculate on the click run and render the chosen category directly."""
     consume_completed_job()
     st.markdown("### Dynamic Top 12 Stock Rankings")
-    c = st.columns(2)
-    busy = bool(st.session_state.get("t12_job"))
-    rb = c[0].button(
+    columns = st.columns(2)
+    columns[0].button(
         "🛡 Top 12 Recession-Resilient Stocks",
         key="t12_recession",
         on_click=request_ranking,
         args=("Recession",),
+        use_container_width=True,
     )
-    mp = c[1].button(
+    columns[1].button(
         "🚀 Top 12 Max-Profit High-Performance Stocks",
         key="t12_profit",
         on_click=request_ranking,
         args=("Max Profit",),
+        use_container_width=True,
     )
     threshold = st.number_input(
         "Replacement threshold (ranking points)",
@@ -137,61 +139,77 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         pd.util.hash_pandas_object(market, index=True).values.tobytes()
         + str(data_as_of).encode()
     ).hexdigest()
-    pending_request = st.session_state.get("t12_pending_request")
-    if pending_request and not st.session_state.get("t12_job"):
-        st.session_state.t12_input_view = pending_request
+
+    requested = st.session_state.pop("t12_pending_request", None)
+    if requested:
+        st.session_state.t12_active_kind = requested
+        st.session_state.t12_input_view = requested
         st.session_state.pop("t12_error", None)
-        progress = {"stage": "Starting ranking calculation"}
-        st.session_state.t12_job = {
-            "future": EXECUTOR.submit(
-                calculate_rankings,
-                market.copy(deep=True),
-                list(years),
-                data_as_of,
-                monthly_loader,
-                live_loader,
-                threshold,
-                progress,
-            ),
-            "fingerprint": fingerprint,
-            "progress": progress,
-        }
-        # Acknowledge only after the job exists. Never rely on rb/mp above to
-        # remember intent; those values are false after an intervening rerun.
-        st.session_state.pop("t12_pending_request", None)
-    watch_ranking_jobs(market, years, data_as_of, monthly_loader, live_loader, fingerprint)
+        progress = {"stage": "Evaluating every eligible MarketScope stock"}
+        try:
+            with st.spinner(
+                "Evaluating all eligible stocks and building both Top 12 tables…"
+            ):
+                payload = calculate_rankings(
+                    market.copy(deep=True),
+                    list(years),
+                    data_as_of,
+                    monthly_loader,
+                    live_loader,
+                    threshold,
+                    progress,
+                )
+            st.session_state.t12_result = payload["result"]
+            st.session_state.t12_histories = payload["histories"]
+            st.session_state.t12_fingerprint = fingerprint
+            st.session_state.t12_portfolios = {}
+            st.session_state.t12_save_messages = []
+            st.session_state.t12_save_job = SAVE_EXECUTOR.submit(
+                save_histories, payload["histories"]
+            )
+        except Exception as exc:
+            logging.getLogger(__name__).exception("Top 12 calculation failed")
+            st.session_state.t12_error = (
+                str(exc)
+                if isinstance(exc, ValueError)
+                else "Top 12 calculation could not be completed. Retry after the current MarketScope data refresh finishes."
+            )
 
-
-@st.fragment(run_every="1s")
-def watch_ranking_jobs(market, years, data_as_of, monthly_loader, live_loader, fingerprint):
-    """Render completion in this fragment, without rerunning the enclosing app."""
     consume_completed_job()
-    job = st.session_state.get("t12_job")
-    if job:
-        st.info(job["progress"]["stage"] + ". The stock table will appear here automatically.")
-    elif st.session_state.get("t12_save_job"):
-        st.caption("Results ready. Saving the change history in the background…")
     if st.session_state.get("t12_error"):
         st.error(st.session_state.t12_error)
     for ok, message in st.session_state.get("t12_save_messages", []):
         if not ok:
             st.warning(message)
+
     result = st.session_state.get("t12_result")
     if not result:
-        if not st.session_state.get("t12_job") and not st.session_state.get(
-            "t12_error"
-        ):
-            st.info("Choose a Top 12 button to display its ranked table here.")
+        st.info("Select either Top 12 button. Its 12-stock ranked table will open below.")
         return
     if st.session_state.get("t12_fingerprint") != fingerprint:
-        st.warning(
-            "Market data changed. Click either ranking button to recalculate this saved view."
-        )
-    kind = st.radio(
-        "Ranking view", list(DISCLOSURES), key="t12_input_view", horizontal=True
+        st.warning("Market data changed. Select either Top 12 button to recalculate.")
+
+    kind = st.session_state.get("t12_active_kind") or st.session_state.get(
+        "t12_input_view", "Recession"
     )
-    table = result[kind]
+    if kind not in ("Recession", "Max Profit"):
+        kind = "Recession"
+    table = result.get(kind)
+    if not isinstance(table, pd.DataFrame) or len(table) != 12:
+        st.error(f"{kind} results are incomplete. Select the button to recalculate.")
+        return
     history = st.session_state.get("t12_histories", {}).get(kind, {})
+    render_ranked_table(
+        kind, table, result, history, market, years, data_as_of,
+        monthly_loader, live_loader, fingerprint,
+    )
+
+
+def render_ranked_table(
+    kind, table, result, history, market, years, data_as_of,
+    monthly_loader, live_loader, fingerprint,
+):
+    """A dedicated table and portfolio workspace for exactly one ranking kind."""
     st.subheader(
         "Top 12 Recession-Resilient Stocks"
         if kind == "Recession"
@@ -227,6 +245,7 @@ def watch_ranking_jobs(market, years, data_as_of, monthly_loader, live_loader, f
         if kind == "Recession"
         else [
             "Historical Performance Score",
+            "Future Projection Score",
             "Future P50 Score",
             "Future P75 Score",
             "5Y CAGR %",
@@ -243,19 +262,43 @@ def watch_ranking_jobs(market, years, data_as_of, monthly_loader, live_loader, f
         ("Bear " if kind == "Recession" else "") + f"P{q} Future Return %"
         for q in PERCENTILES
     ]
+    display = table[preferred + metrics + quantiles].rename(
+        columns={
+            "Symbol": "Ticker",
+            "Name": "Company",
+            "Price": "Current Price",
+            "Recession Score": "Recession Resilience Score",
+            "Defense Score": "Recession Defense Score",
+            "Worst Stress Return %": "Worst Historical Stress Return %",
+            "Recovery Periods": "Recovery Time",
+            "Positive Years %": "Positive-Year %",
+            "Maximum Drawdown %": "Maximum Drawdown %",
+            "Bear P10 Future Return %": "Bear P10 %",
+            "Bear P25 Future Return %": "Bear P25 %",
+            "Bear P50 Future Return %": "Bear P50 %",
+            "Bear P75 Future Return %": "Bear P75 %",
+            "Bear P90 Future Return %": "Bear P90 %",
+            "P10 Future Return %": "P10 Future Return %",
+            "P25 Future Return %": "P25 Future Return %",
+            "P50 Future Return %": "P50 Future Return %",
+            "P75 Future Return %": "P75 Future Return %",
+            "P90 Future Return %": "P90 Future Return %",
+        }
+    )
     config = {
         "Rank": st.column_config.NumberColumn(pinned=True),
-        "Symbol": st.column_config.TextColumn("Ticker", pinned=True),
-        "Price": st.column_config.NumberColumn("Current Price", format="$%.2f"),
+        "Ticker": st.column_config.TextColumn("Ticker", pinned=True),
+        "Current Price": st.column_config.NumberColumn(format="$%.2f"),
     }
-    for col in table:
+    for col in display:
         if "%" in col:
             config[col] = st.column_config.NumberColumn(format="%.2f%%")
     st.dataframe(
-        table[preferred + metrics + quantiles],
+        display,
         hide_index=True,
         column_config=config,
         width="stretch",
+        key="top12_" + kind.lower().replace(" ", "_") + "_ranked_table",
     )
     st.caption(
         "Projection returns are five-year annualized outcomes. Projected dollar profits use $100,000 per security. Recovery is unavailable when the prior high has not been recovered."
