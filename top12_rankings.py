@@ -397,7 +397,7 @@ def build_top12_rankings(
             "Eligible Stocks": len(frame),
             "Excluded Stocks": len(market[market.Type.eq("Stock")]) - len(frame),
             "Historical Through": max(completed),
-            "Model Version": "5.11.7",
+            "Model Version": "5.11.8",
             "Seed": seed,
             "Simulations": simulations,
             "Replacement Threshold": threshold,

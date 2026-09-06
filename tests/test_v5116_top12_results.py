@@ -41,7 +41,7 @@ st.session_state.setdefault('workspace_navigation', 'Favorite Picks')
 main,favorites=st.tabs(['Market','Favorite Picks'],key='workspace_navigation',on_change='rerun')
 if favorites.open:
     with favorites:
-        with patch.object(ui, 'EXECUTOR', st.session_state.qa_executor), patch.object(ui, 'ranking_exports', side_effect=RuntimeError('export down')):
+        with patch.object(ui, 'EXECUTOR', st.session_state.qa_executor), patch.object(ui, 'SAVE_EXECUTOR', st.session_state.qa_executor), patch.object(ui, 'ranking_exports', side_effect=RuntimeError('export down')):
             ui.render_top12_rankings(st.session_state.qa_market, st.session_state.qa_years, '2026-09-04', lambda *a: {}, lambda *a: {})
 """
 
@@ -75,7 +75,7 @@ def test_pending_calculation_survives_rerun_and_prevents_duplicates(payload):
     app = app_for(executor)
     app.button(key="t12_profit").click().run()
     app.run()
-    assert app.button(key="t12_profit").disabled
+    assert app.session_state.t12_job
     assert executor.calls == 1
     assert app.session_state.t12_job["future"] is executor.future
     executor.future.set_result(payload)

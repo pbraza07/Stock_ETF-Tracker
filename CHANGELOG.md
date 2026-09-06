@@ -1,3 +1,10 @@
+# 5.11.8 - 2026-09-06
+
+- Bound remote ranking-history reads with a shared three-second deadline and local-history fallback.
+- Render completed stock tables inside the polling fragment; no full-app rerun is required.
+- Separate history-save workers from ranking workers.
+- Keep category buttons available while a calculation is running.
+
 # MarketScope Changelog
 
 ## 5.11.7 - 2026-09-05

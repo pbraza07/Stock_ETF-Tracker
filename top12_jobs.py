@@ -3,6 +3,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from time import monotonic
 
 from top12_history import load_ledger, current_table, record_run, persist_ledger
 from top12_rankings import build_top12_rankings
@@ -12,8 +13,10 @@ EXECUTOR = ThreadPoolExecutor(max_workers=2, thread_name_prefix="marketscope-top
 INPUT_EXECUTOR = ThreadPoolExecutor(
     max_workers=4, thread_name_prefix="marketscope-top12-inputs"
 )
-MONTHLY_WAIT_SECONDS = 15
-LIVE_WAIT_SECONDS = 45
+HISTORY_WAIT_SECONDS = 3
+MONTHLY_WAIT_SECONDS = 5
+LIVE_WAIT_SECONDS = 8
+SAVE_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="marketscope-top12-save")
 
 
 def calculate_rankings(
@@ -22,14 +25,25 @@ def calculate_rankings(
     warnings = []
     progress["stage"] = "Loading saved selections and monthly evidence"
     histories = {}
+    history_started = monotonic()
+    history_jobs = {
+        kind: INPUT_EXECUTOR.submit(load_ledger, kind)
+        for kind in ("Recession", "Max Profit")
+    }
     for kind in ("Recession", "Max Profit"):
         try:
-            histories[kind] = load_ledger(kind)
+            histories[kind] = history_jobs[kind].result(
+                timeout=max(0, HISTORY_WAIT_SECONDS - (monotonic() - history_started))
+            )
         except Exception:
             LOGGER.exception("Top 12 history load failed")
-            histories[kind] = {}
+            history_jobs[kind].cancel()
+            try:
+                histories[kind] = load_ledger(kind, remote=False)
+            except Exception:
+                histories[kind] = {}
             warnings.append(
-                f"{kind} prior history unavailable; calculating without incumbent preference."
+                f"{kind} remote history unavailable; using locally saved selections when available."
             )
     symbols = tuple(sorted(market.loc[market.Type.eq("Stock"), "Symbol"].tolist()))
     monthly_symbols = symbols + (

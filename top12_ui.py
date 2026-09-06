@@ -12,7 +12,7 @@ from top12_history import load_ledger, current_table, record_run, persist_ledger
 from top12_exports import DISCLOSURES, LIMITATION
 from runtime_performance import ranking_exports
 from future_projection import run_future_projection
-from top12_jobs import EXECUTOR, calculate_rankings, save_histories
+from top12_jobs import EXECUTOR, SAVE_EXECUTOR, calculate_rankings, save_histories
 
 
 def request_ranking(kind):
@@ -36,7 +36,7 @@ def consume_completed_job():
             st.session_state.t12_fingerprint = job["fingerprint"]
             st.session_state.t12_portfolios = {}
             st.session_state.t12_save_messages = []
-            st.session_state.t12_save_job = EXECUTOR.submit(
+            st.session_state.t12_save_job = SAVE_EXECUTOR.submit(
                 save_histories, payload["histories"]
             )
         except Exception as exc:
@@ -56,22 +56,6 @@ def consume_completed_job():
                 (False, "History save failed; ranking results remain available.")
             ]
         cached_ledger.clear()
-
-
-@st.fragment(run_every="1s")
-def watch_ranking_jobs():
-    job = st.session_state.get("t12_job")
-    saved = st.session_state.get("t12_save_job")
-    if (job and job["future"].done()) or (saved and saved.done()):
-        consume_completed_job()
-        st.rerun()
-    if job:
-        st.info(
-            job["progress"]["stage"]
-            + ". You can leave this tab and return; calculation continues."
-        )
-    elif saved:
-        st.caption("Results ready. Saving the change history in the background…")
 
 
 @st.cache_data(ttl=60, max_entries=4, show_spinner=False)
@@ -132,14 +116,12 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
     rb = c[0].button(
         "🛡 Top 12 Recession-Resilient Stocks",
         key="t12_recession",
-        disabled=busy,
         on_click=request_ranking,
         args=("Recession",),
     )
     mp = c[1].button(
         "🚀 Top 12 Max-Profit High-Performance Stocks",
         key="t12_profit",
-        disabled=busy,
         on_click=request_ranking,
         args=("Max Profit",),
     )
@@ -177,9 +159,18 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         # Acknowledge only after the job exists. Never rely on rb/mp above to
         # remember intent; those values are false after an intervening rerun.
         st.session_state.pop("t12_pending_request", None)
+    watch_ranking_jobs(market, years, data_as_of, monthly_loader, live_loader, fingerprint)
+
+
+@st.fragment(run_every="1s")
+def watch_ranking_jobs(market, years, data_as_of, monthly_loader, live_loader, fingerprint):
+    """Render completion in this fragment, without rerunning the enclosing app."""
     consume_completed_job()
-    if st.session_state.get("t12_job") or st.session_state.get("t12_save_job"):
-        watch_ranking_jobs()
+    job = st.session_state.get("t12_job")
+    if job:
+        st.info(job["progress"]["stage"] + ". The stock table will appear here automatically.")
+    elif st.session_state.get("t12_save_job"):
+        st.caption("Results ready. Saving the change history in the background…")
     if st.session_state.get("t12_error"):
         st.error(st.session_state.t12_error)
     for ok, message in st.session_state.get("t12_save_messages", []):

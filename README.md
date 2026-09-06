@@ -1,3 +1,7 @@
+# MarketScope v5.11.8 - Top 12 Loading and Table Completion Fix
+
+See [release notes](RELEASE_5_11_8.md) for this update.
+
 # MarketScope v5.11.7 - Top 12 Click Handoff Fix
 
 This patch fixes lost button requests when the parent application reruns before
