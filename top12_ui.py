@@ -63,6 +63,112 @@ def cached_ledger(kind):
     return load_ledger(kind)
 
 
+def _latest_persisted_run(kind):
+    """Return the newest complete 12-row run from the tracked GitHub history ledger."""
+    ledger = cached_ledger(kind)
+    score = kind + " Score"
+    required = {"Rank", "Symbol", "Sector", score}
+    for run in reversed((ledger or {}).get("runs") or []):
+        holdings = run.get("Holdings")
+        if not isinstance(holdings, list) or len(holdings) != 12:
+            continue
+        table = pd.DataFrame(holdings)
+        if required.issubset(table.columns):
+            table = table.sort_values("Rank", kind="stable").reset_index(drop=True)
+            return ledger, run, table
+    return ledger, None, pd.DataFrame()
+
+
+def _persisted_display_table(table, kind, market):
+    """Keep JSON rank/sector/score authoritative and add current label/price when available."""
+    display = table.copy()
+    if isinstance(market, pd.DataFrame) and not market.empty and "Symbol" in market.columns:
+        enrich = ["Symbol"]
+        for column in ("Name", "Price"):
+            if column in market.columns:
+                enrich.append(column)
+        if len(enrich) > 1:
+            lookup = market[enrich].drop_duplicates("Symbol", keep="first")
+            display = display.merge(lookup, on="Symbol", how="left")
+
+    score = kind + " Score"
+    ordered = [
+        column
+        for column in ("Rank", "Symbol", "Name", "Sector", "Price", score)
+        if column in display.columns
+    ]
+    display = display[ordered].rename(
+        columns={
+            "Symbol": "Ticker",
+            "Name": "Company",
+            "Price": "Current Price",
+            "Recession Score": "Recession Resilience Score",
+        }
+    )
+    return display
+
+
+def render_persisted_ranked_table(kind, market):
+    """Render the newest saved GitHub ranking directly as the user-facing result table."""
+    ledger, run, table = _latest_persisted_run(kind)
+    if run is None or len(table) != 12:
+        st.error(
+            f"No complete saved {kind} Top 12 result is available yet. Use Advanced recalculation below to create one."
+        )
+        return ledger, pd.DataFrame()
+
+    st.subheader(
+        "Top 12 Recession-Resilient Stocks"
+        if kind == "Recession"
+        else "Top 12 Max-Profit High-Performance Stocks"
+    )
+    st.warning(DISCLOSURES[kind])
+
+    metadata = run.get("Metadata") or {}
+    generated = metadata.get("Ranking Generated") or run.get("Timestamp") or "Unavailable"
+    model = metadata.get("Model Version") or "Unavailable"
+    market_through = metadata.get("Market Data Through") or "Unavailable"
+    st.caption(
+        f"Saved ranking result â¢ Generated {generated} â¢ Model {model} â¢ Market data through {market_through}"
+    )
+
+    display = _persisted_display_table(table, kind, market)
+    config = {
+        "Rank": st.column_config.NumberColumn("Rank", pinned=True, format="%d"),
+        "Ticker": st.column_config.TextColumn("Ticker", pinned=True),
+    }
+    if "Current Price" in display.columns:
+        config["Current Price"] = st.column_config.NumberColumn(format="$%.2f")
+    score_label = (
+        "Recession Resilience Score" if kind == "Recession" else "Max Profit Score"
+    )
+    if score_label in display.columns:
+        config[score_label] = st.column_config.NumberColumn(format="%.2f")
+
+    st.dataframe(
+        display,
+        hide_index=True,
+        column_config=config,
+        width="stretch",
+        key="top12_saved_" + kind.lower().replace(" ", "_") + "_table",
+    )
+    st.caption(
+        "This table is read from the saved MarketScope ranking history. Opening it does not recalculate or reorder the ranking."
+    )
+
+    with st.expander("Saved ranking details"):
+        if metadata:
+            details = pd.DataFrame(
+                [{"Field": key, "Value": value} for key, value in metadata.items()]
+            )
+            st.dataframe(details, hide_index=True, width="stretch")
+        events = pd.DataFrame((ledger or {}).get("events", []))
+        if not events.empty:
+            st.markdown("**Change history**")
+            st.dataframe(events, hide_index=True, width="stretch")
+    return ledger, table
+
+
 @st.cache_data(ttl=3600, max_entries=4, show_spinner=False)
 def cached_rankings(market, years, monthly, live, simulations, previous, threshold):
     return build_top12_rankings(
@@ -109,71 +215,96 @@ def portfolio_inputs(table, kind, allocation, investment, years):
 
 
 def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader):
-    """Calculate on the click run and render the chosen category directly."""
+    """Open the selected tracked JSON ranking immediately; recalculation is optional."""
     consume_completed_job()
     st.markdown("### Dynamic Top 12 Stock Rankings")
     columns = st.columns(2)
     columns[0].button(
-        "🛡 Top 12 Recession-Resilient Stocks",
+        "ð¡ Top 12 Recession-Resilient Stocks",
         key="t12_recession",
         on_click=request_ranking,
         args=("Recession",),
         use_container_width=True,
     )
     columns[1].button(
-        "🚀 Top 12 Max-Profit High-Performance Stocks",
+        "ð Top 12 Max-Profit High-Performance Stocks",
         key="t12_profit",
         on_click=request_ranking,
         args=("Max Profit",),
         use_container_width=True,
     )
-    threshold = st.number_input(
-        "Replacement threshold (ranking points)",
-        0.0,
-        10.0,
-        1.0,
-        0.25,
-        key="t12_input_threshold",
-    )
-    fingerprint = hashlib.sha256(
-        pd.util.hash_pandas_object(market, index=True).values.tobytes()
-        + str(data_as_of).encode()
-    ).hexdigest()
 
     requested = st.session_state.pop("t12_pending_request", None)
     if requested:
         st.session_state.t12_active_kind = requested
         st.session_state.t12_input_view = requested
+        st.session_state.t12_show_full_analysis = False
         st.session_state.pop("t12_error", None)
-        progress = {"stage": "Evaluating every eligible MarketScope stock"}
-        try:
-            with st.spinner(
-                "Evaluating all eligible stocks and building both Top 12 tables…"
-            ):
-                payload = calculate_rankings(
-                    market.copy(deep=True),
-                    list(years),
-                    data_as_of,
-                    monthly_loader,
-                    live_loader,
-                    threshold,
-                    progress,
+
+    kind = st.session_state.get("t12_active_kind") or st.session_state.get(
+        "t12_input_view"
+    )
+    if kind not in ("Recession", "Max Profit"):
+        st.info(
+            "Select either Top 12 button. Its saved 12-stock result will open below as a table."
+        )
+        return
+
+    history, saved_table = render_persisted_ranked_table(kind, market)
+
+    fingerprint = hashlib.sha256(
+        pd.util.hash_pandas_object(market, index=True).values.tobytes()
+        + str(data_as_of).encode()
+    ).hexdigest()
+
+    with st.expander("Advanced recalculation and full analysis"):
+        st.caption(
+            "The main table above comes directly from the saved ranking history. Recalculate only when you intentionally want MarketScope to rebuild both Top 12 rankings from current app data."
+        )
+        threshold = st.number_input(
+            "Replacement threshold (ranking points)",
+            0.0,
+            10.0,
+            1.0,
+            0.25,
+            key="t12_input_threshold",
+        )
+        recalculate = st.button(
+            "Recalculate Top 12 rankings",
+            key="t12_recalculate",
+            use_container_width=True,
+        )
+        if recalculate:
+            progress = {"stage": "Evaluating every eligible MarketScope stock"}
+            try:
+                with st.spinner(
+                    "Evaluating all eligible stocks and rebuilding both Top 12 tablesâ¦"
+                ):
+                    payload = calculate_rankings(
+                        market.copy(deep=True),
+                        list(years),
+                        data_as_of,
+                        monthly_loader,
+                        live_loader,
+                        threshold,
+                        progress,
+                    )
+                st.session_state.t12_result = payload["result"]
+                st.session_state.t12_histories = payload["histories"]
+                st.session_state.t12_fingerprint = fingerprint
+                st.session_state.t12_portfolios = {}
+                st.session_state.t12_save_messages = []
+                st.session_state.t12_show_full_analysis = True
+                st.session_state.t12_save_job = SAVE_EXECUTOR.submit(
+                    save_histories, payload["histories"]
                 )
-            st.session_state.t12_result = payload["result"]
-            st.session_state.t12_histories = payload["histories"]
-            st.session_state.t12_fingerprint = fingerprint
-            st.session_state.t12_portfolios = {}
-            st.session_state.t12_save_messages = []
-            st.session_state.t12_save_job = SAVE_EXECUTOR.submit(
-                save_histories, payload["histories"]
-            )
-        except Exception as exc:
-            logging.getLogger(__name__).exception("Top 12 calculation failed")
-            st.session_state.t12_error = (
-                str(exc)
-                if isinstance(exc, ValueError)
-                else "Top 12 calculation could not be completed. Retry after the current MarketScope data refresh finishes."
-            )
+            except Exception as exc:
+                logging.getLogger(__name__).exception("Top 12 calculation failed")
+                st.session_state.t12_error = (
+                    str(exc)
+                    if isinstance(exc, ValueError)
+                    else "Top 12 calculation could not be completed. The saved table above remains available."
+                )
 
     consume_completed_job()
     if st.session_state.get("t12_error"):
@@ -182,26 +313,37 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         if not ok:
             st.warning(message)
 
+    if not st.session_state.get("t12_show_full_analysis"):
+        return
+
     result = st.session_state.get("t12_result")
     if not result:
-        st.info("Select either Top 12 button. Its 12-stock ranked table will open below.")
         return
     if st.session_state.get("t12_fingerprint") != fingerprint:
-        st.warning("Market data changed. Select either Top 12 button to recalculate.")
+        st.warning(
+            "Market data changed since the advanced recalculation. Recalculate again for a current full analysis."
+        )
 
-    kind = st.session_state.get("t12_active_kind") or st.session_state.get(
-        "t12_input_view", "Recession"
-    )
-    if kind not in ("Recession", "Max Profit"):
-        kind = "Recession"
     table = result.get(kind)
     if not isinstance(table, pd.DataFrame) or len(table) != 12:
-        st.error(f"{kind} results are incomplete. Select the button to recalculate.")
+        st.error(
+            f"{kind} advanced results are incomplete. The saved table above remains available."
+        )
         return
-    history = st.session_state.get("t12_histories", {}).get(kind, {})
+    detailed_history = st.session_state.get("t12_histories", {}).get(kind, history)
+    st.divider()
+    st.markdown("### Full recalculated analysis")
     render_ranked_table(
-        kind, table, result, history, market, years, data_as_of,
-        monthly_loader, live_loader, fingerprint,
+        kind,
+        table,
+        result,
+        detailed_history,
+        market,
+        years,
+        data_as_of,
+        monthly_loader,
+        live_loader,
+        fingerprint,
     )
 
 
@@ -314,7 +456,7 @@ def render_ranked_table(
     with st.expander("Walk-forward validation"):
         st.warning(LIMITATION)
         if st.button("Run historical study", key="t12_run_backtest"):
-            with st.spinner("Rebuilding historical rankings from truncated data…"):
+            with st.spinner("Rebuilding historical rankings from truncated dataâ¦"):
                 st.session_state.t12_study = cached_backtest(market, list(years))
         study = st.session_state.get("t12_study")
         if isinstance(study, pd.DataFrame) and not study.empty:
@@ -349,7 +491,7 @@ def render_ranked_table(
         json.dumps(inputs, sort_keys=True).encode() + fingerprint.encode()
     ).hexdigest()
     if st.button("Build 12-Stock Portfolio", key="t12_build"):
-        with st.spinner("Running both portfolio maintenance strategies…"):
+        with st.spinner("Running both portfolio maintenance strategiesâ¦"):
             try:
                 try:
                     live_context = live_loader(tuple(inputs["holdings"]))
