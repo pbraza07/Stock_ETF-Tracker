@@ -361,7 +361,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
     st.markdown("### Dynamic Top 12 Stock Rankings")
     columns = st.columns(2)
     columns[0].button(
-        "🛡 Top 12 Recession-Resilient Stocks",
+        "🛡️ Top 12 Recession-Resilient Stocks",
         key="t12_recession",
         on_click=request_ranking,
         args=("Recession",),
