@@ -228,7 +228,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         use_container_width=True,
     )
     columns[1].button(
-        "ð Top 12 Max-Profit High-Performance Stocks",
+        "🚀 Top 12 Max-Profit High-Performance Stocks",
         key="t12_profit",
         on_click=request_ranking,
         args=("Max Profit",),
