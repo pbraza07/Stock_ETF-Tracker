@@ -63,6 +63,116 @@ def cached_ledger(kind):
     return load_ledger(kind)
 
 
+
+RECESSION_SAVED_COLUMNS = [
+    "Rank", "Symbol", "Name", "Sector", "Price",
+    "Recession Score",
+    "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
+    "Consistency Score", "Current Strength Score", "Profitability Score",
+    "Risk Penalty", "Recession Additional Penalty",
+    "Worst Stress Return %", "Mean Stress Return %",
+    "Stress Market Excess %", "Stress Sector Excess %",
+    "Stress Drawdown %", "Stress Events", "Stress Evidence Basis",
+    "Maximum Drawdown %", "Recovery Periods", "Recovery Basis",
+    "Bear P10 Future Return %", "Bear P25 Future Return %",
+    "Bear P50 Future Return %", "Bear P75 Future Return %", "Bear P90 Future Return %",
+    "Positive Years %", "Historical CAGR %",
+    "Data Quality Score", "Data Confidence", "Why Selected",
+]
+
+MAX_PROFIT_SAVED_COLUMNS = [
+    "Rank", "Symbol", "Name", "Sector", "Price",
+    "Max Profit Score",
+    "Historical Performance Score", "Recent Performance Score",
+    "Future P50 Score", "Future P75 Score", "Fundamentals Score",
+    "Consistency Score", "Relative Strength Score", "Downside Quality Score",
+    "Risk Penalty",
+    "3Y CAGR %", "5Y CAGR %", "10Y CAGR %",
+    "P10 Future Return %", "P25 Future Return %",
+    "P50 Future Return %", "P75 Future Return %", "P90 Future Return %",
+    "Positive Years %", "Maximum Drawdown %",
+    "Best Historical Year %", "Worst Historical Year %",
+    "P50 Projected Profit", "P75 Projected Profit",
+    "Data Quality Score", "Data Confidence", "Why Selected",
+]
+
+PERSISTED_TABLE_RENAMES = {
+    "Symbol": "Ticker",
+    "Name": "Company",
+    "Price": "Current Price",
+    "Recession Score": "Final Recession Score",
+    "Defense Score": "Defense Score (30%)",
+    "Drawdown Score": "Drawdown Score (20%)",
+    "Recovery Score": "Recovery Score (15%)",
+    "Bear Model Score": "Bear Model Score (15%)",
+    "Consistency Score": "Consistency Score",
+    "Current Strength Score": "Current Strength Score (5%)",
+    "Profitability Score": "Profitability Score (5%)",
+    "Recession Additional Penalty": "Recession Penalty",
+    "Maximum Drawdown %": "Max Drawdown %",
+    "Recovery Periods": "Recovery Time",
+    "Bear P10 Future Return %": "Bear P10 %",
+    "Bear P25 Future Return %": "Bear P25 %",
+    "Bear P50 Future Return %": "Bear P50 %",
+    "Bear P75 Future Return %": "Bear P75 %",
+    "Bear P90 Future Return %": "Bear P90 %",
+    "Max Profit Score": "Final Max-Profit Score",
+    "Historical Performance Score": "Historical Performance (25%)",
+    "Recent Performance Score": "Recent Performance (15%)",
+    "Future P50 Score": "Future P50 Score (20%)",
+    "Future P75 Score": "Future P75 Score (15%)",
+    "Fundamentals Score": "Fundamentals Score (10%)",
+    "Relative Strength Score": "Relative Strength Score (5%)",
+    "Downside Quality Score": "Downside Quality Score (5%)",
+    "Positive Years %": "Positive Years %",
+}
+
+
+def _saved_columns(kind):
+    return RECESSION_SAVED_COLUMNS if kind == "Recession" else MAX_PROFIT_SAVED_COLUMNS
+
+
+def _primary_factor_columns(kind):
+    if kind == "Recession":
+        return [
+            "Rank", "Symbol", "Name", "Sector", "Price",
+            "Recession Score",
+            "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
+            "Consistency Score", "Current Strength Score", "Profitability Score",
+            "Risk Penalty", "Recession Additional Penalty",
+            "Worst Stress Return %", "Maximum Drawdown %",
+            "Recovery Periods", "Recovery Basis",
+            "Bear P10 Future Return %", "Bear P25 Future Return %",
+            "Positive Years %", "Historical CAGR %",
+            "Data Confidence", "Why Selected",
+        ]
+    return [
+        "Rank", "Symbol", "Name", "Sector", "Price",
+        "Max Profit Score",
+        "Historical Performance Score", "Recent Performance Score",
+        "Future P50 Score", "Future P75 Score", "Fundamentals Score",
+        "Consistency Score", "Relative Strength Score", "Downside Quality Score",
+        "Risk Penalty",
+        "3Y CAGR %", "5Y CAGR %", "10Y CAGR %",
+        "P10 Future Return %", "P25 Future Return %",
+        "P50 Future Return %", "P75 Future Return %",
+        "Positive Years %", "Maximum Drawdown %",
+        "Data Confidence", "Why Selected",
+    ]
+
+
+def _legacy_factor_run(table, kind):
+    required = (
+        {"Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score"}
+        if kind == "Recession"
+        else {
+            "Historical Performance Score", "Recent Performance Score",
+            "Future P50 Score", "Future P75 Score", "Fundamentals Score"
+        }
+    )
+    return not required.issubset(set(table.columns))
+
+
 def _latest_persisted_run(kind):
     """Return the newest complete 12-row run from the tracked GitHub history ledger."""
     ledger = cached_ledger(kind)
@@ -80,36 +190,70 @@ def _latest_persisted_run(kind):
 
 
 def _persisted_display_table(table, kind, market):
-    """Keep JSON rank/sector/score authoritative and add current label/price when available."""
+    """Preserve saved ranking evidence and enrich only missing name/price fields."""
     display = table.copy()
-    if isinstance(market, pd.DataFrame) and not market.empty and "Symbol" in market.columns:
-        enrich = ["Symbol"]
-        for column in ("Name", "Price"):
-            if column in market.columns:
-                enrich.append(column)
-        if len(enrich) > 1:
-            lookup = market[enrich].drop_duplicates("Symbol", keep="first")
-            display = display.merge(lookup, on="Symbol", how="left")
 
-    score = kind + " Score"
-    ordered = [
-        column
-        for column in ("Rank", "Symbol", "Name", "Sector", "Price", score)
-        if column in display.columns
-    ]
-    display = display[ordered].rename(
-        columns={
-            "Symbol": "Ticker",
-            "Name": "Company",
-            "Price": "Current Price",
-            "Recession Score": "Recession Resilience Score",
-        }
-    )
+    if isinstance(market, pd.DataFrame) and not market.empty and "Symbol" in market.columns:
+        lookup = market.drop_duplicates("Symbol", keep="last").set_index("Symbol")
+        for column in ("Name", "Price"):
+            if column not in lookup.columns:
+                continue
+            mapped = display["Symbol"].map(lookup[column])
+            if column not in display.columns:
+                display[column] = mapped
+            else:
+                display[column] = display[column].where(display[column].notna(), mapped)
+
+    ordered = [column for column in _primary_factor_columns(kind) if column in display.columns]
+    display = display[ordered].rename(columns=PERSISTED_TABLE_RENAMES)
+    if "Consistency Score" in display.columns:
+        display = display.rename(
+            columns={
+                "Consistency Score": (
+                    "Consistency Score (10%)"
+                    if kind == "Recession"
+                    else "Consistency Score (5%)"
+                )
+            }
+        )
     return display
 
 
+def _ranking_factor_config(display):
+    config = {
+        "Rank": st.column_config.NumberColumn("Rank", pinned=True, format="%d"),
+        "Ticker": st.column_config.TextColumn("Ticker", pinned=True),
+    }
+    if "Current Price" in display.columns:
+        config["Current Price"] = st.column_config.NumberColumn(format="$%.2f")
+
+    percent_columns = [
+        column for column in display.columns
+        if "%" in column and column not in {
+            "Defense Score (30%)", "Drawdown Score (20%)", "Recovery Score (15%)",
+            "Bear Model Score (15%)", "Current Strength Score (5%)",
+            "Profitability Score (5%)", "Historical Performance (25%)",
+            "Recent Performance (15%)", "Future P50 Score (20%)",
+            "Future P75 Score (15%)", "Fundamentals Score (10%)",
+            "Relative Strength Score (5%)", "Downside Quality Score (5%)",
+            "Consistency Score (10%)", "Consistency Score (5%)",
+        }
+    ]
+    for column in percent_columns:
+        config[column] = st.column_config.NumberColumn(format="%.2f%%")
+
+    for column in display.columns:
+        if "Score" in column or column in {
+            "Historical Performance (25%)", "Recent Performance (15%)",
+            "Final Max-Profit Score", "Risk Penalty", "Recession Penalty",
+        }:
+            config[column] = st.column_config.NumberColumn(format="%.2f")
+
+    return config
+
+
 def render_persisted_ranked_table(kind, market):
-    """Render the newest saved GitHub ranking directly as the user-facing result table."""
+    """Render saved ranking plus the factor/evidence columns that produced its score."""
     ledger, run, table = _latest_persisted_run(kind)
     if run is None or len(table) != 12:
         st.error(
@@ -129,31 +273,28 @@ def render_persisted_ranked_table(kind, market):
     model = metadata.get("Model Version") or "Unavailable"
     market_through = metadata.get("Market Data Through") or "Unavailable"
     st.caption(
-        f"Saved ranking result â¢ Generated {generated} â¢ Model {model} â¢ Market data through {market_through}"
+        f"Saved ranking result • Generated {generated} • Model {model} • Market data through {market_through}"
     )
+
+    if _legacy_factor_run(table, kind):
+        st.warning(
+            "This saved ranking predates the ranking-factor audit schema, so its JSON only contains rank, ticker, "
+            "sector and final score. Run Advanced recalculation once to save the complete factor evidence used for "
+            "future table displays. The existing ranking is not altered merely by opening this table."
+        )
 
     display = _persisted_display_table(table, kind, market)
-    config = {
-        "Rank": st.column_config.NumberColumn("Rank", pinned=True, format="%d"),
-        "Ticker": st.column_config.TextColumn("Ticker", pinned=True),
-    }
-    if "Current Price" in display.columns:
-        config["Current Price"] = st.column_config.NumberColumn(format="$%.2f")
-    score_label = (
-        "Recession Resilience Score" if kind == "Recession" else "Max Profit Score"
-    )
-    if score_label in display.columns:
-        config[score_label] = st.column_config.NumberColumn(format="%.2f")
-
     st.dataframe(
         display,
         hide_index=True,
-        column_config=config,
+        column_config=_ranking_factor_config(display),
         width="stretch",
         key="top12_saved_" + kind.lower().replace(" ", "_") + "_table",
     )
     st.caption(
-        "This table is read from the saved MarketScope ranking history. Opening it does not recalculate or reorder the ranking."
+        "Factor-score columns are 0-100 comparative scores used by the ranking formula. Raw evidence columns show "
+        "the actual historical/model inputs behind those factor scores. Final score is the weighted factor total "
+        "after applicable penalties. Opening the table does not recalculate or reorder the saved ranking."
     )
 
     with st.expander("Saved ranking details"):
@@ -220,8 +361,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
     st.markdown("### Dynamic Top 12 Stock Rankings")
     columns = st.columns(2)
     columns[0].button(
-        "🛡️ Top 12 Recession-Resilient Stocks",
-
+        "🛡 Top 12 Recession-Resilient Stocks",
         key="t12_recession",
         on_click=request_ranking,
         args=("Recession",),
@@ -279,7 +419,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
             progress = {"stage": "Evaluating every eligible MarketScope stock"}
             try:
                 with st.spinner(
-                    "Evaluating all eligible stocks and rebuilding both Top 12 tablesâ¦"
+                    "Evaluating all eligible stocks and rebuilding both Top 12 tables…"
                 ):
                     payload = calculate_rankings(
                         market.copy(deep=True),
@@ -405,46 +545,57 @@ def render_ranked_table(
         ("Bear " if kind == "Recession" else "") + f"P{q} Future Return %"
         for q in PERCENTILES
     ]
-    display = table[preferred + metrics + quantiles].rename(
-        columns={
-            "Symbol": "Ticker",
-            "Name": "Company",
-            "Price": "Current Price",
-            "Recession Score": "Recession Resilience Score",
-            "Defense Score": "Recession Defense Score",
-            "Worst Stress Return %": "Worst Historical Stress Return %",
-            "Recovery Periods": "Recovery Time",
-            "Positive Years %": "Positive-Year %",
-            "Maximum Drawdown %": "Maximum Drawdown %",
-            "Bear P10 Future Return %": "Bear P10 %",
-            "Bear P25 Future Return %": "Bear P25 %",
-            "Bear P50 Future Return %": "Bear P50 %",
-            "Bear P75 Future Return %": "Bear P75 %",
-            "Bear P90 Future Return %": "Bear P90 %",
-            "P10 Future Return %": "P10 Future Return %",
-            "P25 Future Return %": "P25 Future Return %",
-            "P50 Future Return %": "P50 Future Return %",
-            "P75 Future Return %": "P75 Future Return %",
-            "P90 Future Return %": "P90 Future Return %",
-        }
+    # Put the actual ranking factors first, then the supporting evidence.
+    factor_columns = (
+        [
+            "Rank", "Symbol", "Name", "Sector", "Price", "Recession Score",
+            "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
+            "Consistency Score", "Current Strength Score", "Profitability Score",
+            "Risk Penalty", "Recession Additional Penalty",
+            "Worst Stress Return %", "Maximum Drawdown %",
+            "Recovery Periods", "Recovery Basis",
+            "Bear P10 Future Return %", "Bear P25 Future Return %",
+            "Positive Years %", "Historical CAGR %",
+            "Data Confidence", "Why Selected",
+        ]
+        if kind == "Recession"
+        else [
+            "Rank", "Symbol", "Name", "Sector", "Price", "Max Profit Score",
+            "Historical Performance Score", "Recent Performance Score",
+            "Future P50 Score", "Future P75 Score", "Fundamentals Score",
+            "Consistency Score", "Relative Strength Score", "Downside Quality Score",
+            "Risk Penalty",
+            "3Y CAGR %", "5Y CAGR %", "10Y CAGR %",
+            "P10 Future Return %", "P25 Future Return %",
+            "P50 Future Return %", "P75 Future Return %",
+            "Positive Years %", "Maximum Drawdown %",
+            "Data Confidence", "Why Selected",
+        ]
     )
-    config = {
-        "Rank": st.column_config.NumberColumn(pinned=True),
-        "Ticker": st.column_config.TextColumn("Ticker", pinned=True),
-        "Current Price": st.column_config.NumberColumn(format="$%.2f"),
-    }
-    for col in display:
-        if "%" in col:
-            config[col] = st.column_config.NumberColumn(format="%.2f%%")
+    available = [column for column in factor_columns if column in table.columns]
+    display = table[available].rename(columns=PERSISTED_TABLE_RENAMES)
+    if "Consistency Score" in display.columns:
+        display = display.rename(
+            columns={
+                "Consistency Score": (
+                    "Consistency Score (10%)"
+                    if kind == "Recession"
+                    else "Consistency Score (5%)"
+                )
+            }
+        )
     st.dataframe(
         display,
         hide_index=True,
-        column_config=config,
+        column_config=_ranking_factor_config(display),
         width="stretch",
         key="top12_" + kind.lower().replace(" ", "_") + "_ranked_table",
     )
     st.caption(
-        "Projection returns are five-year annualized outcomes. Projected dollar profits use $100,000 per security. Recovery is unavailable when the prior high has not been recovered."
+        "Factor-score columns are the exact 0-100 components used in the selected ranking formula; the percentage in "
+        "each factor header is its formula weight. Raw CAGR, drawdown, stress and projection columns show the evidence "
+        "behind those components. Projection returns are five-year annualized outcomes. Recovery is unavailable when "
+        "the prior high has not been recovered."
     )
     sectors = table.groupby("Sector").size().rename("Stocks").reset_index()
     sectors["Status"] = sectors.Stocks.map(
@@ -457,7 +608,7 @@ def render_ranked_table(
     with st.expander("Walk-forward validation"):
         st.warning(LIMITATION)
         if st.button("Run historical study", key="t12_run_backtest"):
-            with st.spinner("Rebuilding historical rankings from truncated dataâ¦"):
+            with st.spinner("Rebuilding historical rankings from truncated data…"):
                 st.session_state.t12_study = cached_backtest(market, list(years))
         study = st.session_state.get("t12_study")
         if isinstance(study, pd.DataFrame) and not study.empty:
@@ -492,7 +643,7 @@ def render_ranked_table(
         json.dumps(inputs, sort_keys=True).encode() + fingerprint.encode()
     ).hexdigest()
     if st.button("Build 12-Stock Portfolio", key="t12_build"):
-        with st.spinner("Running both portfolio maintenance strategiesâ¦"):
+        with st.spinner("Running both portfolio maintenance strategies…"):
             try:
                 try:
                     live_context = live_loader(tuple(inputs["holdings"]))

@@ -14,6 +14,37 @@ from persistence import DEFAULT_REPO, DEFAULT_BRANCH, _headers
 
 _LOCK = threading.RLock()
 
+COMMON_AUDIT_COLUMNS = [
+    "Rank", "Symbol", "Name", "Sector", "Price",
+    "Risk Penalty", "Maximum Drawdown %", "Positive Years %",
+    "Historical CAGR %", "Data Quality Score", "Data Confidence", "Why Selected",
+]
+
+RECESSION_AUDIT_COLUMNS = [
+    "Recession Score",
+    "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
+    "Consistency Score", "Current Strength Score", "Profitability Score",
+    "Recession Additional Penalty",
+    "Worst Stress Return %", "Mean Stress Return %",
+    "Stress Market Excess %", "Stress Sector Excess %",
+    "Stress Drawdown %", "Stress Events", "Stress Evidence Basis",
+    "Recovery Periods", "Recovery Basis",
+    "Bear P10 Future Return %", "Bear P25 Future Return %",
+    "Bear P50 Future Return %", "Bear P75 Future Return %", "Bear P90 Future Return %",
+]
+
+MAX_PROFIT_AUDIT_COLUMNS = [
+    "Max Profit Score",
+    "Historical Performance Score", "Recent Performance Score",
+    "Future P50 Score", "Future P75 Score", "Fundamentals Score",
+    "Consistency Score", "Relative Strength Score", "Downside Quality Score",
+    "3Y CAGR %", "5Y CAGR %", "10Y CAGR %",
+    "P10 Future Return %", "P25 Future Return %",
+    "P50 Future Return %", "P75 Future Return %", "P90 Future Return %",
+    "Best Historical Year %", "Worst Historical Year %",
+    "P50 Projected Profit", "P75 Projected Profit",
+]
+
 
 def ledger_path(kind):
     return (
@@ -55,17 +86,36 @@ def load_ledger(kind, remote=True):
     return merge_ledgers(local)
 
 
+def _audit_columns(kind, table):
+    strategy = RECESSION_AUDIT_COLUMNS if kind == "Recession" else MAX_PROFIT_AUDIT_COLUMNS
+    requested = COMMON_AUDIT_COLUMNS + strategy
+    # Preserve deterministic column order while only saving fields that the
+    # ranking engine actually produced.
+    return [column for column in dict.fromkeys(requested) if column in table.columns]
+
+
 def record_run(ledger, kind, table, metadata, timestamp=None):
+    """Persist the ranking plus the factor evidence used to determine it.
+
+    Older ledgers containing only Rank/Symbol/Sector/Score remain valid.
+    New runs store strategy component scores and the most relevant raw evidence
+    so the GitHub-backed result table is auditable without recalculating.
+    """
     stamp = timestamp or datetime.now(timezone.utc).isoformat()
     score = kind + " Score"
-    rows = json.loads(
-        table[["Rank", "Symbol", "Sector", score]].to_json(orient="records")
-    )
+    columns = _audit_columns(kind, table)
+    minimum = ["Rank", "Symbol", "Sector", score]
+    if not set(minimum).issubset(columns):
+        # Defensive fallback should only be needed for an unexpected caller.
+        columns = [column for column in minimum if column in table.columns]
+    rows = json.loads(table[columns].to_json(orient="records"))
+
     fingerprint = hashlib.sha256(
         json.dumps([kind, rows, metadata], sort_keys=True).encode()
     ).hexdigest()
     if any(r["id"] == fingerprint for r in ledger.get("runs", [])):
         return ledger
+
     old = current_table(ledger)
     before = {r["Symbol"]: r for r in old.to_dict("records")}
     after = {r["Symbol"]: r for r in rows}
