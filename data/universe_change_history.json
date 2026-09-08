@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "occurred_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "first_detected_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "first_detected_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CCZ",
+    "name": "Comcast Holdings ZONES",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "first_detected_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "first_detected_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "GSK",
+    "name": "GSK plc American Depositary Shares (Each representing two Ordinary Shares)",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "first_detected_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "first_detected_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HWM",
+    "name": "Howmet Aerospace Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "first_detected_at_et": "2026-09-08T09:59:45.692254-04:00",
+    "first_detected_display_et": "Sep 08, 2026 09:59:45 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "MELI",
+    "name": "MercadoLibre Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  }
+]
