@@ -193,6 +193,14 @@ def _combined_portfolio_metrics(record: dict) -> dict:
             "cagr_10y_pct": None,
             "positive_years": 0,
             "available_years": 0,
+            "positive_months": (
+                int(record.get("portfolio_positive_months"))
+                if record.get("portfolio_positive_months") is not None else None
+            ),
+            "available_months": (
+                int(record.get("portfolio_available_months"))
+                if record.get("portfolio_available_months") is not None else None
+            ),
             "worst_year": None,
             "worst_year_pct": None,
             "best_year": None,
@@ -267,6 +275,14 @@ def _combined_portfolio_metrics(record: dict) -> dict:
         "cagr_10y_pct": cagr,
         "positive_years": positive_years,
         "available_years": len(annual),
+        "positive_months": (
+            int(record.get("portfolio_positive_months"))
+            if record.get("portfolio_positive_months") is not None else None
+        ),
+        "available_months": (
+            int(record.get("portfolio_available_months"))
+            if record.get("portfolio_available_months") is not None else None
+        ),
         "worst_year": worst[0] if worst else None,
         "worst_year_pct": worst[1] if worst else None,
         "best_year": best[0] if best else None,
@@ -437,7 +453,11 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
                 f"REBALANCED {_money(rb_end)}  |  NOT-REBAL {_money(nr_end)}",
                 f"REBALANCE DIFF {_money(rb_end - nr_end, signed=True)}  |  POSITIVE YRS RB {rb_pos}/{rb_years} NR {nr_pos}/{nr_years}",
             ]
-        return []
+        return [
+            "WITHDRAWAL MODE NONE",
+            "NO CASH WITHDRAWALS APPLIED",
+            "FULL PORTFOLIO INFORMATION + TIMEFRAME PERFORMANCE TABLES INCLUDED",
+        ]
 
     withdrawal_lines = _page1_withdrawal_lines()
     x0 = 24
@@ -477,7 +497,13 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
     c.drawRightString(lwidth - 24, section_y, "Allocation-weighted combination of all instruments")
 
     pos_years = f"{int(combined.get('positive_years') or 0)}/{int(combined.get('available_years') or 0)}"
-    page1_positive_months = "-"
+    _base_positive_months = combined.get("positive_months")
+    _base_available_months = combined.get("available_months")
+    page1_positive_months = (
+        f"{int(_base_positive_months)}/{int(_base_available_months)}"
+        if _base_positive_months is not None and _base_available_months is not None
+        else "-"
+    )
     if bool(record.get("monthly_withdrawals_enabled")):
         _page1_rb = dict(record.get("monthly_withdrawal_rebalanced") or {})
         _page1_nr = dict(record.get("monthly_withdrawal_not_rebalanced") or {})

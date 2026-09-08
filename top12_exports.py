@@ -4,10 +4,8 @@ from io import BytesIO
 from xml.sax.saxutils import escape
 import json
 import math
-from pathlib import Path
 import pandas as pd
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import (
     SimpleDocTemplate,
     Paragraph,
@@ -15,6 +13,18 @@ from reportlab.platypus import (
     PageBreak,
     Table,
     TableStyle,
+)
+from marketscope_pdf_theme import (
+    ACCENT,
+    CARD,
+    CARD_ALT,
+    LINE,
+    TEXT,
+    build_styles,
+    document_kwargs,
+    page_decorator,
+    paragraph,
+    table_style,
 )
 
 DISCLOSURES = {
@@ -76,29 +86,19 @@ def build_top12_excel(kind, table, result, portfolio=None, history=None, backtes
 
 def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=None):
     out = BytesIO()
-    styles = getSampleStyleSheet()
+    styles = build_styles()
     story = []
-    from reportlab.pdfbase import pdfmetrics
-    from reportlab.pdfbase.ttfonts import TTFont
-
-    font = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
-    if font.exists():
-        pdfmetrics.registerFont(TTFont("Top12Sans", str(font)))
-        for style in styles.byName.values():
-            style.fontName = "Top12Sans"
-    styles["BodyText"].fontSize = 10
-    styles["BodyText"].leading = 14
 
     def p(text, style="BodyText"):
-        text = str(text).replace("—", "-").replace("→", "to")
-        return Paragraph(escape(text), styles[style])
+        mapped = "MSBody" if style == "BodyText" else style
+        return paragraph(text, styles, mapped)
 
     title = (
         "Top 12 Recession-Resilient Stocks"
         if kind == "Recession"
         else "Top 12 Max-Profit High-Performance Stocks"
     )
-    story += [p("MarketScope — " + title, "Title"), p(DISCLOSURES[kind]), Spacer(1, 12)]
+    story += [p(DISCLOSURES[kind], "MSWarning"), Spacer(1, 12)]
     for k, v in result["metadata"].items():
         story.append(p(f"{k}: {v}"))
     story += [Spacer(1, 12), p("Sector allocation", "Heading2")]
@@ -131,21 +131,12 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
             elif isinstance(value, (float, int)):
                 value = f"{value:,.2f}"
             rows.append([p(c), p(value)])
-        t = Table(rows, colWidths=[290, 180])
-        t.setStyle(
-            TableStyle(
-                [
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    (
-                        "ROWBACKGROUNDS",
-                        (0, 0),
-                        (-1, -1),
-                        [colors.whitesmoke, colors.white],
-                    ),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-                ]
-            )
-        )
+        t = Table(rows, colWidths=[360, 365])
+        t.setStyle(table_style(font_size=7.4, header=False))
+        t.setStyle(TableStyle([
+            ("TEXTCOLOR", (0, 0), (0, -1), ACCENT),
+            ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+        ]))
         story.extend([t, Spacer(1, 12)])
         if i < 11:
             story.append(PageBreak())
@@ -176,19 +167,8 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
     if not (history or {}).get("events"):
         story.append(p("No changes recorded."))
 
-    def footer(canvas, doc):
-        canvas.saveState()
-        canvas.setFont("Helvetica", 8)
-        canvas.drawString(40, 24, "MarketScope 5.11.9 | Probabilistic research report")
-        canvas.drawRightString(doc.pagesize[0] - 40, 24, str(doc.page))
-        canvas.restoreState()
-
-    SimpleDocTemplate(
-        out,
-        title="MarketScope " + title,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=40,
-        bottomMargin=40,
-    ).build(story, onFirstPage=footer, onLaterPages=footer)
+    decorator = page_decorator(title, "Dynamic Top 12 ranking and portfolio evidence")
+    SimpleDocTemplate(out, **document_kwargs("MarketScope " + title)).build(
+        story, onFirstPage=decorator, onLaterPages=decorator
+    )
     return out.getvalue()

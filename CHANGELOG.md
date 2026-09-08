@@ -1,3 +1,11 @@
+# 5.11.11 - 2026-09-08
+
+- Added one shared MarketScope PDF presentation system based on the existing
+  dark Stock Projection report.
+- Applied the common landscape layout, palette, typography, headers, footers,
+  page numbering, warnings, and table treatment to Future Projection and Top 12.
+- Preserved all report calculations, data fields, exports, and saved-PDF behavior.
+
 # 5.11.9 - 2026-09-06
 
 - Replaced Top 12 background polling with direct click-to-table calculation.

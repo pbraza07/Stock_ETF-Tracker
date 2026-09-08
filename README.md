@@ -1,8 +1,8 @@
-# MarketScope v5.11.9
+# MarketScope v5.11.11
 
-MarketScope v5.11.9 fixes the Top 12 selection interface so each ranking button
-opens its own sortable 12-stock table. See [RELEASE_5_11_9.md](RELEASE_5_11_9.md)
-for behavior, validation, deployment steps and evidence limitations.
+MarketScope v5.11.11 uses the Stock Projection visual system for every generated
+PDF, including saved portfolio simulations, Future Projection, and both Top 12
+ranking reports. See [RELEASE_5_11_11.md](RELEASE_5_11_11.md).
 
 Upload the extracted files directly to the GitHub repository root and keep the
 Render Root Directory blank.

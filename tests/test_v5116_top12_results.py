@@ -28,7 +28,7 @@ import streamlit as st
 from unittest.mock import patch
 import top12_ui as ui
 st.session_state.setdefault('workspace_navigation', 'Favorite Picks')
-with patch.object(ui, 'calculate_rankings', return_value=st.session_state.qa_payload), patch.object(ui, 'SAVE_EXECUTOR', st.session_state.qa_save_executor), patch.object(ui, 'ranking_exports', return_value=(b'excel', b'pdf')):
+with patch.object(ui, 'cached_ledger', side_effect=lambda kind: st.session_state.qa_ledgers[kind]), patch.object(ui, 'calculate_rankings', return_value=st.session_state.qa_payload), patch.object(ui, 'SAVE_EXECUTOR', st.session_state.qa_save_executor), patch.object(ui, 'ranking_exports', return_value=(b'excel', b'pdf')):
     ui.render_top12_rankings(st.session_state.qa_market, st.session_state.qa_years, '2026-09-06', lambda *a: {}, lambda *a: {})
 """
 
@@ -39,6 +39,17 @@ def app_for(payload):
     app.session_state.qa_save_executor = SaveExecutor()
     app.session_state.qa_market = fixture()
     app.session_state.qa_years = YEARS
+    app.session_state.qa_ledgers = {
+        kind: {
+            "runs": [{
+                "Timestamp": "2026-09-06",
+                "Metadata": {"Model Version": "5.11.11", "Market Data Through": "2026-09-06"},
+                "Holdings": payload["result"][kind].to_dict("records"),
+            }],
+            "events": [],
+        }
+        for kind in ("Recession", "Max Profit")
+    }
     return app.run()
 
 
@@ -51,8 +62,8 @@ def test_each_button_immediately_opens_its_own_12_stock_table(payload, button, k
     assert not app.exception
     assert app.session_state.t12_active_kind == kind
     assert len(app.dataframe[0].value) == 12
-    score = "Recession Resilience Score" if kind == "Recession" else "Max Profit Score"
-    other = "Max Profit Score" if kind == "Recession" else "Recession Resilience Score"
+    score = "Final Recession Score" if kind == "Recession" else "Final Max-Profit Score"
+    other = "Final Max-Profit Score" if kind == "Recession" else "Final Recession Score"
     assert score in app.dataframe[0].value.columns
     assert other not in app.dataframe[0].value.columns
     assert all(widget.key != "t12_input_view" for widget in app.radio)
@@ -62,10 +73,10 @@ def test_buttons_switch_between_two_distinct_tables(payload):
     app = app_for(payload)
     app.button(key="t12_recession").click().run()
     recession_symbols = app.dataframe[0].value.Ticker.tolist()
-    assert "Recession Resilience Score" in app.dataframe[0].value
+    assert "Final Recession Score" in app.dataframe[0].value
     app.button(key="t12_profit").click().run()
     assert app.session_state.t12_active_kind == "Max Profit"
-    assert "Max Profit Score" in app.dataframe[0].value
+    assert "Final Max-Profit Score" in app.dataframe[0].value
     assert len(app.dataframe[0].value) == 12
     assert app.dataframe[0].value.Ticker.tolist() != []
     app.button(key="t12_recession").click().run()
@@ -78,7 +89,7 @@ def test_table_survives_rerun_and_save_messages_do_not_hide_it(payload):
     app.run()
     assert not app.exception
     assert len(app.dataframe[0].value) == 12
-    assert "Max Profit Score" in app.dataframe[0].value
+    assert "Final Max-Profit Score" in app.dataframe[0].value
 
 
 def test_failure_is_visible_and_previous_table_remains(payload):

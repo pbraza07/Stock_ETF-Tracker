@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.9: recovered dual Top 12 rankings and presentation performance release.
+# v5.11.11: unified Stock Projection layout across every generated PDF.
 
 import json
 import os
@@ -1800,7 +1800,7 @@ def _card_logo_html(symbol: str, logo_url: str) -> str:
 def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame) -> dict:
     """Upgrade any saved simulation to the current PDF/positive-month contract."""
     upgraded = json.loads(json.dumps(record))
-    required_layout = "MarketScope Portfolio Split Simulator v37 - v5.9.82 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1"
+    required_layout = "MarketScope Portfolio Split Simulator v37 - v5.9.82 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1 + no-withdrawal table/PDF parity + unified PDF layout v5.11.11"
     upgraded["_force_pdf_rebuild"] = str(record.get("pdf_layout") or "") != required_layout
     upgraded["app_version"] = MARKETSCOPE_VERSION
 
@@ -1852,6 +1852,25 @@ def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame
                 if values:
                     item["positive_months"] = int(sum(1 for v in values if v > 0.0))
                     item["available_months"] = int(len(values))
+
+            if (
+                not bool(upgraded.get("annual_withdrawals_enabled"))
+                and not bool(upgraded.get("monthly_withdrawals_enabled"))
+                and not actual_payload.get("unavailable")
+            ):
+                legacy_weights = {
+                    str(item.get("symbol") or "").upper(): float(item.get("weight") or 0.0)
+                    for item in instruments
+                }
+                legacy_positive, legacy_months = _portfolio_no_withdrawal_positive_month_counts(
+                    actual_payload,
+                    [str(item.get("symbol") or "").upper() for item in instruments],
+                    legacy_weights,
+                    float(upgraded.get("total_invested") or 0.0),
+                )
+                if legacy_positive is not None and legacy_months is not None:
+                    upgraded["portfolio_positive_months"] = int(legacy_positive)
+                    upgraded["portfolio_available_months"] = int(legacy_months)
 
     if market_df is not None and not market_df.empty:
         lookup_source = _hydrate_price_targets(market_df, symbols) if symbols else market_df.copy()
@@ -4741,7 +4760,90 @@ def _portfolio_analytics_dataframe(payloads: list[dict]) -> pd.DataFrame:
             value = perf.get(metric)
             row[metric] = f"{float(value):+.2f}%" if value is not None else "—"
         rows.append(row)
-    return pd.DataFrame(rows)
+
+    # v5.11.9 corrective parity: the Portfolio/Profit Simulator information
+    # table always uses one canonical schema. Withdrawal mode changes cash-flow
+    # calculations, never which information/performance columns are shown.
+    columns = [
+        "Industry",
+        "Stock",
+        "Allocation",
+        "10-year CAGR",
+        "Positive years",
+        "Positive months",
+        "Worst year and %",
+        "Best year and %",
+        "Regular yield",
+        "Est. annual dividend",
+        *PERF_COLS,
+    ]
+    if not rows:
+        return pd.DataFrame(columns=columns)
+    return pd.DataFrame(rows).reindex(columns=columns)
+
+
+def _portfolio_no_withdrawal_positive_month_counts(
+    monthly_payload: dict,
+    symbols: list[str],
+    weights: dict[str, float],
+    principal: float,
+) -> tuple[int | None, int | None]:
+    # Count positive portfolio months on the natural no-withdrawal drift path.
+    returns = (monthly_payload or {}).get("returns") or {}
+    clean = [
+        str(symbol).upper()
+        for symbol in symbols
+        if float((weights or {}).get(str(symbol).upper(), 0.0) or 0.0) > 0
+    ]
+    if not clean:
+        return None, None
+
+    maps = []
+    for symbol in clean:
+        month_map = returns.get(symbol) or {}
+        if not month_map:
+            return None, None
+        maps.append(month_map)
+
+    common = set(maps[0])
+    for month_map in maps[1:]:
+        common &= set(month_map)
+    periods = sorted(common)
+    if not periods:
+        return None, None
+
+    weight_total = sum(float((weights or {}).get(symbol, 0.0) or 0.0) for symbol in clean)
+    if weight_total <= 0 or float(principal or 0.0) <= 0:
+        return None, None
+
+    balances = {
+        symbol: float(principal) * float((weights or {}).get(symbol, 0.0) or 0.0) / weight_total
+        for symbol in clean
+    }
+    positive = 0
+    modeled = 0
+    for period in periods:
+        before = sum(balances.values())
+        valid = True
+        next_balances = {}
+        for symbol in clean:
+            try:
+                monthly_return = float((returns.get(symbol) or {}).get(period))
+            except (TypeError, ValueError):
+                valid = False
+                break
+            if not np.isfinite(monthly_return) or monthly_return <= -1.0:
+                valid = False
+                break
+            next_balances[symbol] = balances[symbol] * (1.0 + monthly_return)
+        if not valid or before <= 0:
+            continue
+        balances = next_balances
+        after = sum(balances.values())
+        positive += int(after > before)
+        modeled += 1
+
+    return (int(positive), int(modeled)) if modeled else (None, None)
 
 
 with portfolio_tab:
@@ -4765,6 +4867,8 @@ with portfolio_tab:
     portfolio_results: list[dict] = []
     portfolio_analytics: list[dict] = []
     portfolio_income_metrics: dict[str, dict] = {}
+    portfolio_no_withdrawal_positive_months: int | None = None
+    portfolio_no_withdrawal_available_months: int | None = None
     calculated: list[dict] = []
     unresolved_amount = 0.0
     total_ending = 0.0
@@ -6159,6 +6263,7 @@ with portfolio_tab:
                 if portfolio_results:
                     portfolio_income_metrics = cached_income_metrics(tuple(str(s).upper() for s in selected_portfolio_symbols))
                     analytics_monthly_stats: dict[str, dict] = {}
+                    analytics_monthly_payload: dict = {"returns": {}, "unavailable": True}
                     analytics_years = tuple(str(y) for y in (effective_portfolio_years or [])[:10])
                     if analytics_years:
                         analytics_monthly_payload = cached_actual_monthly_returns(
@@ -6172,6 +6277,24 @@ with portfolio_tab:
                                     "positive_months": sum(1 for v in _values if v > 0.0),
                                     "available_months": len(_values),
                                 }
+
+                    # v5.11.9 corrective parity: save a true portfolio-level
+                    # positive-month count even when no withdrawal mode is on.
+                    if (
+                        not portfolio_withdrawals_enabled
+                        and not portfolio_monthly_withdrawals_enabled
+                        and not analytics_monthly_payload.get("unavailable")
+                    ):
+                        (
+                            portfolio_no_withdrawal_positive_months,
+                            portfolio_no_withdrawal_available_months,
+                        ) = _portfolio_no_withdrawal_positive_month_counts(
+                            analytics_monthly_payload,
+                            list(selected_portfolio_symbols),
+                            dict(portfolio_weights),
+                            float(portfolio_total),
+                        )
+
                     market_lookup_for_analytics = market.set_index(market["Symbol"].astype(str).str.upper(), drop=False)
                     portfolio_analytics = []
                     result_lookup = {str(item.get("symbol") or "").upper(): item for item in portfolio_results}
@@ -6425,6 +6548,24 @@ with portfolio_tab:
                 "instrument_count": len(saved_instruments),
                 "instruments": saved_instruments,
                 "effective_calendar_years": list(effective_portfolio_years or []),
+                "portfolio_positive_months": (
+                    int(portfolio_no_withdrawal_positive_months)
+                    if (
+                        not portfolio_withdrawals_enabled
+                        and not portfolio_monthly_withdrawals_enabled
+                        and portfolio_no_withdrawal_positive_months is not None
+                    )
+                    else None
+                ),
+                "portfolio_available_months": (
+                    int(portfolio_no_withdrawal_available_months)
+                    if (
+                        not portfolio_withdrawals_enabled
+                        and not portfolio_monthly_withdrawals_enabled
+                        and portfolio_no_withdrawal_available_months is not None
+                    )
+                    else None
+                ),
                 "monthly_positive_months_rebalanced": int(portfolio_monthly_withdrawal_rebalanced_result.get("positive_months") or 0) if portfolio_monthly_withdrawals_enabled else None,
                 "monthly_positive_months_not_rebalanced": int(portfolio_monthly_withdrawal_not_rebalanced_result.get("positive_months") or 0) if portfolio_monthly_withdrawals_enabled else None,
                 "monthly_months_modeled_rebalanced": int(portfolio_monthly_withdrawal_rebalanced_result.get("months_modeled") or 0) if portfolio_monthly_withdrawals_enabled else None,
@@ -6485,7 +6626,7 @@ with portfolio_tab:
                 "monthly_withdrawal_rebalanced_schedule": list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or []) if portfolio_monthly_withdrawals_enabled else [],
                 "monthly_return_method": "Actual adjusted month-end return from Yahoo/yfinance daily history" if portfolio_monthly_withdrawals_enabled else None,
                 "app_version": MARKETSCOPE_VERSION,
-                "pdf_layout": "MarketScope Portfolio Split Simulator v37 - v5.9.82 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1",
+                "pdf_layout": "MarketScope Portfolio Split Simulator v37 - v5.9.82 monthly reset + monthly start-year RB/NR depletion dashboard + continuous monthly start-year paths + start-year RB/NR depletion dashboard + split start-year strategies + persistent Build Simulation withdrawal tabs + annual and monthly reset views + annual positive years + display-mode searchable dropdowns + six-month universe change history + saved-card inline withdrawal summary + PDF withdrawal summary + Market Table target transcription + required instrument market data on page 1 + no-withdrawal table/PDF parity + unified PDF layout v5.11.11",
             }
             # v5.9.19: create and persist the actual PDF artifact before saving its library record.
             # The server copy is immediately available at an HTTPS static-file URL for mobile

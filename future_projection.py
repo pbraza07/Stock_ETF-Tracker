@@ -1601,32 +1601,28 @@ def build_excel_export(result: dict) -> bytes:
 
 
 def build_pdf_export(result: dict, title: str = "MarketScope Future Projection") -> bytes:
-    """Create a vector PDF executive report with the required risk disclosure."""
+    """Create a vector PDF using the shared Stock Projection visual system."""
 
     from reportlab.graphics.charts.linecharts import HorizontalLineChart
     from reportlab.graphics.shapes import Drawing, String
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_LEFT
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from marketscope_pdf_theme import (
+        ACCENT,
+        CYAN,
+        MUTED,
+        TEXT,
+        build_styles,
+        document_kwargs,
+        page_decorator,
+        table_style,
+    )
 
     output = io.BytesIO()
-    doc = SimpleDocTemplate(
-        output,
-        pagesize=letter,
-        rightMargin=0.42 * inch,
-        leftMargin=0.42 * inch,
-        topMargin=0.42 * inch,
-        bottomMargin=0.42 * inch,
-        title=title,
-    )
-    styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name="MSBody", parent=styles["BodyText"], fontSize=8.3, leading=10.5, textColor=colors.HexColor("#1B2A3A"), alignment=TA_LEFT))
-    styles.add(ParagraphStyle(name="MSWarning", parent=styles["BodyText"], fontSize=8, leading=10, textColor=colors.HexColor("#7C2D12"), backColor=colors.HexColor("#FFF7ED"), borderPadding=6))
-    styles.add(ParagraphStyle(name="MSCell", parent=styles["BodyText"], fontSize=6.2, leading=7.4, textColor=colors.HexColor("#1B2A3A")))
-    story = [Paragraph(title, styles["Title"])]
+    doc = SimpleDocTemplate(output, **document_kwargs(title))
+    styles = build_styles()
+    story = []
     metadata = result.get("metadata") or {}
     story.extend([
         Paragraph(
@@ -1664,15 +1660,7 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
     left = Table(input_rows, colWidths=[1.75 * inch, 5.05 * inch], repeatRows=1)
     right = Table(holdings_rows, colWidths=[2.2 * inch, 2.2 * inch], repeatRows=1)
     for table in (left, right):
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123B68")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 7.8),
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
-        ]))
+        table.setStyle(table_style(font_size=7.8))
     story.extend([left, Spacer(1, 8), Paragraph("Selected holdings", styles["Heading2"]), right, Spacer(1, 10)])
 
     market_state = result.get("current_market_state") or {}
@@ -1688,14 +1676,7 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
         ["Portfolio correlation risk", str(market_state.get("portfolio_correlation_risk") or "Unknown")],
     ]
     environment_table = Table(environment_rows, colWidths=[2.35 * inch, 4.45 * inch], repeatRows=1)
-    environment_table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123B68")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 7.5),
-        ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
+    environment_table.setStyle(table_style(font_size=7.5))
     story.extend([Paragraph("Current market environment", styles["Heading2"]), environment_table, Spacer(1, 10)])
 
     for strategy, payload in (result.get("strategies") or {}).items():
@@ -1722,14 +1703,7 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
                 formatted = "N/A" if value in {None, ""} else str(value)
             rows.append([metric, formatted])
         table = Table(rows, colWidths=[3.15 * inch, 3.65 * inch], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123B68")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 7.5),
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
-        ]))
+        table.setStyle(table_style(font_size=7.5))
         story.append(KeepTogether([
             Paragraph(f"{strategy} summary", styles["Heading2"]),
             table,
@@ -1762,8 +1736,8 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
         chart.valueAxis.valueMin = 0
         chart.valueAxis.labels.fontSize = 6
         drawing.add(chart)
-        drawing.add(String(48, 174, "P50 projected portfolio balance", fontSize=9, fillColor=colors.HexColor("#123B68")))
-        drawing.add(String(295, 174, "Blue: Rebalanced", fontSize=7, fillColor=colors.HexColor("#2F80ED")))
+        drawing.add(String(48, 174, "P50 projected portfolio balance", fontSize=9, fillColor=ACCENT))
+        drawing.add(String(295, 174, "Blue: Rebalanced", fontSize=7, fillColor=CYAN))
         if len(chart_series) > 1:
             drawing.add(String(385, 174, "Orange: Non-Rebalanced", fontSize=7, fillColor=colors.HexColor("#F59E0B")))
         story.extend([Paragraph("Performance chart", styles["Heading2"]), drawing, Spacer(1, 8)])
@@ -1785,13 +1759,7 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
                 f"{float(row['Non-Rebalanced Depletion Probability']):.1f}%",
             ])
         table = Table(rows, repeatRows=1, colWidths=[0.8 * inch, 1.15 * inch, 1.15 * inch, 1.1 * inch, 1.05 * inch, 1.05 * inch])
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123B68")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 6.8),
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
-        ]))
+        table.setStyle(table_style(font_size=6.8))
         story.append(KeepTogether([
             Paragraph("Rebalanced and non-rebalanced comparison", styles["Heading2"]),
             table,
@@ -1813,13 +1781,7 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
             for name, item in freshness.items()
         ]
         freshness_table = Table(freshness_rows, repeatRows=1, colWidths=[2.2 * inch, 1.2 * inch, 3.4 * inch])
-        freshness_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123B68")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 7.2),
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
-        ]))
+        freshness_table.setStyle(table_style(font_size=7.2))
         story.append(freshness_table)
     story.extend([Spacer(1, 8), Paragraph("Model assumptions", styles["Heading2"])])
     assumptions = result.get("model_assumptions", pd.DataFrame())
@@ -1836,14 +1798,8 @@ def build_pdf_export(result: dict, title: str = "MarketScope Future Projection")
                 Paragraph(str(row.get("As-of Date")), styles["MSCell"]),
             ])
         table = Table(rows, repeatRows=1, colWidths=[1.85 * inch, 0.85 * inch, 3.15 * inch, 0.95 * inch])
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123B68")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, -1), 6.5),
-            ("GRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#CBD5E1")),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ]))
+        table.setStyle(table_style(font_size=6.5))
         story.append(table)
-    doc.build(story)
+    decorator = page_decorator(title, "Probabilistic portfolio projection and risk analysis")
+    doc.build(story, onFirstPage=decorator, onLaterPages=decorator)
     return output.getvalue()
