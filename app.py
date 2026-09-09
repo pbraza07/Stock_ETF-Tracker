@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.18: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.19: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -6715,11 +6715,13 @@ with portfolio_tab:
                     return_value = float(rec.get("total_return") or 0)
                     profit_class = "pos" if profit_value > 0 else ("neg" if profit_value < 0 else "flat")
                     _saved_withdrawal_inline = _saved_simulation_withdrawal_inline_html(rec)
+                    from ytd_reports import holdings_card_html
                     st.markdown(
                         "<div class='simulation-library-card'>"
                         f"<div class='simulation-library-identity'><span class='simulation-library-name'>{escape(rec_name)}</span>"
                         f"<small>{escape(str(rec.get('created_at_display_et') or ''))} • {escape(str(rec.get('period') or 'YTD'))} • "
-                        f"{int(rec.get('instrument_count') or len(rec.get('instruments') or []))} instrument(s)</small></div>"
+                        f"{int(rec.get('instrument_count') or len(rec.get('instruments') or []))} instrument(s)</small>"
+                        f"{holdings_card_html(rec)}</div>"
                         f"<div class='simulation-library-metric'><small>INVESTED</small><b>${float(rec.get('total_invested') or 0):,.2f}</b></div>"
                         f"<div class='simulation-library-metric'><small>ENDING</small><b>${float(rec.get('ending_value') or 0):,.2f}</b></div>"
                         f"<div class='simulation-library-metric'><small>PROFIT / LOSS</small><b class='{profit_class}'>${profit_value:+,.2f}</b></div>"

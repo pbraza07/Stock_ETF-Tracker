@@ -769,6 +769,12 @@ div[data-testid="stDataFrame"] {
   padding-left: 10px;
   border-left: 1px solid rgba(148,163,184,.11);
 }
+.simulation-library-identity { min-width: 0; }
+.simulation-library-card .simulation-library-holdings {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
 .simulation-library-metric small {
   display: block;
   color: #7991a4;

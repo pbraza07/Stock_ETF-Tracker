@@ -34,6 +34,13 @@ def performance_table(table):
     return table.drop(columns=['Requested Withdrawal','Actual Withdrawal','Shortfall','Cumulative Withdrawals'],errors='ignore').rename(columns={'Net Profit incl. Withdrawals':'Cumulative Profit'})
 
 
+def holdings_card_html(record):
+    holdings=(record.get('inputs') or {}).get('holdings') or [
+        item.get('Symbol') or item.get('symbol') for item in record.get('instruments',[]) if isinstance(item,dict)]
+    symbols=list(dict.fromkeys(str(symbol).strip() for symbol in holdings if symbol and str(symbol).strip()))
+    return "<small class='simulation-library-holdings'>Holdings: "+escape(', '.join(symbols) if symbols else 'Not recorded')+"</small>"
+
+
 def summary_html(record):
     """Reuse the historical Portfolio card's exact classes and responsive layout."""
     record=presentation_record(record)
@@ -48,7 +55,7 @@ def summary_html(record):
         color=sign(number) if number is not None else ''
         return f"<div class='{cls}'><small>{escape(label)}</small><b class='{color}'>{escape(value)}</b></div>"
     meta=f"{coverage_label(first)} · {first['start_date']} to {first['through']} · {len(inputs.get('holdings',[]))} instrument(s)"
-    identity="<div class='simulation-library-identity'><span class='simulation-library-name'>"+escape(record.get('name','Simulation'))+"</span><small>"+escape(meta)+"</small></div>"
+    identity="<div class='simulation-library-identity'><span class='simulation-library-name'>"+escape(record.get('name','Simulation'))+"</span><small>"+escape(meta)+"</small>"+holdings_card_html(record)+"</div>"
     main=[field('INVESTED',f"${s['Beginning Balance']:,.2f}"),
           field('ENDING' if performance else 'RB ENDING',f"${s['Current Balance']:,.2f}"),
           field('PROFIT / LOSS' if performance else 'RB PROFIT / LOSS',f"${s['Profit / Loss']:+,.2f}",s['Profit / Loss']),
