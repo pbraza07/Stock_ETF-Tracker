@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.13: remove invalid History Pending fallbacks across the application.
+# v5.11.14: remove invalid History Pending fallbacks across the application.
 
 import json
 import os
@@ -4909,7 +4909,7 @@ with portfolio_tab:
 
     with portfolio_ytd_tab:
         from ytd_simulator import render_ytd
-        render_ytd(market)
+        render_ytd(market, on_saved=cached_saved_simulations.clear)
 
     with portfolio_build_tab:
         st.markdown("<div class='investment-title'>PORTFOLIO SPLIT SIMULATOR</div>", unsafe_allow_html=True)
@@ -6703,6 +6703,10 @@ with portfolio_tab:
                 st.info("No portfolio simulations have been saved yet.")
             else:
                 for rec in saved_simulations:
+                    if rec.get("simulation_type") == "ytd_daily":
+                        from ytd_simulator import render_saved_ytd
+                        render_saved_ytd(rec)
+                        continue
                     rec_id = str(rec.get("id") or "")
                     rec_name = str(rec.get("name") or rec_id)
                     profit_value = float(rec.get("profit_loss") or 0)
