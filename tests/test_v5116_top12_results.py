@@ -43,7 +43,7 @@ def app_for(payload):
         kind: {
             "runs": [{
                 "Timestamp": "2026-09-06",
-                "Metadata": {"Model Version": "5.11.14", "Market Data Through": "2026-09-06"},
+                "Metadata": {"Selection Policy": "Top 5 per sector", "Model Version": "5.11.16", "Market Data Through": "2026-09-06"},
                 "Holdings": payload["result"][kind].to_dict("records"),
             }],
             "events": [],
@@ -61,7 +61,7 @@ def test_each_button_immediately_opens_its_own_12_stock_table(payload, button, k
     app.button(key=button).click().run()
     assert not app.exception
     assert app.session_state.t12_active_kind == kind
-    assert len(app.dataframe[0].value) == 12
+    assert len(app.dataframe[0].value) == 30
     score = "Final Recession Score" if kind == "Recession" else "Final Max-Profit Score"
     other = "Final Max-Profit Score" if kind == "Recession" else "Final Recession Score"
     assert score in app.dataframe[0].value.columns
@@ -77,7 +77,7 @@ def test_buttons_switch_between_two_distinct_tables(payload):
     app.button(key="t12_profit").click().run()
     assert app.session_state.t12_active_kind == "Max Profit"
     assert "Final Max-Profit Score" in app.dataframe[0].value
-    assert len(app.dataframe[0].value) == 12
+    assert len(app.dataframe[0].value) == 30
     assert app.dataframe[0].value.Ticker.tolist() != []
     app.button(key="t12_recession").click().run()
     assert app.dataframe[0].value.Ticker.tolist() == recession_symbols
@@ -88,7 +88,7 @@ def test_table_survives_rerun_and_save_messages_do_not_hide_it(payload):
     app.button(key="t12_profit").click().run()
     app.run()
     assert not app.exception
-    assert len(app.dataframe[0].value) == 12
+    assert len(app.dataframe[0].value) == 30
     assert "Final Max-Profit Score" in app.dataframe[0].value
 
 
@@ -105,7 +105,7 @@ def test_failure_is_visible_and_previous_table_remains(payload):
         follow.session_state[key] = value
     follow.button(key="t12_profit") if False else None
     # Existing result rendering is separately covered; worker failures preserve state by implementation.
-    assert len(app.dataframe[0].value) == 12
+    assert len(app.dataframe[0].value) == 30
 
 
 def test_worker_uses_fallbacks_and_returns_both_tables(payload):
@@ -116,5 +116,14 @@ def test_worker_uses_fallbacks_and_returns_both_tables(payload):
         output = calculate_rankings(
             fixture(), YEARS, "asof", lambda *a: {}, lambda *a: {}, 1.0, {}
         )
-    assert len(output["result"]["Recession"]) == 12
-    assert len(output["result"]["Max Profit"]) == 12
+    assert len(output["result"]["Recession"]) == 30
+    assert len(output["result"]["Max Profit"]) == 30
+
+@pytest.mark.parametrize('button,kind', [('t12_recession','Recession'),('t12_profit','Max Profit')])
+def test_first_click_rebuilds_when_only_legacy_history_exists(payload,button,kind):
+    app=app_for(payload)
+    app.session_state.qa_ledgers={'Recession':{},'Max Profit':{}}
+    app.button(key=button).click().run()
+    assert not app.exception
+    tables=[d.value for d in app.dataframe if 'Ticker' in d.value.columns]
+    assert any(len(t)==30 and t.groupby('Sector').size().eq(5).all() for t in tables)

@@ -16,8 +16,8 @@ def test_worker_reads_history_locally_only():
             fixture(), YEARS, "asof", lambda *a: {}, lambda *a: {}, 1.0, {}
         )
     assert calls == [("Recession", False), ("Max Profit", False)]
-    assert len(output["result"]["Recession"]) == 12
-    assert len(output["result"]["Max Profit"]) == 12
+    assert len(output["result"]["Recession"]) == 30
+    assert len(output["result"]["Max Profit"]) == 30
 
 
 def test_persistence_cannot_occupy_calculation_executor():

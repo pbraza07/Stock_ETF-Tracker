@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.14: remove invalid History Pending fallbacks across the application.
+# v5.11.16: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -2735,6 +2735,8 @@ with alerts_tab:
             st.info("No new buy-signal transition is recorded in the current snapshot. Existing active signals remain available in the table filters.")
 
 with market_tab:
+    from economic_calendar import render_economic_calendar
+    render_economic_calendar()
     st.markdown(
         '<div class="universe-status-strip">'
         f'<div><span>Nasdaq Universe Last Refreshed</span><b>{escape(universe_refreshed)}</b></div>'
@@ -6705,7 +6707,7 @@ with portfolio_tab:
                 for rec in saved_simulations:
                     if rec.get("simulation_type") == "ytd_daily":
                         from ytd_simulator import render_saved_ytd
-                        render_saved_ytd(rec)
+                        render_saved_ytd(rec, on_changed=cached_saved_simulations.clear)
                         continue
                     rec_id = str(rec.get("id") or "")
                     rec_name = str(rec.get("name") or rec_id)

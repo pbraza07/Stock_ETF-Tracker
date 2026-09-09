@@ -1,4 +1,4 @@
-"""Daily Top 12 snapshots and permanent change ledgers."""
+"""Daily Top 5 per Sector snapshots and permanent change ledgers."""
 
 import sys
 import json

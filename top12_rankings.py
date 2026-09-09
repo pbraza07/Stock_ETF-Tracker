@@ -181,6 +181,18 @@ def select_top12(frame, score, previous=None, threshold=1.0):
     return result.reset_index(drop=True)
 
 
+def select_sector_leaders(frame, score, previous=None, threshold=1.0):
+    """Five eligible stocks per sector; preserve governed scores and anti-churn."""
+    table=frame.drop(columns=['Rank'],errors='ignore').copy()
+    incumbents=set(previous.Symbol) if isinstance(previous,pd.DataFrame) and not previous.empty else set()
+    table['Selection Priority']=table[score]+table.Symbol.isin(incumbents)*max(0,threshold)
+    table=table.sort_values(['Selection Priority',score,'Symbol'],ascending=[False,False,True])
+    table=table.groupby('Sector',sort=False).head(5).sort_values([score,'Symbol'],ascending=[False,True])
+    table=table.drop(columns='Selection Priority').reset_index(drop=True)
+    table.insert(0,'Rank',range(1,len(table)+1))
+    return table
+
+
 def score_universe(
     market, years, monthly=None, live=None, simulations=5000, seed=42, horizon=5
 ):
@@ -190,9 +202,9 @@ def score_universe(
     frame = screen_favorite_candidates(
         market, years, shortlist_per_sector=max(1, len(market))
     ).reset_index(drop=True)
-    if len(frame) < 12:
+    if frame.empty:
         raise ValueError(
-            "At least 12 stocks with valid sectors and three completed annual observations are required."
+            "At least one stock with a valid sector and three completed annual observations is required."
         )
     symbols = sorted(frame.Symbol.tolist())
     model = prepare_projection_model(market, symbols, years)
@@ -378,7 +390,7 @@ def build_top12_rankings(
     )
     output = {}
     for kind in WEIGHTS:
-        selected = select_top12(
+        selected = select_sector_leaders(
             frame, kind + " Score", (previous or {}).get(kind), threshold
         )
         selected["Why Selected"] = [
@@ -404,6 +416,7 @@ def build_top12_rankings(
             "Seed": seed,
             "Simulations": simulations,
             "Replacement Threshold": threshold,
+            "Selection Policy": "Top 5 per sector",
         },
     )
     output["warnings"] = [
@@ -441,7 +454,7 @@ def walk_forward_rankings(market, years, seed=42):
             continue
         for kind in WEIGHTS:
             try:
-                picks = select_top12(frame, kind + " Score", threshold=0)
+                picks = select_sector_leaders(frame, kind + " Score", threshold=0)
             except ValueError:
                 continue
             for horizon in (1, 3, 5):

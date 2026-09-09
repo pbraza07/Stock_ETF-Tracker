@@ -46,9 +46,9 @@ def test_all_eligible_and_caps(result):
     assert len(result["all_scores"]) == 36
     for kind in ("Recession", "Max Profit"):
         table = result[kind]
-        assert len(table) == 12
-        assert table.groupby("Sector").size().max() <= 4
-        assert table.Symbol.nunique() == 12
+        assert len(table) == 30
+        assert table.groupby("Sector").size().max() <= 5
+        assert table.Symbol.nunique() == 30
         assert table[kind + " Score"].between(0, 100).all()
 
 
@@ -86,7 +86,7 @@ def test_append_only_history(result):
     changed = table.copy()
     changed.loc[0, "Symbol"] = "NEW"
     updated = record_run(ledger, "Recession", changed, {}, "2026-09-02T00:00:00Z")
-    assert updated["events"][:12] == ledger["events"]
+    assert updated["events"][:30] == ledger["events"]
     assert merge_ledgers(updated, ledger) == updated
 
 
@@ -97,7 +97,7 @@ def test_portfolio_and_exports(result):
         for mode in ("Equal Weight", "Score Weighted"):
             inputs = portfolio_inputs(result[kind], kind, mode, 300000, 10)
             assert (
-                len(inputs["holdings"]) == 12
+                len(inputs["holdings"]) == 30
                 and abs(sum(inputs["allocations"].values()) - 100) < 1e-9
             )
             assert inputs["strategy"] == "Both"
@@ -190,7 +190,7 @@ def test_sector_aliases_cannot_evade_cap():
     frame, _, _ = score_universe(data, YEARS, simulations=100)
     assert "Financials" not in set(frame.Sector)
     picks = select_top12(frame, "Recession Score")
-    assert picks.Sector.eq("Finance").sum() <= 4
+    assert picks.Sector.eq("Finance").sum() <= 5
 
 
 def test_lazy_tabs_keep_inputs():

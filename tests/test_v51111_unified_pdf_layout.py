@@ -15,7 +15,7 @@ def _assert_stock_projection_layout(pdf_bytes: bytes, expected_title: str):
     for page in reader.pages:
         assert float(page.mediabox.width) > float(page.mediabox.height)
         text = page.extract_text() or ""
-        assert "MarketScope v5.11.14" in text
+        assert "MarketScope v5.11.16" in text
         assert "Page " in text
     first_page_text = reader.pages[0].extract_text() or ""
     assert expected_title in first_page_text
@@ -85,11 +85,11 @@ def test_both_top12_pdfs_use_stock_projection_layout():
     }
     _assert_stock_projection_layout(
         build_top12_pdf("Recession", table, result),
-        "Top 12 Recession-Resilient Stocks",
+        "Top 5 per Sector Recession-Resilient Stocks",
     )
     _assert_stock_projection_layout(
         build_top12_pdf("Max Profit", table, result),
-        "Top 12 Max-Profit High-Performance Stocks",
+        "Top 5 per Sector Max-Profit High-Performance Stocks",
     )
 
 

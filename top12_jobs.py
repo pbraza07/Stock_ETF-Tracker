@@ -31,7 +31,7 @@ def calculate_rankings(
         try:
             histories[kind] = load_ledger(kind, remote=False)
         except Exception:
-            LOGGER.exception("Top 12 local history load failed")
+            LOGGER.exception("Top 5 per Sector local history load failed")
             histories[kind] = {}
             warnings.append(
                 f"{kind} local history unavailable; calculating without incumbent preference."
@@ -45,7 +45,7 @@ def calculate_rankings(
             monthly_loader, monthly_symbols, tuple(years)
         ).result(timeout=MONTHLY_WAIT_SECONDS) or {"returns": {}}
     except Exception:
-        LOGGER.exception("Top 12 supplemental monthly load failed")
+        LOGGER.exception("Top 5 per Sector supplemental monthly load failed")
         monthly = {"returns": {}}
         warnings.append(
             "Monthly history could not be loaded. Annual approximations are used."
@@ -59,12 +59,12 @@ def calculate_rankings(
             or {}
         )
     except Exception:
-        LOGGER.exception("Top 12 live context load failed")
+        LOGGER.exception("Top 5 per Sector live context load failed")
         live = {}
         warnings.append(
             "Recent supplemental inputs unavailable. Using historical fallback."
         )
-    progress["stage"] = "Calculating both Top 12 lists with 5,000 scenarios"
+    progress["stage"] = "Calculating both Top 5 per Sector lists with 5,000 scenarios"
     result = build_top12_rankings(
         market,
         list(years),
@@ -75,9 +75,9 @@ def calculate_rankings(
         threshold=threshold,
     )
     for kind in ("Recession", "Max Profit"):
-        if kind not in result or len(result[kind]) != 12:
+        if kind not in result or result[kind].empty:
             raise ValueError(
-                f"{kind} did not produce 12 stocks. Check eligible history and sector diversity."
+                f"{kind} did not produce eligible stocks. Check historical evidence and sector classification."
             )
     result["metadata"]["Market Data Through"] = data_as_of
     result["metadata"]["Monthly Data Through"] = max(
@@ -93,7 +93,7 @@ def calculate_rankings(
                 histories[kind], kind, result[kind], result["metadata"], stamp
             )
         except Exception:
-            LOGGER.exception("Top 12 history event creation failed")
+            LOGGER.exception("Top 5 per Sector history event creation failed")
             result["warnings"].append(
                 f"{kind} change event could not be recorded; the calculated ranking remains available."
             )
@@ -107,7 +107,7 @@ def save_histories(histories):
             ok, message = persist_ledger(kind, ledger)
             messages.append((ok, message))
         except Exception:
-            LOGGER.exception("Top 12 history persistence failed")
+            LOGGER.exception("Top 5 per Sector history persistence failed")
             messages.append(
                 (
                     False,

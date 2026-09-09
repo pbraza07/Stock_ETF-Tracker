@@ -40,11 +40,11 @@ def consume_completed_job():
                 save_histories, payload["histories"]
             )
         except Exception as exc:
-            logging.getLogger(__name__).exception("Top 12 calculation failed")
+            logging.getLogger(__name__).exception("Top 5 per Sector calculation failed")
             st.session_state.t12_error = (
                 str(exc)
                 if isinstance(exc, ValueError)
-                else "Top 12 calculation failed. Your previous result is retained. Retry the button; technical details were recorded in the server log."
+                else "Top 5 per Sector calculation failed. Your previous result is retained. Retry the button; technical details were recorded in the server log."
             )
     saved = st.session_state.get("t12_save_job")
     if saved and saved.done():
@@ -180,7 +180,7 @@ def _latest_persisted_run(kind):
     required = {"Rank", "Symbol", "Sector", score}
     for run in reversed((ledger or {}).get("runs") or []):
         holdings = run.get("Holdings")
-        if not isinstance(holdings, list) or len(holdings) != 12:
+        if not isinstance(holdings, list) or not holdings or (run.get("Metadata") or {}).get("Selection Policy") != "Top 5 per sector":
             continue
         table = pd.DataFrame(holdings)
         if required.issubset(table.columns):
@@ -255,18 +255,19 @@ def _ranking_factor_config(display):
 def render_persisted_ranked_table(kind, market):
     """Render saved ranking plus the factor/evidence columns that produced its score."""
     ledger, run, table = _latest_persisted_run(kind)
-    if run is None or len(table) != 12:
-        st.error(
-            f"No complete saved {kind} Top 12 result is available yet. Use Advanced recalculation below to create one."
+    if run is None or table.empty:
+        st.info(
+            f"No complete saved {kind} Top 5 per Sector result is available yet. Use Advanced recalculation below to create one."
         )
         return ledger, pd.DataFrame()
 
     st.subheader(
-        "Top 12 Recession-Resilient Stocks"
+        "Top 5 per Sector Recession-Resilient Stocks"
         if kind == "Recession"
-        else "Top 12 Max-Profit High-Performance Stocks"
+        else "Top 5 per Sector Max-Profit High-Performance Stocks"
     )
     st.warning(DISCLOSURES[kind])
+    st.caption(f"{len(table)} selected stocks across {table.Sector.nunique()} sectors; up to five per sector.")
 
     metadata = run.get("Metadata") or {}
     generated = metadata.get("Ranking Generated") or run.get("Timestamp") or "Unavailable"
@@ -358,17 +359,18 @@ def portfolio_inputs(table, kind, allocation, investment, years):
 def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader):
     """Open the selected tracked JSON ranking immediately; recalculation is optional."""
     consume_completed_job()
-    st.markdown("### Dynamic Top 12 Stock Rankings")
+    st.markdown("### Dynamic sector stock rankings")
+    st.caption("Five highest-scoring eligible stocks per sector. Existing model eligibility and scoring apply; relative rank is not a guarantee of resilience or profit.")
     columns = st.columns(2)
     columns[0].button(
-        "🛡️ Top 12 Recession-Resilient Stocks",
+        "🛡️ Top 5 per Sector Recession-Resilient Stocks",
         key="t12_recession",
         on_click=request_ranking,
         args=("Recession",),
         use_container_width=True,
     )
     columns[1].button(
-        "🚀 Top 12 Max-Profit High-Performance Stocks",
+        "🚀 Top 5 per Sector Max-Profit High-Performance Stocks",
         key="t12_profit",
         on_click=request_ranking,
         args=("Max Profit",),
@@ -387,7 +389,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
     )
     if kind not in ("Recession", "Max Profit"):
         st.info(
-            "Select either Top 12 button. Its saved 12-stock result will open below as a table."
+            "Select either Top 5 per Sector button. Its saved sector-leader result will open below as a table."
         )
         return
 
@@ -400,7 +402,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
 
     with st.expander("Advanced recalculation and full analysis"):
         st.caption(
-            "The main table above comes directly from the saved ranking history. Recalculate only when you intentionally want MarketScope to rebuild both Top 12 rankings from current app data."
+            "The main table above comes directly from the saved ranking history. Recalculate only when you intentionally want MarketScope to rebuild both Top 5 per Sector rankings from current app data."
         )
         threshold = st.number_input(
             "Replacement threshold (ranking points)",
@@ -411,15 +413,15 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
             key="t12_input_threshold",
         )
         recalculate = st.button(
-            "Recalculate Top 12 rankings",
+            "Recalculate Top 5 per Sector rankings",
             key="t12_recalculate",
             use_container_width=True,
         )
-        if recalculate:
+        if recalculate or (requested and saved_table.empty):
             progress = {"stage": "Evaluating every eligible MarketScope stock"}
             try:
                 with st.spinner(
-                    "Evaluating all eligible stocks and rebuilding both Top 12 tables…"
+                    "Evaluating all eligible stocks and rebuilding both Top 5 per Sector tables…"
                 ):
                     payload = calculate_rankings(
                         market.copy(deep=True),
@@ -440,11 +442,11 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
                     save_histories, payload["histories"]
                 )
             except Exception as exc:
-                logging.getLogger(__name__).exception("Top 12 calculation failed")
+                logging.getLogger(__name__).exception("Top 5 per Sector calculation failed")
                 st.session_state.t12_error = (
                     str(exc)
                     if isinstance(exc, ValueError)
-                    else "Top 12 calculation could not be completed. The saved table above remains available."
+                    else "Top 5 per Sector calculation could not be completed. The saved table above remains available."
                 )
 
     consume_completed_job()
@@ -466,7 +468,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         )
 
     table = result.get(kind)
-    if not isinstance(table, pd.DataFrame) or len(table) != 12:
+    if not isinstance(table, pd.DataFrame) or table.empty:
         st.error(
             f"{kind} advanced results are incomplete. The saved table above remains available."
         )
@@ -494,11 +496,12 @@ def render_ranked_table(
 ):
     """A dedicated table and portfolio workspace for exactly one ranking kind."""
     st.subheader(
-        "Top 12 Recession-Resilient Stocks"
+        "Top 5 per Sector Recession-Resilient Stocks"
         if kind == "Recession"
-        else "Top 12 Max-Profit High-Performance Stocks"
+        else "Top 5 per Sector Max-Profit High-Performance Stocks"
     )
     st.warning(DISCLOSURES[kind])
+    st.caption(f"{len(table)} selected stocks across {table.Sector.nunique()} sectors; up to five per sector.")
     st.caption(str(result["metadata"]))
     for warning in result.get("warnings", []):
         st.caption(warning)
@@ -599,7 +602,7 @@ def render_ranked_table(
     )
     sectors = table.groupby("Sector").size().rename("Stocks").reset_index()
     sectors["Status"] = sectors.Stocks.map(
-        lambda n: "SECTOR CAP REACHED" if n == 4 else ""
+        lambda n: "SECTOR CAP REACHED" if n == 5 else ""
     )
     st.dataframe(sectors, hide_index=True)
     with st.expander("All candidate scores and model audit"):
@@ -622,7 +625,7 @@ def render_ranked_table(
             st.caption(
                 "Model Backtest Score: unavailable until historical study completes."
             )
-    st.markdown("#### Build 12-stock portfolio")
+    st.markdown("#### Build sector-leader portfolio")
     allocation = st.radio(
         "Allocation",
         ["Equal Weight", "Score Weighted"],
@@ -642,7 +645,7 @@ def render_ranked_table(
     portfolio_key = hashlib.sha256(
         json.dumps(inputs, sort_keys=True).encode() + fingerprint.encode()
     ).hexdigest()
-    if st.button("Build 12-Stock Portfolio", key="t12_build"):
+    if st.button("Build Sector-Leader Portfolio", key="t12_build"):
         with st.spinner("Running both portfolio maintenance strategies…"):
             try:
                 try:
@@ -712,7 +715,7 @@ def render_ranked_table(
     try:
         excel, pdf = ranking_exports(kind, table, result, portfolio, history, study)
     except Exception:
-        logging.getLogger(__name__).exception("Top 12 export generation failed")
+        logging.getLogger(__name__).exception("Top 5 per Sector export generation failed")
         st.warning(
             "Reports could not be generated. The ranked table above remains available; retry after checking the server log."
         )
@@ -720,12 +723,12 @@ def render_ranked_table(
     st.download_button(
         "Download Excel",
         excel,
-        file_name="MarketScope_Top12_" + kind.replace(" ", "_") + ".xlsx",
+        file_name="MarketScope_SectorLeaders_" + kind.replace(" ", "_") + ".xlsx",
     )
     st.download_button(
         "Download PDF",
         pdf,
-        file_name="MarketScope_Top12_" + kind.replace(" ", "_") + ".pdf",
+        file_name="MarketScope_SectorLeaders_" + kind.replace(" ", "_") + ".pdf",
     )
     with st.expander("View Ranking History"):
         st.dataframe(pd.DataFrame(history.get("events", [])), hide_index=True)

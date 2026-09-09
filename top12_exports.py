@@ -39,7 +39,7 @@ def build_top12_excel(kind, table, result, portfolio=None, history=None, backtes
     from top12_rankings import WEIGHTS
 
     with pd.ExcelWriter(out, engine="openpyxl") as writer:
-        table.to_excel(writer, sheet_name="Top 12", index=False)
+        table.to_excel(writer, sheet_name="Top 5 per Sector", index=False)
         result["all_scores"].to_excel(
             writer, sheet_name="All Candidate Scores", index=False
         )
@@ -94,9 +94,9 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
         return paragraph(text, styles, mapped)
 
     title = (
-        "Top 12 Recession-Resilient Stocks"
+        "Top 5 per Sector Recession-Resilient Stocks"
         if kind == "Recession"
-        else "Top 12 Max-Profit High-Performance Stocks"
+        else "Top 5 per Sector Max-Profit High-Performance Stocks"
     )
     story += [p(DISCLOSURES[kind], "MSWarning"), Spacer(1, 12)]
     for k, v in result["metadata"].items():
@@ -104,7 +104,7 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
     story += [Spacer(1, 12), p("Sector allocation", "Heading2")]
     for sector, count in table.groupby("Sector").size().items():
         story.append(
-            p(f"{sector}: {count}" + (" — SECTOR CAP REACHED" if count == 4 else ""))
+            p(f"{sector}: {count}" + (" — SECTOR CAP REACHED" if count == 5 else ""))
         )
     story.append(PageBreak())
     for i, row in enumerate(table.to_dict("records")):
@@ -167,7 +167,7 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
     if not (history or {}).get("events"):
         story.append(p("No changes recorded."))
 
-    decorator = page_decorator(title, "Dynamic Top 12 ranking and portfolio evidence")
+    decorator = page_decorator(title, "Dynamic Top 5 per Sector ranking and portfolio evidence")
     SimpleDocTemplate(out, **document_kwargs("MarketScope " + title)).build(
         story, onFirstPage=decorator, onLaterPages=decorator
     )
