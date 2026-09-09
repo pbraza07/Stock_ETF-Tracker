@@ -129,6 +129,17 @@ def _pct(value: float) -> str:
     return f"{float(value or 0):+.2f}%"
 
 
+def _history_verification_status(value) -> str:
+    raw = "" if value is None else str(value).strip()
+    if raw.lower() in {"", "nan", "none", "<na>", "—", "pending"}:
+        return "Unavailable"
+    canonical = {
+        "verified": "Verified", "partial": "Partial",
+        "review": "Review", "unavailable": "Unavailable",
+    }
+    return canonical.get(raw.lower(), raw)
+
+
 def _maybe_pct(value) -> str:
     try:
         if value is None:
@@ -1462,7 +1473,7 @@ def build_portfolio_simulation_pdf(record: dict) -> bytes:
                     if item.get("positive_months") is not None and item.get("available_months") is not None
                     else "-"
                 )
-                verification = str(item.get("history_verification") or "Pending")
+                verification = _history_verification_status(item.get("history_verification"))
                 verification_coverage = str(item.get("verification_coverage") or "").strip()
                 verification_text = verification + (f" {verification_coverage}" if verification_coverage else "")
                 max_diff = item.get("max_verification_diff_pp")

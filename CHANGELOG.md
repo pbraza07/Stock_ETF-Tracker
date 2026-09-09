@@ -1,3 +1,12 @@
+# 5.11.12 - 2026-09-09
+
+- Removed the invalid `History Pending` fallback from cards, comparisons,
+  saved simulations, and portfolio PDFs.
+- Normalized old blank or Pending values to `Unavailable` without changing
+  genuinely completed Verified, Partial, or Review results.
+- Clarified the card badge as `History Check` so it cannot be confused with
+  the amount of price/return history available for the stock.
+
 # 5.11.11 - 2026-09-08
 
 - Added one shared MarketScope PDF presentation system based on the existing

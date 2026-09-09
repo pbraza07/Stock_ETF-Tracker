@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.11: unified Stock Projection layout across every generated PDF.
+# v5.11.12: remove invalid History Pending fallbacks across the application.
 
 import json
 import os
@@ -748,6 +748,27 @@ def _combo_rank_table(df: pd.DataFrame, period: str) -> pd.DataFrame:
             out[col] = pd.to_numeric(out[col], errors="coerce").round(2)
     return out
 
+def _normalized_history_verification(value) -> str:
+    """Return only a completed, user-meaningful history-check state."""
+    if value is None:
+        return "Unavailable"
+    try:
+        if pd.isna(value):
+            return "Unavailable"
+    except (TypeError, ValueError):
+        pass
+    raw = str(value).strip()
+    if raw.lower() in {"", "nan", "none", "<na>", "—", "pending"}:
+        return "Unavailable"
+    canonical = {
+        "verified": "Verified",
+        "partial": "Partial",
+        "review": "Review",
+        "unavailable": "Unavailable",
+    }
+    return canonical.get(raw.lower(), raw)
+
+
 def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
     if df is None or df.empty or "Symbol" not in df.columns:
         return pd.DataFrame()
@@ -771,8 +792,9 @@ def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
         "Verification Source", "Verification Updated ET",
     ]:
         if col not in df.columns:
-            df[col] = "Not Rated" if col == "Analyst Rating" else ("Pending" if col == "History Verification" else "—")
+            df[col] = "Not Rated" if col == "Analyst Rating" else ("Unavailable" if col == "History Verification" else "—")
     df["Analyst Rating"] = df["Analyst Rating"].fillna("Not Rated").replace({"": "Not Rated", "nan": "Not Rated"})
+    df["History Verification"] = df["History Verification"].map(_normalized_history_verification)
     for col in SIGNAL_COLS + ["Short Signal New", "Long Signal New"]:
         if col not in df.columns:
             df[col] = False
@@ -1889,7 +1911,9 @@ def _enrich_pdf_record_with_current_market(record: dict, market_df: pd.DataFrame
             item["name"] = str(row.get("Name") or item.get("name") or sym)
             item["sector"] = str(row.get("Sector") or item.get("sector") or "")
             item["analyst_rating"] = str(row.get("Analyst Rating") or item.get("analyst_rating") or "Not Rated")
-            item["history_verification"] = str(row.get("History Verification") or item.get("history_verification") or "Pending")
+            item["history_verification"] = _normalized_history_verification(
+                row.get("History Verification") or item.get("history_verification")
+            )
             item["verification_coverage"] = str(row.get("Verification Coverage") or item.get("verification_coverage") or "")
             item["verification_exceptions"] = str(row.get("Verification Exceptions") or item.get("verification_exceptions") or "")
             item["verification_source"] = str(row.get("Verification Source") or item.get("verification_source") or "")
@@ -6481,7 +6505,9 @@ with portfolio_tab:
                     "industry": str(analytics.get("industry") or (meta_row.get("Industry") if meta_row is not None else "")),
                     "name": str(meta_row.get("Name") if meta_row is not None else sym),
                     "analyst_rating": str(meta_row.get("Analyst Rating") if meta_row is not None else "Not Rated"),
-                    "history_verification": str(meta_row.get("History Verification") if meta_row is not None else "Pending"),
+                    "history_verification": _normalized_history_verification(
+                        meta_row.get("History Verification") if meta_row is not None else None
+                    ),
                     "verification_coverage": str(meta_row.get("Verification Coverage") if meta_row is not None else ""),
                     "verification_exceptions": str(meta_row.get("Verification Exceptions") if meta_row is not None else ""),
                     "verification_source": str(meta_row.get("Verification Source") if meta_row is not None else ""),
@@ -7563,9 +7589,7 @@ with market_tab:
 
         def _history_verification_badge_html(row: pd.Series) -> str:
             """Compact independent-history cross-check flag for cards/comparison."""
-            status = str(row.get("History Verification") or "Pending").strip()
-            if status.lower() in {"", "nan", "none", "—"}:
-                status = "Pending"
+            status = _normalized_history_verification(row.get("History Verification"))
             coverage = str(row.get("Verification Coverage") or "").strip()
             if coverage.lower() in {"nan", "none", "—"}:
                 coverage = ""
@@ -7576,9 +7600,8 @@ with market_tab:
                 "review": ("#3a1d19", "#fca5a5", "⚠"),
                 "partial": ("#30270b", "#fde68a", "◐"),
                 "unavailable": ("#1e293b", "#cbd5e1", "○"),
-                "pending": ("#1e293b", "#cbd5e1", "…"),
             }
-            bg, fg, icon = palette.get(status.lower(), palette["pending"])
+            bg, fg, icon = palette.get(status.lower(), palette["unavailable"])
             suffix = f" {coverage}" if coverage else ""
             diff_text = f" • max Δ {float(max_diff):.2f}pp" if pd.notna(max_diff) and np.isfinite(max_diff) else ""
             title = exceptions or str(row.get("Verification Source") or "Independent historical cross-check")
@@ -7586,7 +7609,7 @@ with market_tab:
                 f'<div title="{escape(title, quote=True)}" style="margin-top:6px;">'
                 f'<span style="display:inline-block;padding:3px 7px;border-radius:999px;'
                 f'background:{bg};color:{fg};font-size:10px;font-weight:700;border:1px solid {fg}55;">'
-                f'{icon} History {escape(status)}{escape(suffix)}{escape(diff_text)}</span></div>'
+                f'{icon} History Check: {escape(status)}{escape(suffix)}{escape(diff_text)}</span></div>'
             )
 
 
