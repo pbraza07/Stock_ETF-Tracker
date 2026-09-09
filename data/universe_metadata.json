@@ -1,15 +1,29 @@
 {
-  "refreshed_at_et": "2026-09-07T12:22:15.276397-04:00",
-  "refreshed_at_display_et": "Sep 07, 2026 12:22:15 PM EDT",
+  "refreshed_at_et": "2026-09-09T09:16:41.288099-04:00",
+  "refreshed_at_display_et": "Sep 09, 2026 09:16:41 AM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 174,
+  "stock_count": 173,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 0,
-  "added_symbols": [],
-  "removed_symbols": [],
-  "analyst_rating_change_count": 0,
-  "analyst_rating_changes": []
+  "added_count": 2,
+  "removed_count": 3,
+  "added_symbols": [
+    "CCZ",
+    "NET"
+  ],
+  "removed_symbols": [
+    "GSK",
+    "HWM",
+    "MELI"
+  ],
+  "analyst_rating_change_count": 1,
+  "analyst_rating_changes": [
+    {
+      "symbol": "PSX",
+      "name": "Phillips 66 Common Stock",
+      "from": "Buy",
+      "to": "Strong Buy"
+    }
+  ]
 }
