@@ -70,5 +70,101 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CCZ",
+    "name": "Comcast Holdings ZONES",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "NET",
+    "name": "Cloudflare Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "BX",
+    "name": "Blackstone Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "CME",
+    "name": "CME Group Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "GSK",
+    "name": "GSK plc American Depositary Shares (Each representing two Ordinary Shares)",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HWM",
+    "name": "Howmet Aerospace Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "MELI",
+    "name": "MercadoLibre Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "first_detected_at_et": "2026-09-09T11:51:59.011369-04:00",
+    "first_detected_display_et": "Sep 09, 2026 11:51:59 AM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "PSX",
+    "name": "Phillips 66 Common Stock",
+    "from": "Buy",
+    "to": "Strong Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
