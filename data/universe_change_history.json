@@ -46,5 +46,41 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-08T15:05:20.178583-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 03:05:20 PM EDT",
+    "first_detected_at_et": "2026-09-08T15:05:20.178583-04:00",
+    "first_detected_display_et": "Sep 08, 2026 03:05:20 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "NET",
+    "name": "Cloudflare Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-08T15:05:20.178583-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 03:05:20 PM EDT",
+    "first_detected_at_et": "2026-09-08T15:05:20.178583-04:00",
+    "first_detected_display_et": "Sep 08, 2026 03:05:20 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "CME",
+    "name": "CME Group Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-08T19:46:35.915504-04:00",
+    "occurred_at_display_et": "Sep 08, 2026 07:46:35 PM EDT",
+    "first_detected_at_et": "2026-09-08T19:46:35.915504-04:00",
+    "first_detected_display_et": "Sep 08, 2026 07:46:35 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CME",
+    "name": "CME Group Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
