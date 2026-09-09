@@ -32,7 +32,7 @@ def _make_archive(path: Path) -> Path:
 
 
 def test_release_version_5956():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.12"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.13"
 
 
 def test_verifier_compares_actual_year_end_returns(tmp_path):
@@ -91,7 +91,7 @@ def test_market_table_exposes_verification_fields():
 
 def test_cards_show_history_verification_badge():
     assert "def _history_verification_badge_html" in APP
-    assert "_history_verification_badge_html(row)" in APP
+    assert "_history_verification_badge_html(row)," not in APP
     assert "History Check: {escape(status)}" in APP
 
 

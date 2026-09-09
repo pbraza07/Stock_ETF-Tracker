@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.12: remove invalid History Pending fallbacks across the application.
+# v5.11.13: remove invalid History Pending fallbacks across the application.
 
 import json
 import os
@@ -4901,10 +4901,15 @@ with portfolio_tab:
     total_return = 0.0
     allocation_valid = False
 
-    portfolio_build_tab, portfolio_manage_tab = st.tabs([
+    portfolio_build_tab, portfolio_manage_tab, portfolio_ytd_tab = st.tabs([
         "◆ Build Simulation",
         "💾 Saved / Manage",
+        "YTD Daily / Weekly / Monthly",
     ])
+
+    with portfolio_ytd_tab:
+        from ytd_simulator import render_ytd
+        render_ytd(market)
 
     with portfolio_build_tab:
         st.markdown("<div class='investment-title'>PORTFOLIO SPLIT SIMULATOR</div>", unsafe_allow_html=True)
@@ -7644,7 +7649,6 @@ with market_tab:
                 '</div>',
                 f'<div class="card-quote-row"><span class="price-line">{escape(price)}</span><span class="cap-line">Mkt Cap {escape(cap_display)}</span></div>',
                 _price_target_html(row),
-                _history_verification_badge_html(row),
                 '</div>',
             ]
             return ''.join(part for part in parts if part)
@@ -8201,11 +8205,12 @@ with market_tab:
         for _col in TABLE_COLUMNS:
             if _col not in table_df.columns:
                 table_df[_col] = pd.NA
+        TABLE_COLUMNS = [c for c in TABLE_COLUMNS if not (c.startswith("Verification") or c in {"History Verification", "Max Verification Diff (pp)"})]
         table_df = table_df[TABLE_COLUMNS].copy()
 
         # Explicit table sorting complements Streamlit's native click-the-header sort.
         table_sort_options = [
-            "Symbol", "Name", "Price", "Market Cap ($B)", "Analyst Rating", "Worst Year", "History Verification",
+            "Symbol", "Name", "Price", "Market Cap ($B)", "Analyst Rating", "Worst Year",
             "Price Target Average", "Avg Target Implied %", "Profit / Loss ($)", "Simulation Return %",
             "Remaining After Withdrawals ($)", "Net Profit incl. Withdrawals ($)",
             *PERF_COLS,
