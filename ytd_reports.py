@@ -22,7 +22,24 @@ def metrics(payload):
     return s
 
 
+def presentation_record(record):
+    """Display existing None-cadence saves as one performance series as well."""
+    if record.get('inputs',{}).get('cadence') == 'None':
+        record=dict(record)
+        record['strategies']={'Performance':next(iter(record['strategies'].values()))}
+    return record
+
+
+def performance_table(table):
+    return table.drop(columns=['Requested Withdrawal','Actual Withdrawal','Shortfall','Cumulative Withdrawals'],errors='ignore').rename(columns={'Net Profit incl. Withdrawals':'Cumulative Profit'})
+
+
 def summary_html(record):
+    record=presentation_record(record)
+    if 'Performance' in record['strategies']:
+        payload=record['strategies']['Performance'];s=metrics(payload)
+        values=[('Beginning balance',f"${s['Beginning Balance']:,.2f}"),('Current balance',f"${s['Current Balance']:,.2f}"),('Profit / loss',f"${s['Profit / Loss']:+,.2f}"),('Return',f"{s['Total Return %']:+.2f}%"),('Positive days',f"{s['Positive Days']}/{s['Days']}"),('Positive months',f"{s['Positive Months']}/{s['Months']}")]
+        return '<div style="background:#0C1824;border:1px solid #27465A;border-radius:16px;padding:18px;color:#F2F7FB"><b>'+escape(record.get('name','Performance'))+'</b><p>'+escape(coverage_label(payload)+' · '+payload['start_date']+' to '+payload['through'])+'</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">'+''.join('<div><small>'+k+'</small><br><strong>'+v+'</strong></div>' for k,v in values)+'</div></div>'
     rb=metrics(record['strategies']['Rebalanced'])
     nr=metrics(record['strategies']['Non-Rebalanced'])
     first=record['strategies']['Rebalanced']
@@ -39,6 +56,7 @@ def summary_html(record):
 
 
 def build_ytd_pdf(record):
+    record=presentation_record(record)
     out = BytesIO()
     c = canvas.Canvas(out, pagesize=PAGE_SIZE)
     w,h = PAGE_SIZE
@@ -100,7 +118,9 @@ def build_ytd_pdf(record):
             if j==0:p.moveTo(xx,yy)
             else:p.lineTo(xx,yy)
         c.setStrokeColor(CYAN); c.setLineWidth(1.5); c.drawPath(p)
-        c.drawString(x,y-16,payload['start_date']); c.drawRightString(x+cw,y-16,payload['through'])
+        dates=[payload['start_date']]+daily['Date'].astype(str).str[:10].tolist()
+        for j in sorted(set(round(k*(len(dates)-1)/4) for k in range(5))):
+            c.drawCentredString(x+cw*j/max(1,len(dates)-1),y-16,dates[j])
         # A separate snapshot page preserves the reference report's instrument section.
         instruments=record.get('instruments') or [{'Symbol':s} for s in inputs.get('holdings',[])]
         for start in range(0,len(instruments),8):
@@ -114,9 +134,13 @@ def build_ytd_pdf(record):
             _,th=t.wrap(w-52,h);t.drawOn(c,26,h-85-th)
         # Split wide ledger into two readable tables; repeat dates for cash-flow reconciliation.
         table=pd.DataFrame(payload['table'])
-        period=table.columns[0]
+        period='Date' if 'Date' in table else 'index' if 'index' in table else table.columns[0]
+        table=table.rename(columns={period:'Date / period'});period='Date / period'
         groups=[[period,'Beginning Balance','Profit','Return %','Actual Withdrawal','Ending Balance'],
                 [period,'Requested Withdrawal','Shortfall','Cumulative Withdrawals','Net Profit incl. Withdrawals']]
+        if name=='Performance':
+            table=performance_table(table)
+            groups=[[period,'Beginning Balance','Profit','Return %','Ending Balance','Cumulative Profit']]
         for cols in groups:
             for start in range(0,len(table),18):
                 begin(name.upper()+' YTD RESULTS',subtitle)
@@ -131,6 +155,7 @@ def build_ytd_pdf(record):
 
 def build_ytd_excel(record):
     """Use the app's installed Excel engine for deployable runtime exports."""
+    record=presentation_record(record)
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.chart import LineChart, Reference
@@ -145,8 +170,11 @@ def build_ytd_excel(record):
         for j in [5,6,7,13]:summary.cell(summary.max_row,j).number_format='$#,##0.00'
         summary.cell(summary.max_row,8).number_format='0.00%'
         for kind in ['table','daily']:
-            frame=pd.DataFrame(payload[kind]); sheet=wb.create_sheet(('RB' if name=='Rebalanced' else 'NR')+' '+kind)
+            frame=pd.DataFrame(payload[kind]); sheet=wb.create_sheet(('Performance' if name=='Performance' else 'RB' if name=='Rebalanced' else 'NR')+' '+kind)
+            date_col='Date' if 'Date' in frame else 'index' if 'index' in frame else frame.columns[0]
+            frame=frame[[date_col]+[col for col in frame if col!=date_col]]
             if kind=='daily':frame['Cumulative profit']=frame['Ending Balance']+frame['Actual Withdrawal'].cumsum()-s['Beginning Balance']
+            if name=='Performance':frame=performance_table(frame)
             sheet.append(frame.columns.tolist())
             for row in frame.itertuples(index=False,name=None):sheet.append(list(row))
             for j,col in enumerate(frame.columns,1):

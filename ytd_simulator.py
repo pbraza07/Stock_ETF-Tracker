@@ -112,13 +112,15 @@ def make_saved_record(outputs, inputs, name):
                           "full_ytd": daily.attrs['full_ytd'], "through": str(daily.index[-1].date()),
                           "custom_start": daily.attrs.get('custom_start',False),
                           "requested_start": daily.attrs.get('requested_start'),
-                          "table": table.reset_index().to_dict('records'),
+                          "table": table.rename_axis('Date').reset_index().to_dict('records'),
                           "daily": daily.rename_axis('Date').reset_index().assign(Date=lambda d: d.Date.astype(str)).to_dict('records')}
                            for key, (table, daily) in outputs.items()}}
 
 
 def render_saved_ytd(record, on_changed=None):
     import streamlit as st
+    from ytd_reports import presentation_record
+    record=presentation_record(record)
     from ytd_reports import summary_html, render_downloads
     st.markdown(summary_html(record), unsafe_allow_html=True)
     from pdf_storage import pdf_viewer_url, load_pdf_artifact, delete_pdf_artifact
@@ -126,7 +128,12 @@ def render_saved_ytd(record, on_changed=None):
     base = Path(__file__).resolve().parent
     actions=st.columns([1.3,1.2,1.2,1])
     try:
-        load_pdf_artifact(record,base,lambda saved: build_ytd_pdf(saved))
+        if record.get('inputs',{}).get('cadence')=='None':
+            from pdf_storage import static_pdf_path
+            path=static_pdf_path(base,record);path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(build_ytd_pdf(record))
+        else:
+            load_pdf_artifact(record,base,lambda saved: build_ytd_pdf(saved))
         actions[0].link_button('📱 Open / Share PDF',pdf_viewer_url(record))
     except Exception as exc:
         st.warning(f'PDF viewer unavailable: {exc}')
@@ -152,6 +159,9 @@ def render_saved_ytd(record, on_changed=None):
             st.caption(f"{payload['start_date']} through {payload['through']}; positive months include the current partial month.")
             show_snapshot(payload['snapshot'])
             table = pd.DataFrame(payload['table'])
+            if name=='Performance':
+                from ytd_reports import performance_table
+                table=performance_table(table)
             st.dataframe(table, width='stretch')
             ledger=pd.DataFrame(payload['daily']).set_index('Date')
             st.line_chart(pd.DataFrame({'Cumulative profit / loss':ledger['Ending Balance']+ledger['Actual Withdrawal'].cumsum()-payload['snapshot']['Beginning Balance']}))
@@ -172,7 +182,7 @@ def render_ytd(market, on_saved=None):
     frequency = st.selectbox("YTD table periods", ["Daily", "Weekly", "Monthly"], index=2)
     cadence = st.selectbox("Withdrawal / rebalance cadence", ["Daily", "Weekly", "Monthly", "None"], index=2)
     enabled = st.checkbox("Enable YTD withdrawals", disabled=cadence=='None') and cadence!='None'
-    if cadence=='None':st.caption('None disables withdrawals and rebalancing; both strategy results use buy-and-hold.')
+    if cadence=='None':st.caption('None displays a single performance result without withdrawals or rebalancing.')
     amount = st.number_input("Withdrawal per selected cadence", min_value=0.0, value=0.0, disabled=not enabled)
     if st.button("Run YTD simulation"):
         if not symbols:
@@ -198,7 +208,8 @@ def render_ytd(market, on_saved=None):
                 update(60, 'Aligning trading dates and checking Full / Partial YTD coverage')
                 prices = history_prices(histories, symbols)
                 outputs = {}
-                for percent,name,rb in [(70,'Rebalanced',True),(85,'Non-Rebalanced',False)]:
+                strategies=[(70,'Performance',False)] if cadence=='None' else [(70,'Rebalanced',True),(85,'Non-Rebalanced',False)]
+                for percent,name,rb in strategies:
                     update(percent,'Calculating '+name+' balances, withdrawals and positive periods')
                     outputs[name] = simulate_ytd(prices,principal,frequency,amount if enabled else 0,cadence,rb,as_of,
                         selected_start if period_mode=='Custom date' else None)
@@ -224,6 +235,8 @@ def render_ytd(market, on_saved=None):
             st.error(f"YTD simulation unavailable: {exc}")
     if "ytd_output" in st.session_state:
         outputs, date = st.session_state.ytd_output
+        if st.session_state.get('ytd_completed_inputs',{}).get('cadence')=='None':
+            outputs={'Performance':next(iter(outputs.values()))}
         from ytd_reports import summary_html, render_downloads
         if 'ytd_record' not in st.session_state:
             st.session_state.ytd_record = make_saved_record(outputs,st.session_state.get('ytd_completed_inputs',{}),'YTD Portfolio')
@@ -231,6 +244,9 @@ def render_ytd(market, on_saved=None):
         render_downloads(st.session_state.ytd_record,'result_reports')
         st.caption(f"Last completed run; cutoff {date}. Run again after changing inputs. Missing dates are excluded, not filled with invented returns.")
         for name, (table, daily) in outputs.items():
+            if name=='Performance':
+                from ytd_reports import performance_table
+                table=performance_table(table)
             st.markdown(f"#### {name}")
             st.caption(f"Actual data through {daily.index[-1].date()}")
             if not daily.attrs.get('full_ytd', False):
