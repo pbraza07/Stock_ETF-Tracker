@@ -466,5 +466,17 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-09T19:43:05.543717-04:00",
+    "occurred_at_display_et": "Sep 09, 2026 07:43:05 PM EDT",
+    "first_detected_at_et": "2026-09-09T19:43:05.543717-04:00",
+    "first_detected_display_et": "Sep 09, 2026 07:43:05 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "APH",
+    "name": "Amphenol Corporation Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
