@@ -35,24 +35,37 @@ def performance_table(table):
 
 
 def summary_html(record):
+    """Reuse the historical Portfolio card's exact classes and responsive layout."""
     record=presentation_record(record)
-    if 'Performance' in record['strategies']:
-        payload=record['strategies']['Performance'];s=metrics(payload)
-        values=[('Beginning balance',f"${s['Beginning Balance']:,.2f}"),('Current balance',f"${s['Current Balance']:,.2f}"),('Profit / loss',f"${s['Profit / Loss']:+,.2f}"),('Return',f"{s['Total Return %']:+.2f}%"),('Positive days',f"{s['Positive Days']}/{s['Days']}"),('Positive months',f"{s['Positive Months']}/{s['Months']}")]
-        return '<div style="background:#0C1824;border:1px solid #27465A;border-radius:16px;padding:18px;color:#F2F7FB"><b>'+escape(record.get('name','Performance'))+'</b><p>'+escape(coverage_label(payload)+' · '+payload['start_date']+' to '+payload['through'])+'</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">'+''.join('<div><small>'+k+'</small><br><strong>'+v+'</strong></div>' for k,v in values)+'</div></div>'
-    rb=metrics(record['strategies']['Rebalanced'])
-    nr=metrics(record['strategies']['Non-Rebalanced'])
-    first=record['strategies']['Rebalanced']
+    performance='Performance' in record['strategies']
+    first=next(iter(record['strategies'].values()))
+    s=metrics(first)
     inputs=record['inputs']
-    mode=coverage_label(first)
-    def field(label,value):
-        color='#FB7185' if value.startswith(('$-','-')) else '#56E58B'
-        return '<div><small>'+escape(label)+'</small><strong style="color:'+color+'">'+escape(value)+'</strong></div>'
-    main=[('INVESTED',f"${rb['Beginning Balance']:,.2f}"),('RB ENDING',f"${rb['Current Balance']:,.2f}"),('RB PROFIT / LOSS',f"${rb['Profit / Loss']:+,.2f}"),('RB RETURN',f"{rb['Total Return %']:+.2f}%")]
-    lower=[(inputs.get('cadence','Monthly').upper()+' WITHDRAWAL',f"${inputs.get('withdrawal',0):,.2f}"),('NR ENDING',f"${nr['Current Balance']:,.2f}"),('NR PROFIT / RETURN',f"${nr['Profit / Loss']:+,.2f} / {nr['Total Return %']:+.2f}%"),('REBALANCE DIFFERENCE',f"${rb['Current Balance']-nr['Current Balance']:+,.2f}"),('POSITIVE DAYS',f"RB {rb['Positive Days']}/{rb['Days']} · NR {nr['Positive Days']}/{nr['Days']}"),('POSITIVE MONTHS',f"RB {rb['Positive Months']}/{rb['Months']} · NR {nr['Positive Months']}/{nr['Months']}")]
-    css='<style>.ytd-card{display:grid;grid-template-columns:minmax(220px,1fr) 2fr;gap:18px;background:#0C1824;border:1px solid #27465A;border-radius:16px;padding:18px;margin:12px 0;color:#F2F7FB}.ytd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:14px}.ytd-lower{border-top:1px solid #27465A;margin-top:15px;padding-top:12px}.ytd-card small{display:block;color:#A5B5C3;font-size:10px}.ytd-card strong{display:block;color:#56E58B;font-size:14px;overflow-wrap:anywhere}@media(max-width:700px){.ytd-card{grid-template-columns:1fr}}</style>'
-    meta=f"{mode} · {first['start_date']} to {first['through']} · {len(inputs.get('holdings',[]))} instrument(s)"
-    return css+'<div class="ytd-card"><div><b>'+escape(record.get('name','YTD Portfolio'))+'</b><small>'+escape(meta)+'</small><small>'+escape(', '.join(inputs.get('holdings',[])))+'</small><small>Profit includes withdrawals. RB = Rebalanced; NR = Non-Rebalanced.</small></div><div><div class="ytd-grid">'+''.join(field(*x) for x in main)+'</div><div class="ytd-grid ytd-lower">'+''.join(field(*x) for x in lower)+'</div></div></div>'
+    def sign(value):
+        return 'pos' if value>0 else 'neg' if value<0 else 'flat'
+    def field(label,value,number=None,secondary=False):
+        cls='simulation-library-withdrawal-metric' if secondary else 'simulation-library-metric'
+        color=sign(number) if number is not None else ''
+        return f"<div class='{cls}'><small>{escape(label)}</small><b class='{color}'>{escape(value)}</b></div>"
+    meta=f"{coverage_label(first)} · {first['start_date']} to {first['through']} · {len(inputs.get('holdings',[]))} instrument(s)"
+    identity="<div class='simulation-library-identity'><span class='simulation-library-name'>"+escape(record.get('name','Simulation'))+"</span><small>"+escape(meta)+"</small></div>"
+    main=[field('INVESTED',f"${s['Beginning Balance']:,.2f}"),
+          field('ENDING' if performance else 'RB ENDING',f"${s['Current Balance']:,.2f}"),
+          field('PROFIT / LOSS' if performance else 'RB PROFIT / LOSS',f"${s['Profit / Loss']:+,.2f}",s['Profit / Loss']),
+          field('RETURN' if performance else 'RB RETURN',f"{s['Total Return %']:+.2f}%",s['Total Return %'])]
+    if performance:
+        lower=[field('POSITIVE DAYS',f"{s['Positive Days']}/{s['Days']}",secondary=True),
+               field('POSITIVE MONTHS',f"{s['Positive Months']}/{s['Months']}",secondary=True)]
+    else:
+        nr=metrics(record['strategies']['Non-Rebalanced'])
+        diff=s['Current Balance']-nr['Current Balance']
+        lower=[field(inputs.get('cadence','Monthly').upper()+' WITHDRAWAL',f"${inputs.get('withdrawal',0):,.2f}",secondary=True),
+               field('NOT-REBALANCED REMAINING',f"${nr['Current Balance']:,.2f}",secondary=True),
+               field('NR PROFIT / RETURN',f"${nr['Profit / Loss']:+,.2f} / {nr['Total Return %']:+.2f}%",nr['Profit / Loss'],True),
+               field('REBALANCE DIFFERENCE',f"${diff:+,.2f}",diff,True),
+               field('POSITIVE DAYS',f"RB {s['Positive Days']}/{s['Days']} · NR {nr['Positive Days']}/{nr['Days']}",secondary=True),
+               field('POSITIVE MONTHS',f"RB {s['Positive Months']}/{s['Months']} · NR {nr['Positive Months']}/{nr['Months']}",secondary=True)]
+    return "<div class='simulation-library-card'>"+identity+''.join(main)+"<div class='simulation-library-withdrawal-strip'>"+''.join(lower)+"</div></div>"
 
 
 def build_ytd_pdf(record):

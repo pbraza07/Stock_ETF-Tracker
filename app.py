@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.17: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.18: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os

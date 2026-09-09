@@ -9,7 +9,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.17"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.18"
 
 
 def test_pending_is_normalized_to_unavailable():
