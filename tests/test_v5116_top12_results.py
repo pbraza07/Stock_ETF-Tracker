@@ -43,7 +43,7 @@ def app_for(payload):
         kind: {
             "runs": [{
                 "Timestamp": "2026-09-06",
-                "Metadata": {"Selection Policy": "Top 5 per sector", "Model Version": "5.11.21", "Market Data Through": "2026-09-06"},
+                "Metadata": {"Selection Policy": "Top 5 per sector", "Model Version": "5.11.23", "Market Data Through": "2026-09-06"},
                 "Holdings": payload["result"][kind].to_dict("records"),
             }],
             "events": [],

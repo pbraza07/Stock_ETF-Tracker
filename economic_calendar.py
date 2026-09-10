@@ -1,4 +1,7 @@
 """Collect Investing.com events and render a native MarketScope calendar."""
+import os
+import json
+from macro_snapshots import with_snapshot
 from datetime import datetime, timedelta, timezone
 from html import escape
 from html.parser import HTMLParser
@@ -87,18 +90,59 @@ def calendar_table(events):
     return ''.join(html)
 
 
+def parse_trading_economics(text):
+    payload=json.loads(text)
+    if not isinstance(payload,list):raise ValueError('Expected a calendar event array')
+    events=[]
+    for row in payload:
+        if row.get('Country')!='United States' or int(row.get('Importance') or 0)!=3:continue
+        stamp=datetime.fromisoformat(row['Date'].replace('Z','+00:00'))
+        if stamp.tzinfo is None:stamp=stamp.replace(tzinfo=timezone.utc)
+        events.append({'id':str(row.get('CalendarId') or row.get('CalendarID') or row['Event']+row['Date']),
+            'timestamp':stamp.isoformat(),'country':'United States','importance':3,'event':str(row['Event']),
+            'actual':str(row.get('Actual') or ''),'forecast':str(row.get('Forecast') or ''),'previous':str(row.get('Previous') or ''),
+            'impact':'neutral','time_label':'Tentative' if row.get('DateSpan') not in (None,0,'0') else ''})
+    return sorted(events,key=lambda event:event['timestamp'])
+
+
+def load_calendar(provider='Investing.com',force=False):
+    if provider=='Trading Economics API':
+        key='trading_economics_us_week';token=os.getenv('TRADING_ECONOMICS_API_KEY','').strip()
+        if not token:
+            result={'data':[],'status':'Unavailable','retrieved_at':None,'error':'TRADING_ECONOMICS_API_KEY is not configured'}
+        else:
+            _,start,end=week_events([])
+            # Include adjacent UTC dates, then strictly filter the week in ET.
+            url=f'https://api.tradingeconomics.com/calendar/country/united%20states/{start-timedelta(days=1)}/{end+timedelta(days=1)}'
+            result=cached_download(key,url,parse_trading_economics,300,force,
+                params={'c':token,'importance':3,'f':'json'})
+    else:
+        key='investing_us_week'
+        result=cached_download(key,calendar_url(),parse_calendar,300,force)
+    return with_snapshot(key,result)
+
+
 def render_economic_calendar():
     import streamlit as st
     st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
+    provider=st.selectbox('Calendar data source',['Investing.com','Trading Economics API'],key='economic_calendar_provider')
     refresh=st.button('Refresh economic calendar',key='refresh_economic_calendar')
-    result=cached_download('investing_us_week',calendar_url(),parse_calendar,300,refresh)
+    result=load_calendar(provider,refresh)
     events,start,end=week_events(result['data'])
     st.caption(f'{start:%b %d} – {end:%b %d, %Y} · United States only · Announcement times: Eastern Time (automatic daylight-saving adjustment)')
     if result['status']=='Unavailable':
-        st.warning('Investing.com event data are temporarily unavailable. Refresh to retry; no events have been invented.')
+        st.warning(f'{provider}: no valid event download or saved snapshot is available. See Connection details below.')
     else:
         if result['status']=='Stale cache':st.warning('Refresh failed. Showing cached events for this week; announcement times or results may have changed.')
         st.caption(f"{result['status']} · Downloaded {result['retrieved_at']}")
         if events:st.markdown(calendar_table(events),unsafe_allow_html=True)
         else:st.info('No U.S. three-star events for this week are present in the downloaded data.')
+    if result.get('error'):
+        with st.expander('Calendar connection details',expanded=result['status']=='Unavailable'):
+            st.write('Latest attempt: '+result['error'])
+            st.write('Investing.com offers no public API. If its webpage download fails, repeating Refresh may not resolve it. For a supported API source, select Trading Economics API and configure TRADING_ECONOMICS_API_KEY in Render and GitHub Actions secrets. An account with calendar API access is required; charges may apply.')
+            st.write('GitHub Actions → Refresh macro snapshots saves successful downloads so they can survive redeploys. A snapshot cannot be created until a provider download succeeds.')
+    if provider=='Trading Economics API':
+        st.markdown('Source: [Trading Economics](https://tradingeconomics.com/calendar). High importance (3) is the selected provider’s classification, not Investing.com’s rating. Values retain source units; no better/worse color is inferred.')
+        return
     st.markdown('Source: [Investing.com Economic Calendar](https://www.investing.com/economic-calendar/). Three stars indicate high expected market impact. Actual/Forecast/Previous values retain their source units; actual-value colors follow the provider’s assessment, not simply whether a number is positive or negative.')

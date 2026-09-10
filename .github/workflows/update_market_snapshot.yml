@@ -1,4 +1,4 @@
-name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.11.21)
+name: Refresh MarketScope universe, snapshot and actual monthly rankings (v5.11.23)
 # Automatic daily refresh owns the full dynamically growing completed-year adjusted-history window
 # and the matching dynamic-history actual-monthly dataset used by withdrawal simulations.
 
@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
+      - 'data/macro_snapshots/**'
       - 'data/default_universe.csv'
       - 'data/market_snapshot.csv'
       - 'data/snapshot_metadata.json'

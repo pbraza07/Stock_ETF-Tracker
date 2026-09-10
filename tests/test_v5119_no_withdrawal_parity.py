@@ -8,7 +8,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_version_remains_5119():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.21"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.23"
 
 
 def test_information_table_has_one_canonical_schema_for_all_modes():

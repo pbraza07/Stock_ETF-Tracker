@@ -23,6 +23,7 @@ SKIP_DIRS = {
     ".venv",
     "generated_pdfs",
     "macro_cache",
+    "macro_snapshots",
 }
 
 

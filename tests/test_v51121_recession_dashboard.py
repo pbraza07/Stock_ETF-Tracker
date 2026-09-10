@@ -36,11 +36,12 @@ def test_week_rollover_never_displays_previous_week_as_current():
 
 
 def test_fred_parsing_and_threshold_in_correct_units():
-    rows=parse_fred('observation_date,SAHMREALTIME\n2026-01-01,0.49\n2026-02-01,.\n2026-03-01,0.50\n','SAHMREALTIME')
+    rows=parse_fred('observation_date,RECPROUSM156N\n2026-01-01,0.49\n2026-02-01,.\n2026-03-01,0.50\n','RECPROUSM156N')
     assert len(rows)==2 and rows[-1]['value']==.5
-    figure=indicator_figure('SAHMREALTIME',rows).to_dict()
-    assert figure['layout']['shapes'][0]['y0']==.5
-    assert figure['layout']['yaxis']['title']['text']=='Percentage points'
+    figure=indicator_figure('RECPROUSM156N',rows).to_dict()
+    assert not figure['layout'].get('shapes')
+    assert figure['layout']['yaxis']['range']==[0,100]
+    assert figure['layout']['yaxis']['title']['text']=='Percent'
     with pytest.raises(ValueError):parse_fred('<html>Bad</html>','USPHCI')
 
 
@@ -60,12 +61,12 @@ def test_recession_tab_renders_both_native_charts(monkeypatch):
     import recession_indicators as module
     from streamlit.testing.v1 import AppTest
     def fake(series,force=False):
-        return {'data':[{'date':'2026-01-01','value':.3 if series=='SAHMREALTIME' else 100},{'date':'2026-02-01','value':.5 if series=='SAHMREALTIME' else 101}], 'status':'Updated','retrieved_at':'2026-03-01T00:00:00+00:00'}
+        return {'data':[{'date':'2026-01-01','value':.3 if series=='RECPROUSM156N' else 100},{'date':'2026-02-01','value':.5 if series=='RECPROUSM156N' else 101}], 'status':'Updated','retrieved_at':'2026-03-01T00:00:00+00:00'}
     monkeypatch.setattr(module,'load_series',fake)
     app=AppTest.from_string('from recession_indicators import render_recession_indicators\nrender_recession_indicators()').run()
     assert not app.exception
     assert len(app.get('plotly_chart'))==2
-    assert any(metric.value=='Triggered' for metric in app.metric)
+    assert any(metric.value=='Smoothed probability' for metric in app.metric)
     app.selectbox[0].select('All history').run()
     assert not app.exception and len(app.get('plotly_chart'))==2
 
