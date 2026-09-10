@@ -814,5 +814,17 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-10T19:35:21.457536-04:00",
+    "occurred_at_display_et": "Sep 10, 2026 07:35:21 PM EDT",
+    "first_detected_at_et": "2026-09-10T19:35:21.457536-04:00",
+    "first_detected_display_et": "Sep 10, 2026 07:35:21 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "AEM",
+    "name": "Agnico Eagle Mines Limited Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
