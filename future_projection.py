@@ -1601,6 +1601,11 @@ def build_excel_export(result: dict) -> bytes:
 
 
 def build_pdf_export(result: dict, title: str = "MarketScope Future Projection") -> bytes:
+    from projection_dashboard_pdf import build_dashboard_pdf
+    return build_dashboard_pdf(result, title)
+
+
+def _legacy_build_pdf_export(result: dict, title: str = "MarketScope Future Projection") -> bytes:
     """Create a vector PDF using the shared Stock Projection visual system."""
 
     from reportlab.graphics.charts.linecharts import HorizontalLineChart

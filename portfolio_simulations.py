@@ -15,6 +15,8 @@ from reportlab.pdfgen import canvas
 
 from persistence import DEFAULT_BRANCH, DEFAULT_REPO, format_et, now_et
 
+from simulation_retirements import active_records, apply_retirements
+
 SIMULATION_PATH = "data/saved_portfolio_simulations.json"
 BOOTSTRAP_PATH = "data/saved_portfolio_simulations.bootstrap.json"
 
@@ -35,13 +37,14 @@ def _raw_url(path: str) -> str:
 def _normalize_records(payload) -> list[dict]:
     if not isinstance(payload, list):
         return []
-    records = [dict(x) for x in payload if isinstance(x, dict) and x.get("id")]
+    records = active_records([dict(x) for x in payload if isinstance(x, dict) and x.get("id")])
     records.sort(key=lambda x: str(x.get("created_at_et") or ""), reverse=True)
     return records
 
 
 def load_saved_simulations(local_data_dir: Path, timeout: int = 8) -> list[dict]:
     """Load durable saved simulations, falling back to local/bootstrap storage."""
+    apply_retirements(local_data_dir)
     local_path = Path(local_data_dir) / Path(SIMULATION_PATH).name
     try:
         if local_path.exists():

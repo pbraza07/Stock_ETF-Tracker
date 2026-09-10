@@ -15,7 +15,7 @@ def _assert_stock_projection_layout(pdf_bytes: bytes, expected_title: str):
     for page in reader.pages:
         assert float(page.mediabox.width) > float(page.mediabox.height)
         text = page.extract_text() or ""
-        assert "MarketScope v5.11.19" in text
+        assert "MarketScope v5.11.20" in text
         assert "Page " in text
     first_page_text = reader.pages[0].extract_text() or ""
     assert expected_title in first_page_text
