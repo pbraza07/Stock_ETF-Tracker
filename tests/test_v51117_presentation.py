@@ -3,7 +3,7 @@ from urllib.parse import urlparse,parse_qs
 import pandas as pd
 from pypdf import PdfReader
 from openpyxl import load_workbook
-from economic_calendar import calendar_url,calendar_embed
+from economic_calendar import calendar_url,calendar_table
 from ytd_simulator import simulate_ytd,make_saved_record
 from ytd_reports import build_ytd_pdf,build_ytd_excel,summary_html,performance_table
 
@@ -20,8 +20,9 @@ def test_none_legacy_save_has_one_performance_export_with_dates():
     assert 'REBALANCE' not in summary_html(record)
     assert 'Actual Withdrawal' not in performance_table(output[0])
 
-def test_calendar_us_only_and_full_frame_dark_filter():
+def test_calendar_us_only_and_native_dark_table():
     params=parse_qs(urlparse(calendar_url()).query)
     assert params['countries']==['5'] and params['importance']==['3']
-    assert params['defaultFont']==['#111827']
-    assert 'filter:invert(.94)' in calendar_embed()
+    html=calendar_table([])
+    assert '<iframe' not in html and '#091825' in html
+    assert '<table>' in html

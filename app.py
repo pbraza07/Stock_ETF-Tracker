@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.20: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.21: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -2690,19 +2690,25 @@ _top_tab_labels = [
     "⚖ Stock & ETF Comparison",
     "◈ Sector Performance",
     "🔔 Alerts & Help",
+    "Recession Indicators",
 ]
 from runtime_performance import preserve_navigation_state
 preserve_navigation_state()
 if bool(st.session_state.pop("future_projection_focus", False)):
     st.session_state["workspace_navigation"] = "Future Projection"
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab = st.tabs(
         _top_tab_labels,
         default="Future Projection",
         key="workspace_navigation", on_change="rerun",
     )
 else:
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
 
+
+if recession_tab.open:
+    with recession_tab:
+        from recession_indicators import render_recession_indicators
+        render_recession_indicators()
 
 with alerts_tab:
     if st.button(
@@ -2736,7 +2742,8 @@ with alerts_tab:
 
 with market_tab:
     from economic_calendar import render_economic_calendar
-    render_economic_calendar()
+    if market_tab.open:
+        render_economic_calendar()
     st.markdown(
         '<div class="universe-status-strip">'
         f'<div><span>Nasdaq Universe Last Refreshed</span><b>{escape(universe_refreshed)}</b></div>'

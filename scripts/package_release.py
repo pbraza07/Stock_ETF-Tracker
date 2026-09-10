@@ -22,6 +22,7 @@ SKIP_DIRS = {
     "__pycache__",
     ".venv",
     "generated_pdfs",
+    "macro_cache",
 }
 
 
