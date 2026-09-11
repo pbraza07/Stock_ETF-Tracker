@@ -1,28 +1,18 @@
 {
-  "refreshed_at_et": "2026-09-11T07:16:52.052739-04:00",
-  "refreshed_at_display_et": "Sep 11, 2026 07:16:52 AM EDT",
+  "refreshed_at_et": "2026-09-11T15:06:05.852540-04:00",
+  "refreshed_at_display_et": "Sep 11, 2026 03:06:05 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 168,
+  "stock_count": 170,
   "etf_count": 213,
-  "added_count": 0,
+  "added_count": 2,
   "removed_count": 0,
-  "added_symbols": [],
+  "added_symbols": [
+    "ADBE",
+    "AEM"
+  ],
   "removed_symbols": [],
-  "analyst_rating_change_count": 2,
-  "analyst_rating_changes": [
-    {
-      "symbol": "CAT",
-      "name": "Caterpillar Inc. Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
-    },
-    {
-      "symbol": "TXN",
-      "name": "Texas Instruments Incorporated Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
-    }
-  ]
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }
