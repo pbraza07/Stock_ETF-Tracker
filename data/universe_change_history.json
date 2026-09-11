@@ -982,5 +982,29 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-11T15:06:05.852540-04:00",
+    "occurred_at_display_et": "Sep 11, 2026 03:06:05 PM EDT",
+    "first_detected_at_et": "2026-09-11T15:06:05.852540-04:00",
+    "first_detected_display_et": "Sep 11, 2026 03:06:05 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "ADBE",
+    "name": "Adobe Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-11T15:06:05.852540-04:00",
+    "occurred_at_display_et": "Sep 11, 2026 03:06:05 PM EDT",
+    "first_detected_at_et": "2026-09-11T15:06:05.852540-04:00",
+    "first_detected_display_et": "Sep 11, 2026 03:06:05 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "AEM",
+    "name": "Agnico Eagle Mines Limited Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
