@@ -13,7 +13,7 @@ def test_latest_vintage_used_independently_of_response_order(monkeypatch,tmp_pat
     monkeypatch.setattr(requests,'get',Mock(return_value=response))
     result=load_series('RECPROUSM156N',True,tmp_path)
     assert result['data']==[{'date':'2026-01-01','value':.76}]
-    assert list(SERIES)==['USPHCI','RECPROUSM156N']
+    assert list(SERIES)==['USPHCI','RECPROUSM156N','SAHMREALTIME']
 
 
 def test_probability_units_are_not_rescaled_and_invalid_values_rejected():

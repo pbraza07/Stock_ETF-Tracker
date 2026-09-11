@@ -1,4 +1,4 @@
-"""Collect Investing.com events and render a native MarketScope calendar."""
+"""Investing.com iframe dashboard; legacy collectors retained for compatibility."""
 import os
 import json
 from macro_snapshots import with_snapshot
@@ -15,7 +15,17 @@ ET = ZoneInfo('America/New_York')
 def calendar_url():
     return 'https://sslecal2.investing.com/?'+urlencode({
         'columns':'exc_flags,exc_currency,exc_importance,exc_actual,exc_forecast,exc_previous',
-        'importance':'3','countries':'5','calType':'week','timeZone':'8','lang':'1'})
+        'importance':'3', 'countries':'5', 'calType':'week', 'timeZone':'8', 'lang':'1',
+        'features':'timezone', 'ecoDayBackground':'#E5E7EB','defaultFont':'#111827',
+        'innerBorderColor':'#CBD5E1','borderColor':'#CBD5E1','ecoDayFontColor':'#111827'})
+
+
+def calendar_embed():
+    # The provider controls the cross-origin document. Filter the whole iframe,
+    # including its white body/rows, instead of changing only header/text colors.
+    from html import escape
+    return '<style>html,body{margin:0;background:#06101A}iframe{width:100%;height:520px;border:0;filter:invert(.94) hue-rotate(180deg);color-scheme:light}</style><iframe title="United States high-importance economic calendar" src="'+escape(calendar_url(),quote=True)+'"></iframe>'
+
 
 
 class CalendarParser(HTMLParser):
@@ -124,25 +134,8 @@ def load_calendar(provider='Investing.com',force=False):
 
 def render_economic_calendar():
     import streamlit as st
+    import streamlit.components.v1 as components
     st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
-    provider=st.selectbox('Calendar data source',['Investing.com','Trading Economics API'],key='economic_calendar_provider')
-    refresh=st.button('Refresh economic calendar',key='refresh_economic_calendar')
-    result=load_calendar(provider,refresh)
-    events,start,end=week_events(result['data'])
-    st.caption(f'{start:%b %d} – {end:%b %d, %Y} · United States only · Announcement times: Eastern Time (automatic daylight-saving adjustment)')
-    if result['status']=='Unavailable':
-        st.warning(f'{provider}: no valid event download or saved snapshot is available. See Connection details below.')
-    else:
-        if result['status']=='Stale cache':st.warning('Refresh failed. Showing cached events for this week; announcement times or results may have changed.')
-        st.caption(f"{result['status']} · Downloaded {result['retrieved_at']}")
-        if events:st.markdown(calendar_table(events),unsafe_allow_html=True)
-        else:st.info('No U.S. three-star events for this week are present in the downloaded data.')
-    if result.get('error'):
-        with st.expander('Calendar connection details',expanded=result['status']=='Unavailable'):
-            st.write('Latest attempt: '+result['error'])
-            st.write('Investing.com offers no public API. If its webpage download fails, repeating Refresh may not resolve it. For a supported API source, select Trading Economics API and configure TRADING_ECONOMICS_API_KEY in Render and GitHub Actions secrets. An account with calendar API access is required; charges may apply.')
-            st.write('GitHub Actions → Refresh macro snapshots saves successful downloads so they can survive redeploys. A snapshot cannot be created until a provider download succeeds.')
-    if provider=='Trading Economics API':
-        st.markdown('Source: [Trading Economics](https://tradingeconomics.com/calendar). High importance (3) is the selected provider’s classification, not Investing.com’s rating. Values retain source units; no better/worse color is inferred.')
-        return
-    st.markdown('Source: [Investing.com Economic Calendar](https://www.investing.com/economic-calendar/). Three stars indicate high expected market impact. Actual/Forecast/Previous values retain their source units; actual-value colors follow the provider’s assessment, not simply whether a number is positive or negative.')
+    st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
+    components.html(calendar_embed(),height=525,scrolling=False)
+    st.markdown('Economic Calendar provided by [Investing.com](https://www.investing.com/economic-calendar/). If the embedded calendar is blocked by your browser, open the source calendar.')

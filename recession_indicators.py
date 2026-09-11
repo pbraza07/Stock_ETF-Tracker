@@ -19,6 +19,12 @@ SERIES = {
         'adjustment':'Not seasonally adjusted', 'units':'Percent', 'source':'Marcelle Chauvet and Jeremy Piger', 'color':'#A78BFA',
         'explanation':'This monthly series estimates the probability that the U.S. economy was in recession during the observation month. The model uses payroll employment, industrial production, real personal income excluding transfers, and real manufacturing and trade sales. Values closer to 100% indicate stronger modeled recession evidence; values closer to 0% indicate weaker evidence. For example, 0.76 means 0.76%, not 76%. These are smoothed estimates that can be revised using later information, not a forecast of the probability of a future recession or an official recession declaration. The Sahm Rule’s 0.50-percentage-point threshold does not apply.',
     },
+    'SAHMREALTIME': {
+        'name':'Real-time Sahm Rule Recession Indicator',
+        'units':'Percentage points', 'source':'Claudia Sahm', 'color':'#FBBF24',
+        'adjustment':'Seasonally adjusted',
+        'explanation':'This monthly indicator compares the three-month average unemployment rate with the lowest three-month average over the previous 12 months. A reading of 0.50 percentage points or more triggers the Sahm Rule recession signal. The dashed line marks that threshold. A reading below it means the rule is not triggered for that month; it does not rule out a recession. This is not a recession probability or an official recession declaration. “Real-time” refers to unemployment data available in each historical month, not a continuously updating feed.',
+    },
 }
 
 
@@ -72,7 +78,9 @@ def indicator_figure(series, records, years=10):
     spec=SERIES[series]
     fig=go.Figure(go.Scatter(x=frame.date,y=frame.value,mode='lines',name=spec['name'],
         line={'color':spec['color'],'width':2.5},connectgaps=False,
-        hovertemplate='%{x|%b %Y}<br>%{y:.2f}'+('%' if series=='RECPROUSM156N' else '')+'<extra></extra>'))
+        hovertemplate='%{x|%b %Y}<br>%{y:.2f}'+('%' if series=='RECPROUSM156N' else ' pp' if series=='SAHMREALTIME' else '')+'<extra></extra>'))
+    if series=='SAHMREALTIME':
+        fig.add_hline(y=.5,line_color='#FB7185',line_dash='dash',annotation_text='Sahm threshold: 0.50 pp',annotation_font_color='#FB7185')
     if series=='RECPROUSM156N':
         fig.update_yaxes(range=[0,100],ticksuffix='%')
     fig.update_layout(template='plotly_dark',paper_bgcolor='#06101A',plot_bgcolor='#091825',
@@ -103,10 +111,12 @@ def render_recession_indicators():
                 st.warning('The refresh failed. Showing the last valid downloaded observations; these may be outdated.')
             records=result['data'];last=records[-1];date=pd.Timestamp(last['date']).strftime('%b %Y')
             a,b,c=st.columns(3)
-            a.metric('Latest observation',f"{last['value']:.2f}"+('%' if series=='RECPROUSM156N' else ''))
+            a.metric('Latest observation',f"{last['value']:.2f}"+('%' if series=='RECPROUSM156N' else ' pp' if series=='SAHMREALTIME' else ''))
             b.metric('Observation month',date)
             if series=='RECPROUSM156N':
                 c.metric('Estimate type', 'Smoothed probability')
+            elif series=='SAHMREALTIME':
+                c.metric('Sahm threshold', 'Triggered' if last['value']>=.5 else 'Not triggered')
             else:
                 lookup={row['date']:row['value'] for row in records}
                 prior=lookup.get((pd.Timestamp(last['date'])-pd.DateOffset(months=1)).strftime('%Y-%m-%d'))
@@ -124,4 +134,4 @@ def render_recession_indicators():
                 st.markdown('For reliable collection, set `FRED_API_KEY` in Render Environment and the GitHub repository Actions secrets, then run **Refresh macro snapshots** in GitHub Actions. Get your key from [FRED](https://fred.stlouisfed.org/docs/api/api_key.html). Do not paste keys into chat.')
         st.markdown('**How to read this graph:** '+spec['explanation'])
         st.markdown(f"Source: {spec['source']}, retrieved from [FRED — {series}](https://fred.stlouisfed.org/series/{series}).")
-    st.caption('Observation dates are not publication dates. Both histories can be revised. API real-time dates select data vintages, not the chart’s observation start. When several vintages exist for a month, the latest available value is displayed. These indicators are context, not a combined forecast or guarantee.')
+    st.caption('Observation dates are not publication dates. Data can be revised; the Sahm series preserves its real-time unemployment-data basis. API real-time dates select data vintages, not the chart’s observation start. When several vintages exist for a month, the latest available value is displayed. These indicators are context, not a combined forecast or guarantee.')

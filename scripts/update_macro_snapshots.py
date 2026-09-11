@@ -5,7 +5,6 @@ from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from recession_indicators import load_series
-from economic_calendar import load_calendar
 from macro_snapshots import ROOT, validate_snapshot
 
 
@@ -22,14 +21,8 @@ def save_result(key,result,directory=ROOT):
 
 def main():
     failed=[]
-    for key in ('USPHCI','RECPROUSM156N'):
+    for key in ('USPHCI','RECPROUSM156N','SAHMREALTIME'):
         result=load_series(key,True)
-        if not save_result(key,result):failed.append(key)
-        print(key,result['status'],result.get('error') or '')
-    providers=[('investing_us_week','Investing.com')]
-    if os.getenv('TRADING_ECONOMICS_API_KEY'):providers.append(('trading_economics_us_week','Trading Economics API'))
-    for key,provider in providers:
-        result=load_calendar(provider,True)
         if not save_result(key,result):failed.append(key)
         print(key,result['status'],result.get('error') or '')
     if failed:

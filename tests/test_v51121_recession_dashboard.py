@@ -65,17 +65,18 @@ def test_recession_tab_renders_both_native_charts(monkeypatch):
     monkeypatch.setattr(module,'load_series',fake)
     app=AppTest.from_string('from recession_indicators import render_recession_indicators\nrender_recession_indicators()').run()
     assert not app.exception
-    assert len(app.get('plotly_chart'))==2
+    assert len(app.get('plotly_chart'))==3
     assert any(metric.value=='Smoothed probability' for metric in app.metric)
     app.selectbox[0].select('All history').run()
-    assert not app.exception and len(app.get('plotly_chart'))==2
+    assert not app.exception and len(app.get('plotly_chart'))==3
 
 
-def test_calendar_native_ui(monkeypatch):
-    import economic_calendar as module
+def test_calendar_restored_iframe_ui(monkeypatch):
     from streamlit.testing.v1 import AppTest
-    monkeypatch.setattr(module,'cached_download',lambda *a,**k:{'data':parse(row()),'status':'Updated','retrieved_at':'2026-09-10T12:00:00+00:00'})
     app=AppTest.from_string('from economic_calendar import render_economic_calendar\nrender_economic_calendar()').run()
     assert not app.exception
-    assert any('ms-economic' in item.value for item in app.markdown)
-    assert not app.get('iframe')
+    assert len(app.get('iframe'))==1
+    from economic_calendar import calendar_embed
+    html=calendar_embed()
+    assert 'filter:invert(.94) hue-rotate(180deg)' in html
+    assert 'countries=5' in html and 'importance=3' in html

@@ -7,7 +7,7 @@ from macro_data import CACHE_DIR
 from persistence import DEFAULT_REPO, DEFAULT_BRANCH
 
 ROOT = Path(__file__).parent / 'data' / 'macro_snapshots'
-KEYS = {'USPHCI','RECPROUSM156N','investing_us_week','trading_economics_us_week'}
+KEYS = {'USPHCI','RECPROUSM156N','SAHMREALTIME','investing_us_week','trading_economics_us_week'}
 
 
 def validate_snapshot(value, key):
@@ -15,7 +15,7 @@ def validate_snapshot(value, key):
         raise ValueError('Invalid snapshot envelope')
     stamp=datetime.fromisoformat(value['retrieved_at'])
     if stamp.tzinfo is None or stamp>datetime.now(timezone.utc):raise ValueError('Invalid snapshot retrieval date')
-    if key in ('USPHCI','RECPROUSM156N'):
+    if key in ('USPHCI','RECPROUSM156N','SAHMREALTIME'):
         if not value['data']:raise ValueError('Empty FRED snapshot')
         for row in value['data']:
             datetime.fromisoformat(row['date'])
