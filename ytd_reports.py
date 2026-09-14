@@ -3,6 +3,7 @@ from io import BytesIO
 from html import escape
 import json
 import pandas as pd
+from ytd_period_metrics import period_metrics, reporting_frequency, stats_html, metric_rows
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, Paragraph
 from marketscope_pdf_theme import (PAGE_SIZE, BACKGROUND, HEADER_WASH, CARD, BORDER,
@@ -72,7 +73,9 @@ def summary_html(record):
                field('REBALANCE DIFFERENCE',f"${diff:+,.2f}",diff,True),
                field('POSITIVE DAYS',f"RB {s['Positive Days']}/{s['Days']} · NR {nr['Positive Days']}/{nr['Days']}",secondary=True),
                field('POSITIVE MONTHS',f"RB {s['Positive Months']}/{s['Months']} · NR {nr['Positive Months']}/{nr['Months']}",secondary=True)]
-    return "<div class='simulation-library-card'>"+identity+''.join(main)+"<div class='simulation-library-withdrawal-strip'>"+''.join(lower)+"</div></div>"
+    statistics = ''.join(stats_html(period_metrics(payload.get('daily', []), reporting_frequency(record)), name)
+                         for name, payload in record['strategies'].items())
+    return "<div class='simulation-library-card'>"+identity+''.join(main)+"<div class='simulation-library-withdrawal-strip'>"+''.join(lower)+"</div>"+statistics+"</div>"
 
 
 def build_ytd_pdf(record):
@@ -141,6 +144,18 @@ def build_ytd_pdf(record):
         dates=[payload['start_date']]+daily['Date'].astype(str).str[:10].tolist()
         for j in sorted(set(round(k*(len(dates)-1)/4) for k in range(5))):
             c.drawCentredString(x+cw*j/max(1,len(dates)-1),y-16,dates[j])
+        begin('PERIOD PERFORMANCE STATISTICS', subtitle)
+        stats = period_metrics(payload.get('daily', []), reporting_frequency(record))
+        rows = [['Metric - '+stats['frequency'], 'Value', 'Observed date / range']]
+        rows += [[label, value, dates] for label, value, dates, color in metric_rows(stats)]
+        cells=[[Paragraph(escape(v),styles['MSCell']) for v in row] for row in rows]
+        for row_index, item in enumerate(metric_rows(stats), 1):
+            cells[row_index][1] = Paragraph('<font color="'+item[3]+'">'+escape(item[1])+'</font>',styles['MSCell'])
+        t=Table(cells,colWidths=[(w-52)*.36,(w-52)*.22,(w-52)*.42])
+        t.setStyle(table_style(font_size=10))
+        _,th=t.wrap(w-52,h);t.drawOn(c,26,h-85-th)
+        note=Paragraph('Streaks use pre-withdrawal returns; extremes use period investment profit. Zero-return periods break streaks. Earliest ties and actual observed trading dates shown. Partial periods included.',styles['MSCell'])
+        _,nh=note.wrap(w-52,h);note.drawOn(c,26,h-110-th-nh)
         # A separate snapshot page preserves the reference report's instrument section.
         instruments=record.get('instruments') or [{'Symbol':s} for s in inputs.get('holdings',[])]
         for start in range(0,len(instruments),8):
@@ -211,6 +226,13 @@ def build_ytd_excel(record):
         sheet.append(frame.columns.tolist())
         for row in frame.itertuples(index=False,name=None):sheet.append(list(row))
         sheet.freeze_panes='B2';sheet.auto_filter.ref=sheet.dimensions
+    summary.append([])
+    summary.append(['Period performance statistics','Frequency','Metric','Value','Date / range'])
+    for name,payload in record['strategies'].items():
+        stats=period_metrics(payload.get('daily', []),reporting_frequency(record))
+        for label,value,dates,color in metric_rows(stats):
+            summary.append([name,stats['frequency'],label,value,dates])
+            summary.cell(summary.max_row,4).font=Font(color=color.lstrip('#'))
     for sheet in wb:
         for cell in sheet[1]:cell.fill=PatternFill('solid',fgColor='123B40');cell.font=Font(color='56E58B',bold=True)
         for col in sheet.columns:

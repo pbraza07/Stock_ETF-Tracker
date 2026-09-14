@@ -94,13 +94,16 @@ def snapshot(daily):
             "Withdrawn": float(daily["Actual Withdrawal"].sum())}
 
 
-def show_snapshot(values):
+def show_snapshot(values, daily=None, frequency='Daily'):
     import streamlit as st
     columns = st.columns(4)
     columns[0].metric("Beginning balance", f"${values['Beginning Balance']:,.2f}")
     columns[1].metric("Current balance after withdrawals", f"${values['Current Balance']:,.2f}")
     columns[2].metric("Positive days", f"{values['Positive Days']}/{values['Days']}")
     columns[3].metric("Positive months", f"{values['Positive Months']}/{values['Months']}")
+    if daily is not None:
+        from ytd_period_metrics import period_metrics, stats_html
+        st.markdown(stats_html(period_metrics(daily, frequency)), unsafe_allow_html=True)
 
 
 def make_saved_record(outputs, inputs, name):
@@ -157,7 +160,8 @@ def render_saved_ytd(record, on_changed=None):
         for name, payload in record['strategies'].items():
             st.markdown(f"**{name}**")
             st.caption(f"{payload['start_date']} through {payload['through']}; positive months include the current partial month.")
-            show_snapshot(payload['snapshot'])
+            from ytd_period_metrics import reporting_frequency
+            show_snapshot(payload['snapshot'], payload.get('daily', []), reporting_frequency(record))
             table = pd.DataFrame(payload['table'])
             if name=='Performance':
                 from ytd_reports import performance_table
@@ -252,7 +256,7 @@ def render_ytd(market, on_saved=None):
             if not daily.attrs.get('full_ytd', False):
                 label='Partial selected period' if daily.attrs.get('custom_start') else 'Partial YTD'
                 st.warning(f"{label}: available shared history starts {daily.attrs.get('start_date')}. Earlier returns are not assumed or fabricated.")
-            show_snapshot(snapshot(daily))
+            show_snapshot(snapshot(daily), daily, st.session_state.get('ytd_completed_inputs', {}).get('reporting_frequency', 'Monthly'))
             st.caption("Positive periods measure investment returns before withdrawals; months include the current partial month.")
             configs = {c: st.column_config.NumberColumn(format="%.2f%%" if c == "Return %" else "$%.2f") for c in table.columns}
             st.dataframe(table, width="stretch", column_config=configs)
