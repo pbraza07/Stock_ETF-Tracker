@@ -134,7 +134,9 @@ def render_recession_indicators():
                 c.metric('Monthly change',f"{(last['value']/prior-1)*100:+.2f}%" if prior else 'Unavailable')
             st.caption(f"{result['status']} · Downloaded {result['retrieved_at']} · Monthly · {spec['adjustment']}")
             if interactive:
-                st.plotly_chart(indicator_figure(series,records,years),width='stretch',key=f'fred_{series}')
+                from recession_interactive import interactive_html
+                import streamlit.components.v1 as components
+                components.html(interactive_html(series,records,years),height=445,scrolling=False)
             else:
                 from recession_chart_svg import indicator_svg
                 st.image(indicator_svg(series,records,years),width='stretch')

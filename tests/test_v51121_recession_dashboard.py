@@ -71,7 +71,8 @@ def test_recession_tab_renders_both_native_charts(monkeypatch):
     app.selectbox[0].select('All history').run()
     assert not app.exception and len(app.get('image'))==3
     app.checkbox[0].check().run()
-    assert not app.exception and len(app.get('plotly_chart'))==3
+    assert not app.exception and len(app.get('iframe'))==3
+    assert not app.get('plotly_chart')
 
 
 def test_calendar_restored_iframe_ui(monkeypatch):
