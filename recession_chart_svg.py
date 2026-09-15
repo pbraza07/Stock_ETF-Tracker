@@ -43,7 +43,8 @@ def indicator_svg(series, records, years=10):
         v=lo+(hi-lo)*i/5
         svg.append(f'<path d="M90 {y(v):.2f} H980" stroke="#20394A"/>')
         text(80,y(v)+4,f'{v:,.2f}'+('%' if series=='RECPROUSM156N' else ''),'end')
-        d=start+(end-start)*i/5
+        # Scale by a fraction first: multiplying a 60+ year Timedelta by 5 overflows nanoseconds.
+        d=start+(end-start)*(i/5)
         text(x(d),335,f'{d:%b %Y}','middle',size=12)
     if series=='SAHMREALTIME':
         svg.append(f'<path d="M90 {y(.5):.2f} H980" stroke="#FB7185" stroke-dasharray="6 4"/>')

@@ -367,14 +367,14 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         key="t12_recession",
         on_click=request_ranking,
         args=("Recession",),
-        use_container_width=True,
+        width="stretch",
     )
     columns[1].button(
         "🚀 Top 5 per Sector Max-Profit High-Performance Stocks",
         key="t12_profit",
         on_click=request_ranking,
         args=("Max Profit",),
-        use_container_width=True,
+        width="stretch",
     )
 
     requested = st.session_state.pop("t12_pending_request", None)
@@ -415,7 +415,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
         recalculate = st.button(
             "Recalculate Top 5 per Sector rankings",
             key="t12_recalculate",
-            use_container_width=True,
+            width="stretch",
         )
         if recalculate or (requested and saved_table.empty):
             progress = {"stage": "Evaluating every eligible MarketScope stock"}

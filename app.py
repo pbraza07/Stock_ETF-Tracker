@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.29: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.30: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -2714,7 +2714,7 @@ with alerts_tab:
     if st.button(
         f"🔔 Buy Signal Alerts ({len(new_signal_alerts)} new)" if not st.session_state.buy_signal_alerts_open else "🔔 Hide Buy Signal Alerts",
         key="toggle_buy_signal_alerts",
-        use_container_width=True,
+        width="stretch",
         type="primary" if st.session_state.buy_signal_alerts_open else "secondary",
     ):
         st.session_state.buy_signal_alerts_open = not st.session_state.buy_signal_alerts_open
@@ -2762,7 +2762,7 @@ with market_tab:
         refresh_universe_now = st.button(
             "↻ Refresh Nasdaq Universe Now",
             key="refresh_nasdaq_universe_now",
-            use_container_width=True,
+            width="stretch",
             help=(
                 "Refresh Nasdaq >$100B stock membership and Nasdaq analyst ratings immediately. "
                 "This uses the same universe generator as the scheduled workflow."
@@ -2776,7 +2776,7 @@ with market_tab:
                 else "🕘 Hide Change History"
             ),
             key="toggle_universe_change_history",
-            use_container_width=True,
+            width="stretch",
             help=(
                 "Show stock additions/removals and analyst-rating changes recorded during the last six months. "
                 "Older events remain permanently stored for historical purposes."
@@ -2792,7 +2792,7 @@ with market_tab:
                 else "★ Hide Pick Fav Trail"
             ),
             key="toggle_favorite_picks_history",
-            use_container_width=True,
+            width="stretch",
             help=(
                 "Show the permanent, all-time Pick Fav replacement and risk-rating history. "
                 "Each row keeps the date the change was first detected."
@@ -2826,7 +2826,7 @@ with market_tab:
             hc4.metric("Rating changes", f"{int(history_counts.get('Analyst Rating', 0)):,}")
             st.dataframe(
                 six_month_history,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=min(600, 72 + max(1, len(six_month_history)) * 35),
                 column_config={"Date / Time (ET)": "First Detected (ET)"},
@@ -2842,7 +2842,7 @@ with market_tab:
             else:
                 st.dataframe(
                     all_time_universe_history,
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                     height=min(650, 72 + max(1, len(all_time_universe_history)) * 35),
                     column_config={"Date / Time (ET)": "First Detected (ET)"},
@@ -2873,7 +2873,7 @@ with market_tab:
             fh4.metric("Risk changes", f"{int(favorite_history_counts.get('Favorite Risk Rating Changed', 0)):,}")
             st.dataframe(
                 favorite_picks_change_frame,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=min(720, 72 + max(1, len(favorite_picks_change_frame)) * 35),
                 key="favorite_picks_permanent_change_history",
@@ -2881,7 +2881,7 @@ with market_tab:
             with st.expander(f"Favorite Picks run audit ({len(favorite_picks_run_frame):,} runs retained)"):
                 st.dataframe(
                     favorite_picks_run_frame,
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                     height=min(520, 72 + max(1, len(favorite_picks_run_frame)) * 35),
                     key="favorite_picks_run_history_main",
@@ -3040,7 +3040,7 @@ with market_tab:
         refresh_now = st.button(
             f"⚡ Refresh {target_count:,}",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             disabled=target_count == 0,
         )
     with rc3:
@@ -4982,20 +4982,20 @@ with portfolio_tab:
                 f"💰 {period_label} Profit table", f"🛡️ {period_label} Best Worst-Year table",
             ])
             with table_profit_tab:
-                st.dataframe(_combo_rank_table(profit_rank, period_label), use_container_width=True, hide_index=True, height=500)
+                st.dataframe(_combo_rank_table(profit_rank, period_label), width="stretch", hide_index=True, height=500)
             with table_worst_tab:
-                st.dataframe(_combo_rank_table(worst_rank, period_label), use_container_width=True, hide_index=True, height=500)
+                st.dataframe(_combo_rank_table(worst_rank, period_label), width="stretch", hide_index=True, height=500)
 
         with preset_row1[0]:
-            with st.popover("📈 5Y Combo Rankings", use_container_width=True):
+            with st.popover("📈 5Y Combo Rankings", width="stretch"):
                 _render_profit_worst_rankings("5Y", COMBO_5Y_PROFIT_FILE, COMBO_5Y_WORST_FILE)
 
         with preset_row1[1]:
-            with st.popover("📊 10Y Combo Rankings", use_container_width=True):
+            with st.popover("📊 10Y Combo Rankings", width="stretch"):
                 _render_profit_worst_rankings("10Y", COMBO_10Y_PROFIT_FILE, COMBO_10Y_WORST_FILE)
 
         with preset_row1[2]:
-            with st.popover("💵 10Y Yearly Withdrawal", use_container_width=True):
+            with st.popover("💵 10Y Yearly Withdrawal", width="stretch"):
                 st.markdown("### $300K Start / $85K per Year")
                 st.caption(
                     f"Top 100 surviving four-stock portfolios, four different sectors, {COMBO_RANK_YEARS_BY_PERIOD['10Y'][-1]}–{COMBO_RANK_YEARS_BY_PERIOD['10Y'][0]}. "
@@ -5034,12 +5034,12 @@ with portfolio_tab:
                                  args=(picker_key, lookup_key, "10Y Not-Rebalanced Withdrawal combo"))
                 trb, tnr = st.tabs(["🔄 Rebalanced Top 100", "↗ Not Rebalanced Top 100"])
                 with trb:
-                    st.dataframe(_withdrawal_combo_rank_table(rebalance_rank), use_container_width=True, hide_index=True, height=520)
+                    st.dataframe(_withdrawal_combo_rank_table(rebalance_rank), width="stretch", hide_index=True, height=520)
                 with tnr:
-                    st.dataframe(_withdrawal_combo_rank_table(not_rebalanced_rank), use_container_width=True, hide_index=True, height=520)
+                    st.dataframe(_withdrawal_combo_rank_table(not_rebalanced_rank), width="stretch", hide_index=True, height=520)
 
         with preset_row2[0]:
-            with st.popover("🗓️ 10Y Actual-Monthly Withdrawal", use_container_width=True):
+            with st.popover("🗓️ 10Y Actual-Monthly Withdrawal", width="stretch"):
                 st.markdown("### $300K Start / $5K per Month · HWM Excluded")
                 st.caption(
                     "Actual adjusted month-end returns from Yahoo/yfinance daily history. All 120 withdrawals must be funded. "
@@ -5077,12 +5077,12 @@ with portfolio_tab:
                                  args=(picker_key, lookup_key, "10Y Monthly Not-Rebalanced Withdrawal combo"))
                 mrb_tab, mnr_tab = st.tabs(["🔄 Monthly Rebalanced Top 100", "↗ Monthly Not Rebalanced Top 100"])
                 with mrb_tab:
-                    st.dataframe(_monthly_withdrawal_combo_rank_table(monthly_rebalance_rank), use_container_width=True, hide_index=True, height=520)
+                    st.dataframe(_monthly_withdrawal_combo_rank_table(monthly_rebalance_rank), width="stretch", hide_index=True, height=520)
                 with mnr_tab:
-                    st.dataframe(_monthly_withdrawal_combo_rank_table(monthly_not_rebalanced_rank), use_container_width=True, hide_index=True, height=520)
+                    st.dataframe(_monthly_withdrawal_combo_rank_table(monthly_not_rebalanced_rank), width="stretch", hide_index=True, height=520)
 
         with preset_row2[1]:
-            with st.popover("🛡️ Recession-Balanced Top 100", use_container_width=True):
+            with st.popover("🛡️ Recession-Balanced Top 100", width="stretch"):
                 st.markdown("### 2 Profit Engines + 2 Recession-Defense Stocks")
                 st.caption(
                     "Exactly four stocks from four different sectors: 2 Profit Engines + 2 Recession Defense stocks. "
@@ -5119,15 +5119,15 @@ with portfolio_tab:
                                  args=(picker_key, lookup_key, "Recession-Balanced Not-Rebalanced combo"))
                 rbt, nrt = st.tabs(["🔄 Rebalanced Top 100", "↗ Not Rebalanced Top 100"])
                 with rbt:
-                    st.dataframe(_recession_combo_rank_table(recession_rb), use_container_width=True, hide_index=True, height=520)
+                    st.dataframe(_recession_combo_rank_table(recession_rb), width="stretch", hide_index=True, height=520)
                 with nrt:
-                    st.dataframe(_recession_combo_rank_table(recession_nr), use_container_width=True, hide_index=True, height=520)
+                    st.dataframe(_recession_combo_rank_table(recession_nr), width="stretch", hide_index=True, height=520)
                 st.caption(
                     "Recession Defense is a historical resilience screen, not a guarantee. A hard maximum of five Top-100 appearances per ticker is enforced in each strategy ranking. The next successful MarketScope refresh regenerates these rankings from the current annual-return snapshot."
                 )
 
         with preset_row2[2]:
-            with st.popover("💰 10Y $160K Withdrawal Top 100", use_container_width=True):
+            with st.popover("💰 10Y $160K Withdrawal Top 100", width="stretch"):
                 st.markdown("### $300K Start / $160K per Year · Max 5 Uses per Ticker")
                 st.caption(
                     "Four stocks from four different sectors, equal 25% starting allocation, using the completed "
@@ -5199,14 +5199,14 @@ with portfolio_tab:
                 with high_rb_tab:
                     st.dataframe(
                         _withdrawal_combo_rank_table(high_rb),
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                         height=540,
                     )
                 with high_nr_tab:
                     st.dataframe(
                         _withdrawal_combo_rank_table(high_nr),
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                         height=540,
                     )
@@ -5218,7 +5218,7 @@ with portfolio_tab:
                 )
 
         with preset_row2[3]:
-            with st.popover("🏆 20Y $160K Withdrawal Top 250", use_container_width=True):
+            with st.popover("🏆 20Y $160K Withdrawal Top 250", width="stretch"):
                 st.markdown("### $300K Start / $160K per Year · 20Y · Max 10 Uses per Ticker")
                 st.caption(
                     "Exactly four stocks from four different sectors, equal 25% starting allocation, using "
@@ -5292,14 +5292,14 @@ with portfolio_tab:
                 with long_rb_tab:
                     st.dataframe(
                         _withdrawal_combo_rank_table(long_rb),
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                         height=560,
                     )
                 with long_nr_tab:
                     st.dataframe(
                         _withdrawal_combo_rank_table(long_nr),
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                         height=560,
                     )
@@ -5649,12 +5649,12 @@ with portfolio_tab:
                             st.caption("After each completed-year withdrawal, the remaining balance is restored to the original target weights.")
                             rb_rows = _withdrawal_table_rows(portfolio_withdrawal_rebalanced_result)
                             if rb_rows:
-                                st.dataframe(pd.DataFrame(rb_rows), use_container_width=True, hide_index=True, height=min(560, 56 + 36 * len(rb_rows)))
+                                st.dataframe(pd.DataFrame(rb_rows), width="stretch", hide_index=True, height=min(560, 56 + 36 * len(rb_rows)))
                         with nr_tab:
                             st.caption("After each withdrawal, holdings keep their post-return weights; no annual rebalance is performed.")
                             nr_rows = _withdrawal_table_rows(portfolio_withdrawal_not_rebalanced_result)
                             if nr_rows:
-                                st.dataframe(pd.DataFrame(nr_rows), use_container_width=True, hide_index=True, height=min(560, 56 + 36 * len(nr_rows)))
+                                st.dataframe(pd.DataFrame(nr_rows), width="stretch", hide_index=True, height=min(560, 56 + 36 * len(nr_rows)))
                         with compare_tab:
                             rb_schedule = list(portfolio_withdrawal_rebalanced_result.get("schedule") or [])
                             nr_schedule = list(portfolio_withdrawal_not_rebalanced_result.get("schedule") or [])
@@ -5673,7 +5673,7 @@ with portfolio_tab:
                                     "Difference": f"${(rb_remaining - nr_remaining):+,.2f}",
                                 })
                             if compare_rows:
-                                st.dataframe(pd.DataFrame(compare_rows), use_container_width=True, hide_index=True, height=min(560, 56 + 36 * len(compare_rows)))
+                                st.dataframe(pd.DataFrame(compare_rows), width="stretch", hide_index=True, height=min(560, 56 + 36 * len(compare_rows)))
 
                         with reset_tab:
                             st.caption(
@@ -5741,7 +5741,7 @@ with portfolio_tab:
 
                                 st.dataframe(
                                     annual_reset_df,
-                                    use_container_width=True,
+                                    width="stretch",
                                     hide_index=True,
                                     height=min(660, 56 + 36 * len(annual_reset_df)),
                                     column_config=reset_column_config,
@@ -5840,7 +5840,7 @@ with portfolio_tab:
 
                             st.dataframe(
                                 paths_df,
-                                use_container_width=True,
+                                width="stretch",
                                 hide_index=True,
                                 height=min(760, 70 + 34 * len(paths_df)),
                                 column_config=start_year_column_config,
@@ -6086,12 +6086,12 @@ with portfolio_tab:
                             st.caption("After every month-end withdrawal, the remaining balance is restored to the original target weights.")
                             rows = _monthly_withdrawal_table_rows(portfolio_monthly_withdrawal_rebalanced_result)
                             if rows:
-                                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=560)
+                                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=560)
                         with mnr_tab:
                             st.caption("After every month-end withdrawal, holdings retain their drifted post-return weights.")
                             rows = _monthly_withdrawal_table_rows(portfolio_monthly_withdrawal_not_rebalanced_result)
                             if rows:
-                                st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=560)
+                                st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=560)
                         with mcompare_tab:
                             rb_schedule = list(portfolio_monthly_withdrawal_rebalanced_result.get("schedule") or [])
                             nr_schedule = list(portfolio_monthly_withdrawal_not_rebalanced_result.get("schedule") or [])
@@ -6110,7 +6110,7 @@ with portfolio_tab:
                                     "Difference": f"${(rb_remaining - nr_remaining):+,.2f}",
                                 })
                             if compare_rows:
-                                st.dataframe(pd.DataFrame(compare_rows), use_container_width=True, hide_index=True, height=560)
+                                st.dataframe(pd.DataFrame(compare_rows), width="stretch", hide_index=True, height=560)
 
                         with mreset_tab:
                             st.caption(
@@ -6150,7 +6150,7 @@ with portfolio_tab:
                                     )
                                 st.dataframe(
                                     monthly_reset_df,
-                                    use_container_width=True,
+                                    width="stretch",
                                     hide_index=True,
                                     height=min(760, 70 + 34 * len(monthly_reset_df)),
                                     column_config=monthly_reset_column_config,
@@ -6215,7 +6215,7 @@ with portfolio_tab:
                             }
                             st.dataframe(
                                 paths_df,
-                                use_container_width=True,
+                                width="stretch",
                                 hide_index=True,
                                 height=min(800, 70 + 34 * len(paths_df)),
                                 column_config=monthly_start_year_column_config,
@@ -6366,7 +6366,7 @@ with portfolio_tab:
                         portfolio_analytics_df = _portfolio_analytics_dataframe(portfolio_analytics)
                         st.dataframe(
                             portfolio_analytics_df,
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True,
                             height=min(520, 62 + 42 * len(portfolio_analytics_df)),
                         )
@@ -6483,7 +6483,7 @@ with portfolio_tab:
             save_simulation_clicked = st.button(
                 "💾 Save PDF to Library",
                 key="save_portfolio_simulation_pdf",
-                use_container_width=True,
+                width="stretch",
                 type="primary",
                 disabled=not portfolio_save_ready,
                 help="Save this completed simulation into the in-app PDF library.",
@@ -6492,7 +6492,7 @@ with portfolio_tab:
             if st.button(
                 f"📚 Saved ({len(saved_simulations)})" if not st.session_state.simulation_library_open else "📚 Hide Library",
                 key="toggle_simulation_library",
-                use_container_width=True,
+                width="stretch",
             ):
                 st.session_state.simulation_library_open = not st.session_state.simulation_library_open
                 st.rerun()
@@ -6747,7 +6747,7 @@ with portfolio_tab:
                         st.link_button(
                             "📱 Open / Share PDF",
                             pdf_viewer_url(pdf_record),
-                            use_container_width=True,
+                            width="stretch",
                             help="Open the MarketScope mobile PDF viewer. Share PDF uses the phone's native share sheet; Back to MarketScope returns to the app.",
                         )
                     with action_cols[1]:
@@ -6757,10 +6757,10 @@ with portfolio_tab:
                             file_name=safe_filename(pdf_record),
                             mime="application/pdf",
                             key=f"download_simulation_{rec_id}",
-                            use_container_width=True,
+                            width="stretch",
                         )
                     with action_cols[2]:
-                        if st.button("🗑 Delete", key=f"delete_simulation_{rec_id}", use_container_width=True):
+                        if st.button("🗑 Delete", key=f"delete_simulation_{rec_id}", width="stretch"):
                             st.session_state.pending_delete_simulation = rec_id
                             st.rerun()
                     with action_cols[3]:
@@ -6772,7 +6772,7 @@ with portfolio_tab:
                         st.warning(f"Delete saved simulation '{rec_name}'? This removes it from the in-app library.")
                         confirm_cols = st.columns([1, 1, 4])
                         with confirm_cols[0]:
-                            if st.button("Confirm Delete", key=f"confirm_delete_simulation_{rec_id}", type="primary", use_container_width=True):
+                            if st.button("Confirm Delete", key=f"confirm_delete_simulation_{rec_id}", type="primary", width="stretch"):
                                 pdf_delete_ok, pdf_delete_msg = delete_pdf_artifact(
                                     rec,
                                     BASE_DIR,
@@ -6793,7 +6793,7 @@ with portfolio_tab:
                                 cached_simulation_pdf.clear()
                                 st.rerun()
                         with confirm_cols[1]:
-                            if st.button("Cancel", key=f"cancel_delete_simulation_{rec_id}", use_container_width=True):
+                            if st.button("Cancel", key=f"cancel_delete_simulation_{rec_id}", width="stretch"):
                                 st.session_state.pending_delete_simulation = None
                                 st.rerun()
 
@@ -6841,7 +6841,7 @@ if favorite_tab.open:
                 "Pick Fav",
                 key="run_favorite_picks",
                 type="primary",
-                use_container_width=True,
+                width="stretch",
                 help="Refresh the finalist inputs and calculate the current Top 2 stocks within every eligible sector.",
             )
         with pick_controls[1]:
@@ -6974,7 +6974,7 @@ if favorite_tab.open:
             }
             st.dataframe(
                 favorite_table,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=min(920, 92 + 38 * len(favorite_table)),
                 column_config=favorite_column_config,
@@ -7002,7 +7002,7 @@ if favorite_tab.open:
                         pd.DataFrame(
                             [{"Model": name, "Ensemble Weight %": float(weight) * 100.0} for name, weight in weights.items()]
                         ),
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                         column_config={"Ensemble Weight %": st.column_config.NumberColumn(format="%.2f%%")},
                     )
@@ -7015,7 +7015,7 @@ if favorite_tab.open:
                 if freshness:
                     st.dataframe(
                         pd.DataFrame([{"Dataset": name, **values} for name, values in freshness.items()]),
-                        use_container_width=True,
+                        width="stretch",
                         hide_index=True,
                     )
                 warnings = favorite_result.get("warnings") or []
@@ -7046,7 +7046,7 @@ if favorite_tab.open:
         else:
             st.dataframe(
                 favorite_picks_change_frame,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=min(620, 72 + max(1, len(favorite_picks_change_frame)) * 35),
                 key="favorite_picks_change_history_tab",
@@ -7054,7 +7054,7 @@ if favorite_tab.open:
             with st.expander(f"Previous Pick Fav runs ({len(favorite_picks_run_frame):,})"):
                 st.dataframe(
                     favorite_picks_run_frame,
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True,
                     height=min(480, 72 + max(1, len(favorite_picks_run_frame)) * 35),
                     key="favorite_picks_run_history_tab",
@@ -7263,7 +7263,7 @@ with market_tab:
         if st.button(
             "✦ Sort Cards By" if not st.session_state.sort_menu_open else "✦ Hide Sort Options",
             key="toggle_sort_menu",
-            use_container_width=True,
+            width="stretch",
             type="primary" if st.session_state.sort_menu_open else "secondary",
         ):
             st.session_state.sort_menu_open = not st.session_state.sort_menu_open
@@ -7285,7 +7285,7 @@ with market_tab:
                     if col_widget.button(
                         label,
                         key=f"sort_card_{option}",
-                        use_container_width=True,
+                        width="stretch",
                         type="primary" if active else "secondary",
                     ):
                         if st.session_state.card_sort_choice != option:
@@ -7298,7 +7298,7 @@ with market_tab:
                 if st.button(
                     "↓ High → Low",
                     key="sort_desc",
-                    use_container_width=True,
+                    width="stretch",
                     type="primary" if not st.session_state.card_sort_ascending else "secondary",
                 ):
                     st.session_state.card_sort_ascending = False
@@ -7308,7 +7308,7 @@ with market_tab:
                 if st.button(
                     "↑ Low → High",
                     key="sort_asc",
-                    use_container_width=True,
+                    width="stretch",
                     type="primary" if st.session_state.card_sort_ascending else "secondary",
                 ):
                     st.session_state.card_sort_ascending = True
@@ -7356,7 +7356,7 @@ with market_tab:
             st.session_state.card_page = 0
         page_cols = st.columns([1, 1, 3, 1, 1])
         with page_cols[0]:
-            if st.button("◀", key="prev_cards", use_container_width=True, disabled=st.session_state.card_page <= 0):
+            if st.button("◀", key="prev_cards", width="stretch", disabled=st.session_state.card_page <= 0):
                 st.session_state.card_page -= 1
                 st.rerun()
         with page_cols[1]:
@@ -7364,7 +7364,7 @@ with market_tab:
         with page_cols[3]:
             st.markdown(f"<div class='page-chip'>{len(filtered):,} results</div>", unsafe_allow_html=True)
         with page_cols[4]:
-            if st.button("▶", key="next_cards", use_container_width=True, disabled=st.session_state.card_page >= pages - 1):
+            if st.button("▶", key="next_cards", width="stretch", disabled=st.session_state.card_page >= pages - 1):
                 st.session_state.card_page += 1
                 st.rerun()
 
@@ -7553,7 +7553,7 @@ with market_tab:
                         st.button(
                             f"{timeframe_display_label(metric)}  {format_pct(row.get(metric))}",
                             key=f"profit_tile_{clean_namespace}_{symbol}_{metric}",
-                            use_container_width=True,
+                            width="stretch",
                             type="primary" if active and _metric_available else "secondary",
                             disabled=not _metric_available,
                             help=None if _metric_available else "No saved return exists for this period (for example, the instrument may not have existed yet).",
@@ -7834,7 +7834,7 @@ with market_tab:
             lc2.metric("Session / window", f"{change:+.2f}%" if np.isfinite(change) else "—")
             lc3.metric("High", f"${float(close.max()):,.2f}")
             lc4.metric("Low", f"${float(close.min()):,.2f}")
-            st.line_chart(close.rename("Live adjusted price"), use_container_width=True, height=390)
+            st.line_chart(close.rename("Live adjusted price"), width="stretch", height=390)
             last_ts = pd.Timestamp(close.index[-1])
             try:
                 last_label = last_ts.strftime("%b %d, %Y %I:%M:%S %p %Z")
@@ -7905,7 +7905,7 @@ with market_tab:
                     is_etf = str(row.get("Type") or "").strip().upper() == "ETF"
                     action_cols = st.columns(4 if is_etf else 3)
                     with action_cols[0]:
-                        if st.button(f"Open {symbol}", key=f"open_{symbol}_{page_start}", use_container_width=True):
+                        if st.button(f"Open {symbol}", key=f"open_{symbol}_{page_start}", width="stretch"):
                             st.session_state.selected_symbol = symbol
                             st.session_state.scroll_to_chart = True
                             st.rerun()
@@ -7914,7 +7914,7 @@ with market_tab:
                         if st.button(
                             "Hide News" if news_open else "📰 News",
                             key=f"news_{symbol}_{page_start}",
-                            use_container_width=True,
+                            width="stretch",
                             type="primary" if news_open else "secondary",
                         ):
                             st.session_state.news_symbol = None if news_open else symbol
@@ -7925,7 +7925,7 @@ with market_tab:
                             if st.button(
                                 "Hide Holdings" if holdings_open else "◫ Holdings",
                                 key=f"holdings_{symbol}_{page_start}",
-                                use_container_width=True,
+                                width="stretch",
                                 type="primary" if holdings_open else "secondary",
                             ):
                                 st.session_state.holdings_symbol = None if holdings_open else symbol
@@ -7952,7 +7952,7 @@ with market_tab:
             if st.button(
                 "◀ Previous",
                 key="prev_cards_bottom",
-                use_container_width=True,
+                width="stretch",
                 disabled=st.session_state.card_page <= 0,
             ):
                 st.session_state.card_page -= 1
@@ -7968,7 +7968,7 @@ with market_tab:
             if st.button(
                 "Next ▶",
                 key="next_cards_bottom",
-                use_container_width=True,
+                width="stretch",
                 disabled=st.session_state.card_page >= pages - 1,
             ):
                 st.session_state.card_page += 1
@@ -8060,7 +8060,7 @@ with market_tab:
                 ch4.metric("High close", f"${chart_stats['high']:,.2f}")
                 ch5.metric("Low close", f"${chart_stats['low']:,.2f}")
                 chart_series = pd.to_numeric(detail_hist["Close"], errors="coerce").dropna().rename("Adjusted Close")
-                st.line_chart(chart_series, use_container_width=True, height=360)
+                st.line_chart(chart_series, width="stretch", height=360)
                 st.caption(
                     f"{selected} adjusted daily closes for calendar year {selected_chart_year} • "
                     f"{chart_stats['days']:,} trading-day observations. Selecting another year replaces both the graph and year summary."
@@ -8353,7 +8353,7 @@ with market_tab:
         table_column_config.update(timeframe_column_config([c for c in PERF_COLS if c in table_df.columns]))
         table_event = st.dataframe(
             table_df,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             height=760,
             column_config=table_column_config,
@@ -8471,7 +8471,7 @@ with compare_tab:
                 st.session_state.compare_page = 0
             cc_nav = st.columns([1.1, 1.3, 3.0, 1.3, 1.1])
             with cc_nav[0]:
-                if st.button("◀", key="compare_prev", use_container_width=True, disabled=st.session_state.compare_page <= 0):
+                if st.button("◀", key="compare_prev", width="stretch", disabled=st.session_state.compare_page <= 0):
                     st.session_state.compare_page -= 1
                     st.rerun()
             with cc_nav[1]:
@@ -8482,7 +8482,7 @@ with compare_tab:
             with cc_nav[3]:
                 st.markdown(f"<div class='page-chip'>{len(comparison_df):,} instruments</div>", unsafe_allow_html=True)
             with cc_nav[4]:
-                if st.button("▶", key="compare_next", use_container_width=True, disabled=st.session_state.compare_page >= compare_pages - 1):
+                if st.button("▶", key="compare_next", width="stretch", disabled=st.session_state.compare_page >= compare_pages - 1):
                     st.session_state.compare_page += 1
                     st.rerun()
 
@@ -8519,7 +8519,7 @@ with compare_tab:
                             if st.button(
                                 "Hide Details" if detail_open else "Open Full Details",
                                 key=f"compare_detail_{symbol}_{compare_start}",
-                                use_container_width=True,
+                                width="stretch",
                                 type="primary" if detail_open else "secondary",
                             ):
                                 st.session_state.comparison_detail_symbol = None if detail_open else symbol
@@ -8529,7 +8529,7 @@ with compare_tab:
                             if st.button(
                                 "Hide News" if news_open else "📰 News",
                                 key=f"compare_news_{symbol}_{compare_start}",
-                                use_container_width=True,
+                                width="stretch",
                                 type="primary" if news_open else "secondary",
                             ):
                                 st.session_state.news_symbol = None if news_open else symbol
@@ -8540,7 +8540,7 @@ with compare_tab:
                                 if st.button(
                                     "Hide Holdings" if holdings_open else "◫ Holdings",
                                     key=f"compare_holdings_{symbol}_{compare_start}",
-                                    use_container_width=True,
+                                    width="stretch",
                                     type="primary" if holdings_open else "secondary",
                                 ):
                                     st.session_state.holdings_symbol = None if holdings_open else symbol
@@ -8552,7 +8552,7 @@ with compare_tab:
                             if st.button(
                                 f"Remove {symbol}",
                                 key=f"remove_compare_{symbol}_{compare_start}",
-                                use_container_width=True,
+                                width="stretch",
                             ):
                                 updated = [x for x in st.session_state.compare_symbols if x != symbol]
                                 st.session_state.compare_symbols = updated
@@ -8609,7 +8609,7 @@ with compare_tab:
                 compare_hist = _filter_history_for_calendar_year(full_compare_history, selected_compare_year)
                 compare_stats = _year_chart_stats(compare_hist)
                 if compare_stats and "Close" in compare_hist:
-                    st.line_chart(pd.to_numeric(compare_hist["Close"], errors="coerce").dropna().rename("Adjusted Close"), use_container_width=True, height=360)
+                    st.line_chart(pd.to_numeric(compare_hist["Close"], errors="coerce").dropna().rename("Adjusted Close"), width="stretch", height=360)
                     st.caption(f"{comparison_detail_symbol} adjusted daily closes for {selected_compare_year}.")
                 else:
                     st.info(f"No adjusted daily price history is available for {comparison_detail_symbol} in {selected_compare_year}.")
@@ -8721,7 +8721,7 @@ with compare_tab:
             comp_column_config.update(timeframe_column_config([c for c in PERF_COLS if c in comp_table.columns]))
             st.dataframe(
                 comp_table,
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=min(840, 86 + max(1, len(comp_table)) * 35),
                 column_config=comp_column_config,
@@ -8920,7 +8920,7 @@ with sector_tab:
             configs.update({year_col: st.column_config.NumberColumn(timeframe_display_label(year_col), format="%.2f%%") for year_col in annual_return_cols})
             st.dataframe(
                 drill_table[drill_cols],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 height=min(520, 110 + len(drill_table) * 32),
                 column_config=configs,
@@ -8951,7 +8951,7 @@ with sector_tab:
                         with kpi_stocks:
                             with st.popover(
                                 f'TOTAL STOCKS · {int(sector_row["Stocks"])}',
-                                use_container_width=True,
+                                width="stretch",
                                 help=f'Tap Total Stocks to view and rank all {sector_row["Sector"]} stocks.',
                             ):
                                 _render_sector_top_performers_popover(str(sector_row["Sector"]), sector_button_key)
@@ -8977,7 +8977,7 @@ with sector_tab:
         sector_table = sector_df[table_cols].copy()
         st.dataframe(
             sector_table,
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
             column_config={
                 "MarketCap": st.column_config.NumberColumn("Combined Market Cap", format="$%.0f"),

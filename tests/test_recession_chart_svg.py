@@ -17,3 +17,13 @@ def test_server_chart_has_no_script_and_keeps_shading(series):
 def test_missing_month_not_connected():
     svg=indicator_svg('USPHCI',[{'date':'2020-01-01','value':1},{'date':'2020-03-01','value':2}])
     assert svg.count('<circle ')==2
+
+@pytest.mark.parametrize('series',['USPHCI','RECPROUSM156N','SAHMREALTIME'])
+@pytest.mark.parametrize('years',[None,5,10,20])
+def test_full_history_and_windows_do_not_overflow(series,years):
+    import pandas as pd
+    rows=[{'date':str(d.date()),'value':1.0} for d in pd.date_range('1959-01-01','2026-07-01',freq='MS')]
+    svg=indicator_svg(series,rows,years)
+    ET.fromstring(svg)
+    assert 'Jul 2026' in svg
+    if years is None: assert 'Jan 1959' in svg
