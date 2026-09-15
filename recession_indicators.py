@@ -107,6 +107,7 @@ def render_recession_indicators():
     st.markdown(f'Recession dates: [FRED / NBER chronology]({RECESSION_SOURCE}).')
     refresh=st.button('Refresh recession data',key='refresh_recession_data')
     window=st.selectbox('Chart history',['10 years','5 years','20 years','All history'],key='recession_history_window')
+    interactive=st.checkbox('Use interactive charts (requires browser chart scripts)',value=False,key='recession_interactive_charts')
     years={'10 years':10,'5 years':5,'20 years':20,'All history':None}[window]
     with st.spinner('Loading FRED observations…'):
         with ThreadPoolExecutor(max_workers=2) as pool:
@@ -132,7 +133,11 @@ def render_recession_indicators():
                 prior=lookup.get((pd.Timestamp(last['date'])-pd.DateOffset(months=1)).strftime('%Y-%m-%d'))
                 c.metric('Monthly change',f"{(last['value']/prior-1)*100:+.2f}%" if prior else 'Unavailable')
             st.caption(f"{result['status']} · Downloaded {result['retrieved_at']} · Monthly · {spec['adjustment']}")
-            st.plotly_chart(indicator_figure(series,records,years),width='stretch',key=f'fred_{series}')
+            if interactive:
+                st.plotly_chart(indicator_figure(series,records,years),width='stretch',key=f'fred_{series}')
+            else:
+                from recession_chart_svg import indicator_svg
+                st.image(indicator_svg(series,records,years),width='stretch')
             from recession_shading import PERIODS
             end=pd.Timestamp(records[-1]['date'])
             start=pd.Timestamp(records[0]['date']) if years is None else max(pd.Timestamp(records[0]['date']),end-pd.DateOffset(years=years))

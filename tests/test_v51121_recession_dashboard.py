@@ -65,9 +65,12 @@ def test_recession_tab_renders_both_native_charts(monkeypatch):
     monkeypatch.setattr(module,'load_series',fake)
     app=AppTest.from_string('from recession_indicators import render_recession_indicators\nrender_recession_indicators()').run()
     assert not app.exception
-    assert len(app.get('plotly_chart'))==3
+    assert len(app.get('image'))==3
+    assert not app.get('plotly_chart')
     assert any(metric.value=='Smoothed probability' for metric in app.metric)
     app.selectbox[0].select('All history').run()
+    assert not app.exception and len(app.get('image'))==3
+    app.checkbox[0].check().run()
     assert not app.exception and len(app.get('plotly_chart'))==3
 
 

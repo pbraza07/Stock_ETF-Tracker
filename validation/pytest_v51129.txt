@@ -1,0 +1,76 @@
+........................................................................ [ 11%]
+.........F.............................................................. [ 22%]
+........................................................................ [ 34%]
+........................................................................ [ 45%]
+........................................................................ [ 56%]
+........................................................................ [ 68%]
+........................................................................ [ 79%]
+........................................................................ [ 90%]
+..........................................................               [100%]
+=================================== FAILURES ===================================
+________________ test_recession_tab_renders_both_native_charts _________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7faffdcd6930>
+
+    def test_recession_tab_renders_both_native_charts(monkeypatch):
+        import recession_indicators as module
+        from streamlit.testing.v1 import AppTest
+        def fake(series,force=False):
+            return {'data':[{'date':'2026-01-01','value':.3 if series=='RECPROUSM156N' else 100},{'date':'2026-02-01','value':.5 if series=='RECPROUSM156N' else 101}], 'status':'Updated','retrieved_at':'2026-03-01T00:00:00+00:00'}
+        monkeypatch.setattr(module,'load_series',fake)
+        app=AppTest.from_string('from recession_indicators import render_recession_indicators\nrender_recession_indicators()').run()
+        assert not app.exception
+>       assert len(app.get('plotly_chart'))==3
+E       AssertionError: assert 0 == 3
+E        +  where 0 = len([])
+E        +    where [] = get('plotly_chart')
+E        +      where get = AppTest(\n    _script_path='/tmp/tmphysqc2ed/60dde3beacc6871cb3dfce36c2503a5a',\n    default_timeout=3,\n    session_stat...SpecialBlock(\n            type='sidebar'\n        ),\n        2: SpecialBlock(\n            type='event'\n        )\n    }\n).get
+
+tests/test_v51121_recession_dashboard.py:68: AssertionError
+----------------------------- Captured stderr call -----------------------------
+2026-09-15 16:00:12.476 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-09-15 16:00:12.822 DEBUG   streamlit.runtime.scriptrunner.script_runner: Running script
+2026-09-15 16:00:12.822 DEBUG   streamlit.runtime.media_file_manager: Disconnecting files for session with ID test session id
+2026-09-15 16:00:12.822 DEBUG   streamlit.runtime.media_file_manager: Sessions still active: dict_keys([])
+2026-09-15 16:00:12.823 DEBUG   streamlit.runtime.media_file_manager: Files: 0; Sessions with files: 0
+2026-09-15 16:00:13.049 DEBUG   streamlit.runtime.memory_media_file_storage: Adding media file da8be8d31e90ae33b90c2455ed69205e
+2026-09-15 16:00:13.060 DEBUG   streamlit.runtime.memory_media_file_storage: Adding media file a0327ff0fcc0cc231e0f15cd8a87f165
+2026-09-15 16:00:13.070 DEBUG   streamlit.runtime.memory_media_file_storage: Adding media file 99ef2945df584268edb4895f92ee750a
+2026-09-15 16:00:13.075 DEBUG   streamlit.runtime.media_file_manager: Removing orphaned files...
+2026-09-15 16:00:13.075 DEBUG   streamlit.runtime.media_file_manager: Removing orphaned deferred callables...
+------------------------------ Captured log call -------------------------------
+WARNING  streamlit.runtime.scriptrunner_utils.script_run_context:script_run_context.py:476 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+DEBUG    streamlit.runtime.scriptrunner.script_runner:script_runner.py:547 Running script
+DEBUG    streamlit.runtime.media_file_manager:media_file_manager.py:203 Disconnecting files for session with ID test session id
+DEBUG    streamlit.runtime.media_file_manager:media_file_manager.py:213 Sessions still active: dict_keys([])
+DEBUG    streamlit.runtime.media_file_manager:media_file_manager.py:217 Files: 0; Sessions with files: 0
+DEBUG    streamlit.runtime.memory_media_file_storage:memory_media_file_storage.py:164 Adding media file da8be8d31e90ae33b90c2455ed69205e
+DEBUG    streamlit.runtime.memory_media_file_storage:memory_media_file_storage.py:164 Adding media file a0327ff0fcc0cc231e0f15cd8a87f165
+DEBUG    streamlit.runtime.memory_media_file_storage:memory_media_file_storage.py:164 Adding media file 99ef2945df584268edb4895f92ee750a
+DEBUG    streamlit.runtime.media_file_manager:media_file_manager.py:142 Removing orphaned files...
+DEBUG    streamlit.runtime.media_file_manager:media_file_manager.py:163 Removing orphaned deferred callables...
+=============================== warnings summary ===============================
+tests/test_analytics.py::test_positive_returns
+tests/test_analytics.py::test_short_history_blanks_long_horizon
+tests/test_refresh_engine.py::test_history_has_required_metrics
+tests/test_v54_signals_and_layout.py::test_three_year_and_one_year_average_are_computed
+tests/test_v54_signals_and_layout.py::test_strong_buy_can_create_long_fundamental_signal
+tests/test_v55_futuristic_cards.py::test_all_annualized_horizons_1_to_10_exist
+  /workspace/scratch/cf609644dad1/work_v51129/analytics.py:278: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+    ytd_base = _price_on_or_before(close, jan1 - pd.Timedelta(days=1))
+
+tests/test_analytics.py: 20 warnings
+tests/test_refresh_engine.py: 10 warnings
+tests/test_v54_signals_and_layout.py: 20 warnings
+tests/test_v55_futuristic_cards.py: 10 warnings
+  /workspace/scratch/cf609644dad1/work_v51129/analytics.py:270: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+    inception_date <= target + pd.Timedelta(days=10)
+
+tests/test_ytd_save_ui.py::test_run_save_and_reopen_snapshot
+  /workspace/scratch/cf609644dad1/work_v51129/ytd_simulator.py:205: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.
+    as_of = (pd.Timestamp.now(tz="America/New_York") - pd.Timedelta(days=1)).date()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_v51121_recession_dashboard.py::test_recession_tab_renders_both_native_charts
+1 failed, 633 passed, 67 warnings in 49.39s
