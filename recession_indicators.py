@@ -6,6 +6,7 @@ import os
 from macro_snapshots import with_snapshot
 import pandas as pd
 from macro_data import cached_download
+from recession_shading import shade_recessions, NOTE as RECESSION_NOTE, SOURCE as RECESSION_SOURCE
 
 SERIES = {
     'USPHCI': {
@@ -85,6 +86,7 @@ def indicator_figure(series, records, years=10):
     fig=go.Figure(go.Scatter(x=frame.date,y=frame.value,mode='lines',name=spec['name'],
         line={'color':spec['color'],'width':2.5},connectgaps=False,
         hovertemplate='%{x|%b %Y}<br>%{y:.2f}'+('%' if series=='RECPROUSM156N' else ' pp' if series=='SAHMREALTIME' else '')+'<extra></extra>'))
+    shade_recessions(fig, frame.date.min(), frame.date.max())
     if series=='SAHMREALTIME':
         fig.add_hline(y=.5,line_color='#FB7185',line_dash='dash',annotation_text='Sahm threshold: 0.50 pp',annotation_font_color='#FB7185')
     if series=='RECPROUSM156N':
@@ -101,6 +103,8 @@ def render_recession_indicators():
     import streamlit as st
     st.subheader('Recession Indicators — United States')
     st.caption('Monthly economic evidence from FRED. Charts are built from downloaded observations in MarketScope.')
+    st.markdown('🟥 **Historical recession periods** — '+RECESSION_NOTE)
+    st.markdown(f'Recession dates: [FRED / NBER chronology]({RECESSION_SOURCE}).')
     refresh=st.button('Refresh recession data',key='refresh_recession_data')
     window=st.selectbox('Chart history',['10 years','5 years','20 years','All history'],key='recession_history_window')
     years={'10 years':10,'5 years':5,'20 years':20,'All history':None}[window]
@@ -129,6 +133,11 @@ def render_recession_indicators():
                 c.metric('Monthly change',f"{(last['value']/prior-1)*100:+.2f}%" if prior else 'Unavailable')
             st.caption(f"{result['status']} · Downloaded {result['retrieved_at']} · Monthly · {spec['adjustment']}")
             st.plotly_chart(indicator_figure(series,records,years),width='stretch',key=f'fred_{series}')
+            from recession_shading import PERIODS
+            end=pd.Timestamp(records[-1]['date'])
+            start=pd.Timestamp(records[0]['date']) if years is None else max(pd.Timestamp(records[0]['date']),end-pd.DateOffset(years=years))
+            visible=[f'{pd.Timestamp(a):%b %Y} – {pd.Timestamp(b):%b %Y}' for a,b in PERIODS if pd.Timestamp(b)>=start and pd.Timestamp(a)<=end]
+            st.caption('Shaded recessions: '+('; '.join(visible) if visible else 'None in the selected history window.'))
             with st.expander(f'View {series} observations / download'):
                 frame=pd.DataFrame(records).rename(columns={'date':'Observation date','value':spec['units']})
                 st.dataframe(frame.iloc[::-1],hide_index=True,width='stretch')
