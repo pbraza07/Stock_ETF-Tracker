@@ -9,7 +9,8 @@ import requests
 CACHE_DIR = Path(__file__).parent / 'data' / 'macro_cache'
 
 
-def cached_download(key, url, parse, ttl, force=False, cache_dir=None, params=None):
+def cached_download(key, url, parse, ttl, force=False, cache_dir=None, params=None,
+                    timeout=(4,10), attempts=1):
     directory = Path(cache_dir) if cache_dir is not None else CACHE_DIR
     path = directory / f'{key}.json'
     previous = None
@@ -21,8 +22,16 @@ def cached_download(key, url, parse, ttl, force=False, cache_dir=None, params=No
     except (OSError, ValueError, KeyError, TypeError):
         previous = None
     try:
-        response = requests.get(url, params=params, timeout=(4,10), headers={'User-Agent':'MarketScope economic dashboard', 'Accept':'text/csv,text/html;q=0.9'})
-        response.raise_for_status()
+        for attempt in range(max(1, attempts)):
+            try:
+                response = requests.get(url, params=params, timeout=timeout, headers={'User-Agent':'MarketScope economic dashboard', 'Accept':'application/json,text/csv,text/html;q=0.9'})
+                response.raise_for_status()
+                break
+            except requests.RequestException as failure:
+                status = getattr(getattr(failure, 'response', None), 'status_code', None)
+                transient = isinstance(failure, (requests.Timeout, requests.ConnectionError)) or status in (429,500,502,503,504)
+                if not transient or attempt + 1 >= max(1, attempts):
+                    raise
         data = parse(response.text)
         result = {'data':data, 'retrieved_at':datetime.now(timezone.utc).isoformat(), 'source':url}
         try:

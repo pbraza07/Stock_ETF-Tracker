@@ -44,10 +44,11 @@ def parse_fred(text, series):
     return frame.to_dict('records')
 
 
-def load_series(series, force=False, cache_dir=None):
+def load_series(series, force=False, cache_dir=None, background=False):
     if series not in SERIES:
         raise ValueError('Unknown recession indicator')
     api_key=os.getenv('FRED_API_KEY','').strip()
+    options = {'timeout': (5,30), 'attempts': 2} if background else {}
     if api_key:
         def parse_api(text):
             payload=json.loads(text)
@@ -60,10 +61,15 @@ def load_series(series, force=False, cache_dir=None):
             csv=frame.rename(columns={'date':'observation_date','value':series}).to_csv(index=False)
             return parse_fred(csv,series)
         result=cached_download(series,'https://api.stlouisfed.org/fred/series/observations',parse_api,6*3600,force,cache_dir,
-            params={'api_key':api_key,'series_id':series,'file_type':'json','sort_order':'asc','limit':100000,'realtime_start':'1990-07-04','realtime_end':'9999-12-31'})
-    else:
+            params={'api_key':api_key,'series_id':series,'file_type':'json','sort_order':'asc','limit':100000,'realtime_start':'1990-07-04','realtime_end':'9999-12-31'}, **options)
+    if not api_key or result['status'] not in ('Updated','Cached'):
+        primary = result if api_key else None
         result=cached_download(series,f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}',
-            lambda text:parse_fred(text,series),6*3600,force,cache_dir)
+            lambda text:parse_fred(text,series),6*3600,force,cache_dir, **options)
+        if primary and primary.get('error'):
+            result['diagnostic'] = 'Official API: '+primary['error']+'; CSV: '+result['status']
+            if result['status'] not in ('Updated','Cached'):
+                result['error'] = result['diagnostic']+' ('+str(result.get('error'))+')'
     return with_snapshot(series,result) if cache_dir is None else result
 
 
