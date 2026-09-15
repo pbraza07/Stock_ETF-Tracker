@@ -1102,5 +1102,17 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-14T20:06:43.791532-04:00",
+    "occurred_at_display_et": "Sep 14, 2026 08:06:43 PM EDT",
+    "first_detected_at_et": "2026-09-14T20:06:43.791532-04:00",
+    "first_detected_display_et": "Sep 14, 2026 08:06:43 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "SO",
+    "name": "Southern Company (The) Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
