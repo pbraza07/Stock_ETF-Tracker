@@ -862,5 +862,53 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "occurred_at_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "first_detected_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "first_detected_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "AEM",
+    "name": "Agnico Eagle Mines Limited Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "occurred_at_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "first_detected_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "first_detected_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "EQIX",
+    "name": "Equinix Inc. Common Stock REIT",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "occurred_at_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "first_detected_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "first_detected_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "FCX",
+    "name": "Freeport-McMoRan Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "occurred_at_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "first_detected_at_et": "2026-09-16T10:30:00.394702-04:00",
+    "first_detected_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "JPM",
+    "name": "JP Morgan Chase & Co. Common Stock",
+    "from": "Strong Buy",
+    "to": "Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
