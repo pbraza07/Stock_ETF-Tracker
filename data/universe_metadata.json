@@ -1,48 +1,17 @@
 {
-  "refreshed_at_et": "2026-09-15T12:43:42.191930-04:00",
-  "refreshed_at_display_et": "Sep 15, 2026 12:43:42 PM EDT",
+  "refreshed_at_et": "2026-09-15T20:05:30.071881-04:00",
+  "refreshed_at_display_et": "Sep 15, 2026 08:05:30 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 166,
+  "stock_count": 165,
   "etf_count": 213,
-  "added_count": 2,
-  "removed_count": 10,
-  "added_symbols": [
-    "CCZ",
-    "NET"
-  ],
+  "added_count": 0,
+  "removed_count": 1,
+  "added_symbols": [],
   "removed_symbols": [
-    "AEM",
-    "BX",
-    "CEG",
-    "CME",
-    "EQIX",
-    "FCX",
-    "HWM",
-    "MELI",
-    "SO",
-    "VRT"
+    "HOOD"
   ],
-  "analyst_rating_change_count": 3,
-  "analyst_rating_changes": [
-    {
-      "symbol": "CAT",
-      "name": "Caterpillar Inc. Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
-    },
-    {
-      "symbol": "PSX",
-      "name": "Phillips 66 Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
-    },
-    {
-      "symbol": "TXN",
-      "name": "Texas Instruments Incorporated Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
-    }
-  ]
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }

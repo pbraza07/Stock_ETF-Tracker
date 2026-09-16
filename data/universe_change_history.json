@@ -850,5 +850,17 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-15T20:05:30.071881-04:00",
+    "occurred_at_display_et": "Sep 15, 2026 08:05:30 PM EDT",
+    "first_detected_at_et": "2026-09-15T20:05:30.071881-04:00",
+    "first_detected_display_et": "Sep 15, 2026 08:05:30 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HOOD",
+    "name": "Robinhood Markets Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
