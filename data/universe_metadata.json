@@ -1,26 +1,19 @@
 {
-  "refreshed_at_et": "2026-09-16T10:30:00.394702-04:00",
-  "refreshed_at_display_et": "Sep 16, 2026 10:30:00 AM EDT",
+  "refreshed_at_et": "2026-09-16T20:16:12.237578-04:00",
+  "refreshed_at_display_et": "Sep 16, 2026 08:16:12 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 168,
+  "stock_count": 165,
   "etf_count": 213,
-  "added_count": 3,
-  "removed_count": 0,
-  "added_symbols": [
+  "added_count": 0,
+  "removed_count": 3,
+  "added_symbols": [],
+  "removed_symbols": [
+    "ADBE",
     "AEM",
-    "EQIX",
     "FCX"
   ],
-  "removed_symbols": [],
-  "analyst_rating_change_count": 1,
-  "analyst_rating_changes": [
-    {
-      "symbol": "JPM",
-      "name": "JP Morgan Chase & Co. Common Stock",
-      "from": "Strong Buy",
-      "to": "Buy"
-    }
-  ]
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }
