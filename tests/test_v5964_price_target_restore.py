@@ -54,7 +54,7 @@ def _hydrate_function():
 
 
 def test_release_version_5964():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.31"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.32"
     assert "v5.9.66" in APP
 
 

@@ -236,7 +236,7 @@ def validate_projection_inputs(inputs: dict, market: pd.DataFrame | None = None)
         errors.append("Withdrawal Timing must be Beginning of period or End of period.")
     if value["rebalancing_frequency"] not in {"Yearly", "Quarterly", "Monthly"}:
         errors.append("Rebalancing Frequency must be Yearly, Quarterly, or Monthly.")
-    if value["projection_profile"] not in {"AUTO", "CONSERVATIVE", "BALANCED", "GROWTH", "STRESS TEST"}:
+    if value["projection_profile"] not in {"AUTO", "CONSERVATIVE", "BALANCED", "GROWTH", "STRESS TEST", "HISTORICAL-CALIBRATED"}:
         errors.append("Projection Strategy must be AUTO, Conservative, Balanced, Growth, or Stress Test.")
     holdings = value["holdings"]
     if not holdings:
@@ -1154,6 +1154,8 @@ def run_future_projection(
         )
 
     defaults = model_defaults()
+    historical_mode = normalized['projection_profile'] == 'HISTORICAL-CALIBRATED'
+    historical_audit = None
     simulations = int(normalized["simulation_count"])
     start_year = int(normalized["forecast_start_year"])
     base_periods = int(normalized["future_years"] * (12 if base_monthly else 1))
@@ -1217,7 +1219,7 @@ def run_future_projection(
     no_withdrawal_states = {
         name: _make_state(simulations, normalized["starting_investment"], target)
         for name in state_names
-    } if normalized["include_no_withdrawal_comparison"] else {}
+    } if normalized["include_no_withdrawal_comparison"] or historical_mode else {}
     regime_counts = np.zeros(3, dtype=np.int64)
     annual_fee = float(normalized["annual_management_fee"])
     fee_rate = math.expm1(math.log1p(annual_fee) / 12.0) if base_monthly else annual_fee
@@ -1237,6 +1239,18 @@ def run_future_projection(
     history_matrix, _history_labels = _history_matrix(model)
     block_length = 6 if base_monthly else 2
     bootstrap_rows = block_bootstrap_indices(base_periods, simulations, len(history_matrix), block_length, rng)
+    if historical_mode:
+        from historical_calibration import prepare_history, sample_indices
+        history_matrix, historical_audit = prepare_history(model, target)
+        bootstrap_rows = sample_indices(base_periods, simulations, len(history_matrix),
+            historical_audit['periods_per_year'], historical_audit['recent_weight'], int(normalized['random_seed']))
+        model_assignment[:] = 1
+        ensemble_weights = {model_labels[0]:0., model_labels[1]:1., model_labels[2]:0.}
+        projection_quality = dict(projection_quality)
+        projection_quality['confidence'] = 'Low'
+        projection_quality['score'] = None
+        projection_quality['explanation'] = 'Historical-Calibrated is experimental. Recency weights use past-only error tests; percentile coverage and superiority versus AUTO have not been validated. Any displayed zero calibration score means unscored, not a measured zero.'
+        historical_audit['reference_return_basis'] = 'All simulated paths, matching strategy without withdrawals; no survivor-only filtering.'
     cma_anchor = float(capital_market_assumptions()["broad_market_annual_geometric_return"]["value"])
     factor_expected = 0.75 * cma_anchor + 0.25 * np.asarray(conditioned["expected_annual_returns"], dtype=float)
     factor_log = np.log1p(factor_expected) / (12.0 if base_monthly else 1.0)
@@ -1272,6 +1286,8 @@ def run_future_projection(
         lower = defaults["individual_monthly_return_floor"] if base_monthly else defaults["individual_annual_return_floor"]
         upper = defaults["individual_monthly_return_ceiling"] if base_monthly else defaults["individual_annual_return_ceiling"]
         simulated_returns = np.clip(simulated_returns, lower, upper)
+        if historical_mode:
+            simulated_returns = history_matrix[bootstrap_rows[base_index]]
         request = _period_request(normalized, base_index, base_monthly)
         contribution = _period_contribution(normalized, base_index, base_monthly)
         period_label, year, month = _period_label(start_year, base_index, base_monthly)
@@ -1326,6 +1342,14 @@ def run_future_projection(
             estimated_completed = int(round(simulations * (base_index + 1) / base_periods))
             progress(estimated_completed, simulations, f"Modeling period {base_index + 1:,} of {base_periods:,}")
 
+    if historical_mode:
+        # Preserve account return statistics, and expose all-path, cash-flow-free
+        # investment returns separately. No depleted paths are discarded.
+        for name, state in states.items():
+            for row, reference in zip(state['table_rows'], no_withdrawal_states[name]['table_rows']):
+                for key, value in reference.items():
+                    if key.startswith('P') and ('Annual Return %' in key or 'Monthly Return %' in key):
+                        row[key.replace(' Return %', ' Investment Return % (no withdrawals)')] = value
     strategies = {
         name: _finalize_strategy(
             state,
@@ -1342,6 +1366,9 @@ def run_future_projection(
     annualized_volatility = float(np.sqrt(max(0., target_weights @ np.asarray(conditioned["annual_covariance"]) @ target_weights))*100)
     for payload in strategies.values():
         payload["summary"]["Modeled Annualized Portfolio Volatility"] = annualized_volatility
+        if historical_mode:
+            payload['summary']['Modeled Annualized Portfolio Volatility'] = float(np.std(history_matrix @ target, ddof=1)*np.sqrt(historical_audit['periods_per_year'])*100)
+            payload['summary']['Projection Method'] = 'Historical-Calibrated joint observed-return bootstrap'
     comparison = pd.DataFrame()
     if {"Rebalanced", "Non-Rebalanced"}.issubset(strategies):
         rb = strategies["Rebalanced"]["table"]
@@ -1440,12 +1467,25 @@ def run_future_projection(
         where=audit_denominator > 0,
     )
     np.fill_diagonal(audit_correlation, 1.0)
+    if historical_mode:
+        warnings.append('Historical-Calibrated is experimental, uses observed joint blocks and does not apply live regime adjustments. Current-holdings selection bias and unseen future risks remain. Existing account-return columns include depleted paths; separate no-withdrawal investment-return columns do not.')
+        validation = {'records':historical_audit['walk_forward'], 'model_metrics':{}}
+        assumption_rows = [
+            {'Assumption':'Projection method','Value':'Joint observed-return block bootstrap'},
+            {'Assumption':'Recent five-year weight','Value':historical_audit['recent_weight']},
+            {'Assumption':'Shared observed periods','Value':historical_audit['shared_periods']},
+            {'Assumption':'Forecast-year return decay','Value':'None'},
+            {'Assumption':'Calibration status','Value':'Experimental; predictive superiority and percentile coverage unverified'},
+        ]
+        holding_assumptions = pd.DataFrame({'Ticker':model.symbols,
+            'Observed Geometric Annual Return %':np.expm1(np.mean(np.log1p(history_matrix),axis=0)*historical_audit['periods_per_year'])*100})
     audit = {
+        "historical_calibration": historical_audit,
         "projection_timestamp": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "prices_used": {symbol: (market_state.get("holding_adjustments") or {}).get(symbol, {}).get("current_price") for symbol in model.symbols},
         "data_as_of_dates": market_state.get("data_freshness") or {},
         "current_regime_probabilities": market_state.get("regime_probabilities") or {},
-        "expected_return_assumptions": {symbol: float(value) for symbol, value in zip(model.symbols, conditioned["expected_annual_returns"])},
+        "expected_return_assumptions": ('Empirical joint blocks; no fixed return drift applied' if historical_mode else {symbol: float(value) for symbol, value in zip(model.symbols, conditioned["expected_annual_returns"])}),
         "volatility_multipliers": {symbol: float(value) for symbol, value in zip(model.symbols, conditioned["volatility_multipliers"])},
         "correlation_matrix": audit_correlation.tolist(),
         "model_weights": ensemble_weights,
@@ -1468,7 +1508,7 @@ def run_future_projection(
             "random_seed": normalized["random_seed"],
             "base_frequency": "Monthly" if base_monthly else "Yearly",
             "output_frequency": "Monthly" if output_monthly else "Yearly",
-            "live_data_status": "ACTIVE" if market_state.get("live_conditioning_active") else "HISTORICAL FALLBACK",
+            "live_data_status": 'HISTORICAL-CALIBRATED (live adjustments not applied)' if historical_mode else ("ACTIVE" if market_state.get("live_conditioning_active") else "HISTORICAL FALLBACK"),
             "projection_calibration_score": projection_quality.get("score"),
             "projection_confidence": projection_quality.get("confidence"),
         },

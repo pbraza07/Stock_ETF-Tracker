@@ -40,6 +40,7 @@ PERCENTILE_COLORS = {
     90: "#A855F7",
 }
 PROFILE_HELP = {
+    "Historical-Calibrated": "Joint historical-return blocks with past-only recency calibration; requires five years of shared observed history. No forecast-year decay. Historical losses may repeat or be exceeded in reality. Not validated as more accurate than AUTO.",
     "AUTO": "Recommended. Adapts risk assumptions to the current regime, holdings, horizon, and withdrawal rate.",
     "Conservative": "Uses stronger return shrinkage and moderately higher volatility; emphasize P10 and P25.",
     "Balanced": "Uses the calibrated ensemble as-is; emphasize the P25-P75 planning range.",
@@ -610,7 +611,7 @@ def render_future_projection(
             if quality == "High Precision":
                 st.warning("High Precision runs 50,000 simulations and may take longer.")
 
-        profile = st.selectbox("Projection Strategy", ["AUTO", "Conservative", "Balanced", "Growth", "Stress Test"], key="fp_projection_profile")
+        profile = st.selectbox("Projection Strategy", ["AUTO", "Conservative", "Balanced", "Growth", "Stress Test", "Historical-Calibrated"], key="fp_projection_profile")
         st.caption(PROFILE_HELP[profile])
 
         st.markdown("#### Portfolio holdings")
@@ -745,6 +746,8 @@ def render_future_projection(
                 st.session_state.fp_running = False
 
     result = st.session_state.get("fp_result")
+    if result and (result.get('audit') or {}).get('historical_calibration'):
+        st.info('Historical-Calibrated: no automatic forecast-year decay. Investment Return % (no withdrawals) columns show all-path reference investment performance; existing return columns describe the withdrawal account. Historical calibration is not proof of superior forecasting accuracy. Existing live-model calibration scores do not validate this mode.')
     if not result:
         st.info("Select at least one holding and choose Run Projection to generate probabilistic results.")
         return
