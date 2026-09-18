@@ -1,19 +1,28 @@
 {
-  "refreshed_at_et": "2026-09-16T20:16:12.237578-04:00",
-  "refreshed_at_display_et": "Sep 16, 2026 08:16:12 PM EDT",
+  "refreshed_at_et": "2026-09-17T20:01:44.764535-04:00",
+  "refreshed_at_display_et": "Sep 17, 2026 08:01:44 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 165,
+  "stock_count": 167,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 3,
-  "added_symbols": [],
-  "removed_symbols": [
+  "added_count": 3,
+  "removed_count": 1,
+  "added_symbols": [
     "ADBE",
     "AEM",
     "FCX"
   ],
-  "analyst_rating_change_count": 0,
-  "analyst_rating_changes": []
+  "removed_symbols": [
+    "ABNB"
+  ],
+  "analyst_rating_change_count": 1,
+  "analyst_rating_changes": [
+    {
+      "symbol": "MCD",
+      "name": "McDonald's Corporation Common Stock",
+      "from": "Strong Buy",
+      "to": "Buy"
+    }
+  ]
 }
