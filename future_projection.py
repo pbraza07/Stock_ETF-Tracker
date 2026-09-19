@@ -1240,10 +1240,16 @@ def run_future_projection(
     block_length = 6 if base_monthly else 2
     bootstrap_rows = block_bootstrap_indices(base_periods, simulations, len(history_matrix), block_length, rng)
     if historical_mode:
-        from historical_calibration import prepare_history, sample_indices
+        from historical_calibration import prepare_history, sample_indices, SmoothedHistory
         history_matrix, historical_audit = prepare_history(model, target)
         bootstrap_rows = sample_indices(base_periods, simulations, len(history_matrix),
             historical_audit['periods_per_year'], historical_audit['recent_weight'], int(normalized['random_seed']))
+        historical_sampler=SmoothedHistory(history_matrix,historical_audit['periods_per_year'],
+            historical_audit['recent_weight'],int(normalized['random_seed']))
+        historical_audit['smoothing']={'method':'Moment-matched joint log-return kernel',
+            'bandwidth':historical_sampler.bandwidth,
+            'policy':'min(0.25, shared_periods ** -0.2); not optimized or validated for predictive accuracy',
+            'interpretation':'Synthetic variations around observed blocks. Log mean and covariance preserved per block position in expectation; arithmetic means, tails and serial dependence can change. Rounded percentiles can still repeat.'}
         model_assignment[:] = 1
         ensemble_weights = {model_labels[0]:0., model_labels[1]:1., model_labels[2]:0.}
         projection_quality = dict(projection_quality)
@@ -1287,7 +1293,7 @@ def run_future_projection(
         upper = defaults["individual_monthly_return_ceiling"] if base_monthly else defaults["individual_annual_return_ceiling"]
         simulated_returns = np.clip(simulated_returns, lower, upper)
         if historical_mode:
-            simulated_returns = history_matrix[bootstrap_rows[base_index]]
+            simulated_returns = historical_sampler.draw(bootstrap_rows[base_index],base_index)
         request = _period_request(normalized, base_index, base_monthly)
         contribution = _period_contribution(normalized, base_index, base_monthly)
         period_label, year, month = _period_label(start_year, base_index, base_monthly)
@@ -1368,7 +1374,7 @@ def run_future_projection(
         payload["summary"]["Modeled Annualized Portfolio Volatility"] = annualized_volatility
         if historical_mode:
             payload['summary']['Modeled Annualized Portfolio Volatility'] = float(np.std(history_matrix @ target, ddof=1)*np.sqrt(historical_audit['periods_per_year'])*100)
-            payload['summary']['Projection Method'] = 'Historical-Calibrated joint observed-return bootstrap'
+            payload['summary']['Projection Method'] = 'Historical-Calibrated smoothed joint-return bootstrap'
     comparison = pd.DataFrame()
     if {"Rebalanced", "Non-Rebalanced"}.issubset(strategies):
         rb = strategies["Rebalanced"]["table"]
@@ -1468,10 +1474,11 @@ def run_future_projection(
     )
     np.fill_diagonal(audit_correlation, 1.0)
     if historical_mode:
-        warnings.append('Historical-Calibrated is experimental, uses observed joint blocks and does not apply live regime adjustments. Current-holdings selection bias and unseen future risks remain. Existing account-return columns include depleted paths; separate no-withdrawal investment-return columns do not.')
+        warnings.append('Historical-Calibrated is experimental, smooths observed joint blocks into synthetic returns and does not apply live regime adjustments. Smoothing changes tails and serial dependence; predictive superiority is unverified. Current-holdings selection bias and unseen future risks remain. Existing account-return columns include depleted paths; separate no-withdrawal investment-return columns do not.')
         validation = {'records':historical_audit['walk_forward'], 'model_metrics':{}}
         assumption_rows = [
-            {'Assumption':'Projection method','Value':'Joint observed-return block bootstrap'},
+            {'Assumption':'Projection method','Value':'Smoothed joint historical-return blocks (synthetic variations)'},
+            {'Assumption':'Smoothing bandwidth','Value':historical_sampler.bandwidth},
             {'Assumption':'Recent five-year weight','Value':historical_audit['recent_weight']},
             {'Assumption':'Shared observed periods','Value':historical_audit['shared_periods']},
             {'Assumption':'Forecast-year return decay','Value':'None'},
@@ -1485,7 +1492,7 @@ def run_future_projection(
         "prices_used": {symbol: (market_state.get("holding_adjustments") or {}).get(symbol, {}).get("current_price") for symbol in model.symbols},
         "data_as_of_dates": market_state.get("data_freshness") or {},
         "current_regime_probabilities": market_state.get("regime_probabilities") or {},
-        "expected_return_assumptions": ('Empirical joint blocks; no fixed return drift applied' if historical_mode else {symbol: float(value) for symbol, value in zip(model.symbols, conditioned["expected_annual_returns"])}),
+        "expected_return_assumptions": ('Smoothed empirical joint blocks; no fixed return drift applied' if historical_mode else {symbol: float(value) for symbol, value in zip(model.symbols, conditioned["expected_annual_returns"])}),
         "volatility_multipliers": {symbol: float(value) for symbol, value in zip(model.symbols, conditioned["volatility_multipliers"])},
         "correlation_matrix": audit_correlation.tolist(),
         "model_weights": ensemble_weights,

@@ -24,7 +24,7 @@ ET = ZoneInfo("America/New_York")
 
 
 def test_release_version_5958():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.33"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.34"
 
 
 def test_dynamic_year_count_grows_without_code_change():

@@ -40,7 +40,7 @@ PERCENTILE_COLORS = {
     90: "#A855F7",
 }
 PROFILE_HELP = {
-    "Historical-Calibrated": "Joint historical-return blocks with past-only recency calibration; requires five years of shared observed history. No forecast-year decay. Historical losses may repeat or be exceeded in reality. Not validated as more accurate than AUTO.",
+    "Historical-Calibrated": "Smoothed joint historical-return blocks with past-only recency calibration; requires five years of shared observed history. Synthetic variations reduce exact historical repeats; rounded percentiles can still match. No forecast-year decay. Smoothing is not validated as more accurate than AUTO.",
     "AUTO": "Recommended. Adapts risk assumptions to the current regime, holdings, horizon, and withdrawal rate.",
     "Conservative": "Uses stronger return shrinkage and moderately higher volatility; emphasize P10 and P25.",
     "Balanced": "Uses the calibrated ensemble as-is; emphasize the P25-P75 planning range.",
@@ -748,7 +748,7 @@ def render_future_projection(
 
     result = st.session_state.get("fp_result")
     if result and (result.get('audit') or {}).get('historical_calibration'):
-        st.info('Historical-Calibrated: no automatic forecast-year decay. Investment Return % (no withdrawals) columns show all-path reference investment performance; existing return columns describe the withdrawal account. Historical calibration is not proof of superior forecasting accuracy. Existing live-model calibration scores do not validate this mode.')
+        st.info('Historical-Calibrated uses smoothed historical blocks, not literal replays or a year-by-year forecast. Each percentile is a distribution summary, not one continuous scenario; matching rounded annual returns are possible. No automatic forecast-year decay. Investment Return % (no withdrawals) columns show all-path reference performance; existing return columns describe the withdrawal account. Smoothing changes tail shapes and has not demonstrated superior forecasting accuracy.')
     if not result:
         st.info("Select at least one holding and choose Run Projection to generate probabilistic results.")
         return
