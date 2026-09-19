@@ -294,9 +294,10 @@ def _render_market_environment(result: dict) -> None:
         )
     freshness = state.get("data_freshness") or {}
     if freshness:
-        rows = [{"Data": name, "Status": item.get("status"), "Updated / Through": item.get("updated")} for name, item in freshness.items()]
+        rows = [{"Data": name, "Status": item.get("status"), "Updated / Through": item.get("updated"), "Coverage":item.get('coverage',''), "Retrieved":item.get('retrieved_at','')} for name, item in freshness.items()]
         with st.expander("Live data status and freshness", expanded=False):
             st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+            st.caption('Macro dates are observation periods, not download times. Available means valid downloaded observations, not real-time releases. Partial means some configured series are missing; stale means the last successful download is being used after a failed refresh. FRED_API_KEY must be configured in Render Environment, separately from GitHub Actions.')
 
 
 def _selected_percentiles() -> list[int]:

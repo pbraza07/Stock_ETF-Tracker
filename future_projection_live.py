@@ -133,6 +133,11 @@ def _history_snapshot(frame: pd.DataFrame | None) -> dict:
 
 
 def _fetch_fred_one(name: str, series_id: str, timeout: int = 8) -> tuple[str, dict]:
+    from projection_macro import fetch_one
+    return fetch_one(name, series_id, timeout)
+
+
+def _legacy_fetch_fred_one(name: str, series_id: str, timeout: int = 8) -> tuple[str, dict]:
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
     try:
         response = requests.get(url, timeout=timeout, headers={"User-Agent": "MarketScope/5.11"})
@@ -355,7 +360,7 @@ def _freshness_panel(live_data: dict, snapshots: dict[str, dict]) -> dict:
     rows = {
         "Market prices": {"status": cached_prefix + price_status, "updated": price_updated},
         "Fundamentals": {"status": cached_prefix + "LATEST AVAILABLE", "updated": max(fundamental_dates) if fundamental_dates else (live_data.get("cache_retrieved_at") or retrieved)},
-        "Macro": {"status": cached_prefix + "LATEST AVAILABLE", "updated": max(macro_dates) if macro_dates else "Unavailable"},
+        "Macro": __import__('projection_macro').freshness(live_data.get('macro') or {}, fred_series()),
         "Volatility": {"status": cached_prefix + ("END OF DAY" if "SPY" in snapshots else "LATEST AVAILABLE"), "updated": snapshots.get("SPY", {}).get("observation_date", live_data.get("cache_retrieved_at") or retrieved)},
         "Analyst estimates": {"status": cached_prefix + "LATEST AVAILABLE", "updated": max(fundamental_dates) if fundamental_dates else (live_data.get("cache_retrieved_at") or retrieved)},
         "Historical monthly data": {"status": cached_prefix + "LATEST AVAILABLE", "updated": history_through[:7] if len(history_through) >= 7 else history_through},
@@ -368,6 +373,11 @@ def _freshness_panel(live_data: dict, snapshots: dict[str, dict]) -> dict:
     }
     now = pd.Timestamp.now(tz="UTC")
     for name, item in rows.items():
+        if name == 'Macro':
+            # Monthly/quarterly observation dates are not download freshness.
+            if live_data.get('using_cached_data') and item['status'] != 'UNAVAILABLE':
+                item['status'] = 'CACHED - ' + item['status']
+            continue
         try:
             stamp = pd.Timestamp(item["updated"])
             if stamp.tzinfo is None:
