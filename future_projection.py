@@ -162,6 +162,8 @@ def normalize_projection_inputs(inputs: dict) -> dict:
             or capital_market_assumptions()["broad_market_annual_geometric_return"]["as_of_date"]
         ),
         "forecast_start_year": int(raw.get("forecast_start_year") or datetime.utcnow().year),
+        "planning_engine": bool(raw.get("planning_engine", False)),
+        "planning": dict(raw.get("planning") or {}),
     }
     if normalized["allocation_mode"].lower().startswith("equal") and holdings:
         equal_weight = 100.0 / len(holdings)
@@ -1133,6 +1135,12 @@ def run_future_projection(
     errors, input_warnings = validate_projection_inputs(normalized, market)
     if errors:
         raise ProjectionValidationError(" ".join(errors))
+    if normalized.get('planning_engine'):
+        from planning_engine import run_planning
+        try:
+            return run_planning(market,normalized,annual_year_columns,monthly_returns,live_context,data_as_of,progress)
+        except ValueError as exc:
+            raise ProjectionValidationError(str(exc)) from exc
     base_monthly = (
         normalized["withdrawal_frequency"] == "Monthly"
         or (
@@ -1560,6 +1568,9 @@ def build_csv_export(result: dict) -> bytes:
 def build_excel_export(result: dict) -> bytes:
     """Create the required multi-sheet, source-backed Excel workbook."""
 
+    if result.get('planning_engine'):
+        from planning_exports import excel_export
+        return excel_export(result)
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
 
@@ -1648,6 +1659,9 @@ def build_excel_export(result: dict) -> bytes:
 
 
 def build_pdf_export(result: dict, title: str = "MarketScope Future Projection") -> bytes:
+    if result.get('planning_engine'):
+        from planning_exports import pdf_export
+        return pdf_export(result)
     from projection_dashboard_pdf import build_dashboard_pdf
     return build_dashboard_pdf(result, title)
 

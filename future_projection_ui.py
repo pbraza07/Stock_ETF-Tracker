@@ -667,13 +667,20 @@ def render_future_projection(
                 st.date_input("Capital-market assumption date", key="fp_cma_date")
                 cma = capital_market_assumptions()["broad_market_annual_geometric_return"]
                 st.markdown(
-                    "**Expected-return model details**  \n"
+                    "**Legacy profile assumptions (not used by Forward Planning)**  \n"
                     f"Broad-market anchor: {float(cma['value']) * 100:.2f}%  \nSource: {cma['source']}  \n"
                     f"As of: {cma['as_of_date']}  \nLast updated: {cma['last_updated_date']}  \n"
                     "The live engine uses bounded valuation, fundamental, momentum, rates, volatility, and correlation adjustments with heavy shrinkage."
                 )
 
+    from planning_ui import controls as planning_controls, render as render_planning
+    planning_config, planning_errors = planning_controls()
     projection_inputs, parse_errors = _build_inputs()
+    if planning_config is not None:
+        projection_inputs['planning_engine'] = True
+        projection_inputs['planning'] = planning_config
+        parse_errors.extend(planning_errors)
+        st.caption('Forward Planning uses its own forward assumptions; the earlier projection-profile selector and inflation toggle apply only to Existing projection profiles. The selected horizon, holdings, contributions, timing and maintenance schedule still apply.')
     validation_errors, validation_warnings = validate_projection_inputs(projection_inputs, market)
     all_errors = [*parse_errors, *validation_errors]
     for warning in validation_warnings:
@@ -690,7 +697,7 @@ def render_future_projection(
         st.session_state.fp_running = True
         monthly_payload = {}
         live_context = {}
-        needs_monthly = projection_inputs["withdrawal_frequency"] == "Monthly" or (projection_inputs["strategy"] in {"Rebalanced", "Both"} and projection_inputs["rebalancing_frequency"] in {"Quarterly", "Monthly"})
+        needs_monthly = projection_inputs.get('planning_engine') or projection_inputs["withdrawal_frequency"] == "Monthly" or (projection_inputs["strategy"] in {"Rebalanced", "Both"} and projection_inputs["rebalancing_frequency"] in {"Quarterly", "Monthly"})
         if needs_monthly and monthly_loader is not None:
             with st.spinner("Loading actual monthly return history and identifying explicit fallback periods..."):
                 try:
@@ -701,6 +708,13 @@ def render_future_projection(
             with st.spinner("Building the current market state from recent market, fundamental, volatility, and official macro data..."):
                 try:
                     live_context = live_loader(tuple(projection_inputs["holdings"])) or {}
+                    if projection_inputs.get('planning_engine'):
+                        from projection_macro import fetch_one
+                        try:
+                            _, inflation_series = fetch_one('inflation_expectation','T10YIE')
+                            live_context.setdefault('macro',{})['inflation_expectation'] = inflation_series
+                        except Exception:
+                            live_context.setdefault('failures',[]).append('Breakeven inflation unavailable; explicit planning inflation assumption used.')
                 except Exception as exc:
                     live_context = {"failures": [f"Live adaptive loader did not complete ({type(exc).__name__})."]}
         key = projection_cache_key(projection_inputs, market, annual_year_columns, monthly_payload, data_as_of, live_context)
@@ -747,6 +761,9 @@ def render_future_projection(
                 st.session_state.fp_running = False
 
     result = st.session_state.get("fp_result")
+    if result and result.get('planning_engine'):
+        render_planning(result)
+        return
     if result and (result.get('audit') or {}).get('historical_calibration'):
         st.info('Historical-Calibrated uses smoothed historical blocks, not literal replays or a year-by-year forecast. Each percentile is a distribution summary, not one continuous scenario; matching rounded annual returns are possible. No automatic forecast-year decay. Investment Return % (no withdrawals) columns show all-path reference performance; existing return columns describe the withdrawal account. Smoothing changes tail shapes and has not demonstrated superior forecasting accuracy.')
     if not result:

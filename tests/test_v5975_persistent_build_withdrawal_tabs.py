@@ -5,8 +5,8 @@ APP = (ROOT / "app.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5975():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.34"
-    assert "v5.11.34" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.35"
+    assert "v5.11.35" in APP
 
 
 def test_build_simulation_has_persistent_annual_strategy_tabs():
