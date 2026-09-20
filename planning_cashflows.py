@@ -41,7 +41,7 @@ def liquidate(holdings,basis,net_needed,cfg,target,last_returns,method=None):
     gross=sales.sum(1);tax=(sales*rates).sum(1);net=(sales*keep).sum(1)
     return net,gross,tax,sales,gross*friction
 
-def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spending=None,detail=True):
+def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spending=None,detail=True,capture_balances=False):
     months,count,n=returns.shape;weights=np.array([inputs['allocations'][s]/100 for s in inputs['holdings']]);weights/=weights.sum()
     initial=inputs['starting_investment'];h=np.tile(initial*weights,(count,1));basis=h*cfg['basis_fraction']
     debt=np.full(count,float(cfg['pal_balance']));initial_equity=initial-cfg['pal_balance']
@@ -101,7 +101,7 @@ def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spendi
         underwater=np.where(equity<peak-.01,underwater+1,0);recovery=np.maximum(recovery,underwater)
         threshold=cfg['goal_amount']*(cpi if cfg['goal_real'] else 1);floor_ok&=equity>=threshold
         if detail:
-            balances.append(equity.copy())
+            if capture_balances:balances.append(equity.copy())
             row={'Date':str(pd.Period(f"{inputs['forecast_start_year']}-01",freq='M')+m),'Beginning balance':float(np.median(opening)),
                  'Median investment profit before costs':float(np.median(investment_profit)),
                  'Gross withdrawal':float(np.median(gross)),'Estimated withdrawal taxes':float(np.median(tax)),

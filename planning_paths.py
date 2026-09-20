@@ -47,13 +47,16 @@ def log_covariance(model):
         return .8*cov+.2*np.diag(np.maximum(np.diag(cov),.0001)),freq+' observed log-return covariance'
     return np.asarray(model.annual_covariance),'Fallback covariance proxy; insufficient joint log-return evidence'
 
-def generate_paths(model,context,cma,cfg,years,count,seed,progress=None):
+def generate_paths(model,context,cma,cfg,years,count,seed,progress=None,workdir=None):
     months=years*12;n=len(model.symbols)
     if months*count*n*4>300_000_000:
         raise ValueError('This planning run exceeds the memory budget. Reduce simulation quality or holdings; requested paths are never silently reduced.')
     # Per-path parameter uncertainty and period draws are horizon independent.
     rng=np.random.default_rng(seed)
-    returns=np.empty((months,count,n),dtype=np.float32)
+    if workdir:
+        from pathlib import Path
+        returns=np.memmap(Path(workdir)/'scenarios.bin',mode='w+',shape=(months,count,n),dtype=np.float32)
+    else:returns=np.empty((months,count,n),dtype=np.float32)
     inflation=np.empty((months,count),dtype=np.float32);rates=np.empty_like(inflation)
     cov,risk_source=log_covariance(model)
     vol=np.sqrt(np.maximum(np.diag(cov),.0001)); corr=cov/np.outer(vol,vol);np.fill_diagonal(corr,1.)
@@ -129,7 +132,8 @@ def generate_paths(model,context,cma,cfg,years,count,seed,progress=None):
         inflation[m]=np.clip(cfg['inflation']+(params[regime,3]-.025),0,.15)
         rates[m]=params[regime,4]
         cluster=np.clip(.94*cluster+.06*np.mean(z*z,axis=1),.5,3)
-        if progress and (m%12==0 or m==months-1):progress(m+1,months,'Generating forward monthly scenarios')
+        if progress and (m%3==0 or m==months-1):progress(m+1,months,f'Generating {count:,} forward paths: forecast months')
+    if isinstance(returns,np.memmap):returns.flush()
     return {'returns':returns,'inflation':inflation,'rates':rates,'model_assignment':assignment,
             'decomposition':[r for year in annual for r in year], 'correlation':corr,
             'regime_correlations':{k:stress_correlation(corr,p[2]).tolist() for k,p in zip(names,params)},

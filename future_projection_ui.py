@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import queue
-import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from html import escape
 from typing import Callable
@@ -690,6 +687,11 @@ def render_future_projection(
     if all_errors:
         st.error("Projection cannot run yet: " + " ".join(dict.fromkeys(all_errors)))
 
+    from projection_jobs import submit as submit_projection, render_status
+    if st.session_state.get('fp_running') and not st.session_state.get('fp_job_id'):
+        st.session_state.fp_running = False
+    if st.session_state.get('fp_job_error'):
+        st.error('Projection could not finish: ' + st.session_state.pop('fp_job_error'))
     run_columns = st.columns([1.5, 1, 4])
     run_clicked = run_columns[0].button("Run Projection", type="primary", disabled=bool(all_errors) or bool(st.session_state.fp_running), width="stretch")
     run_columns[1].button("Reset", disabled=bool(st.session_state.fp_running), width="stretch", on_click=_reset_projection)
@@ -724,41 +726,19 @@ def render_future_projection(
             st.session_state.fp_running = False
             st.success("Loaded an identical projection from the in-session result cache.")
         else:
-            progress_bar = st.progress(0.0, text="Preparing projection worker...")
-            progress_events: queue.Queue = queue.Queue()
-
-            def report_progress(completed: int, total: int, label: str) -> None:
-                progress_events.put((completed, total, label))
-
             try:
-                with ThreadPoolExecutor(max_workers=1, thread_name_prefix="marketscope-future") as executor:
-                    future = executor.submit(run_future_projection, market, projection_inputs, annual_year_columns, monthly_payload, data_as_of, model_as_of, report_progress, live_context)
-                    while not future.done():
-                        latest = None
-                        while True:
-                            try:
-                                latest = progress_events.get_nowait()
-                            except queue.Empty:
-                                break
-                        if latest:
-                            completed, total, label = latest
-                            progress_bar.progress(min(0.99, completed / max(1, total)), text=f"{label} - simulations completed: {completed:,} / {total:,}")
-                        time.sleep(0.04)
-                    result = future.result()
-                progress_bar.progress(1.0, text=f"Simulations completed: {projection_inputs['simulation_count']:,} / {projection_inputs['simulation_count']:,}")
-                cache[key] = result
-                while len(cache) > 5:
-                    cache.pop(next(iter(cache)))
-                st.session_state.fp_result_cache = cache
-                st.session_state.fp_result = result
-                st.success(f"Projection complete - {projection_inputs['simulation_count']:,} deterministic ensemble simulations.")
-            except ProjectionValidationError as exc:
-                st.error(str(exc))
+                st.session_state.fp_job_id = submit_projection(lambda callback: run_future_projection(
+                    market, projection_inputs, annual_year_columns, monthly_payload, data_as_of, model_as_of, callback, live_context))
+                st.session_state.fp_job_cache_key = key
+                st.session_state.fp_running = True
+                st.rerun()
             except Exception as exc:
-                print(f"Future Projection internal error: {type(exc).__name__}: {exc}")
-                st.error("The projection could not be completed. Verify the selected holdings and historical data, then try again.")
-            finally:
                 st.session_state.fp_running = False
+                st.error(str(exc))
+
+    if st.session_state.get('fp_job_id'):
+        render_status()
+        return
 
     result = st.session_state.get("fp_result")
     if result and result.get('planning_engine'):

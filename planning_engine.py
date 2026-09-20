@@ -1,5 +1,4 @@
 """Forward Planning orchestration, diagnostics, scenarios and retirement solving."""
-from copy import deepcopy
 from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
@@ -26,7 +25,7 @@ def stress_tests(paths,inputs,cfg,strategy):
         if 'impairment' in name:r[:,0,0]=0;r[0,0,0]=-.90
         inf=np.full((months,1),.045 if 'inflation' in name else cfg['inflation'])
         rates=np.full((months,1),.08 if 'rates' in name else .035)
-        case=simulate(r,inputs,cfg,strategy,inf,rates)
+        case=simulate(r,inputs,cfg,strategy,inf,rates,capture_balances=True)
         s=case['summary'];b=case['balances'][:,0];peak=inputs['starting_investment']-cfg['pal_balance']
         below=np.where(b<peak)[0];recovered=np.where(b>=peak)[0]
         recovery=next((int(i-below[0]) for i in recovered if len(below) and i>below[0]),None) if len(below) else 0
@@ -36,9 +35,17 @@ def stress_tests(paths,inputs,cfg,strategy):
     return output
 
 def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,progress=None):
+    # Disk-backed scenario cubes avoid retaining hundreds of MB of anonymous RAM.
+    # They contain intermediate simulated paths only and are removed on exit.
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory(prefix='marketscope-projection-') as workdir:
+        return _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,progress,workdir)
+
+def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,progress,workdir):
     from future_projection import prepare_projection_model,ProjectionValidationError
     from future_projection_live import build_current_market_state
-    cfg=settings(inputs.get('planning'));context=deepcopy(live_context or {})
+    cfg=settings(inputs.get('planning'));context=dict(live_context or {})
+    context['fundamentals']={s:dict(v) for s,v in (context.get('fundamentals') or {}).items()}
     model=prepare_projection_model(market,inputs['holdings'],year_columns,monthly_returns=monthly,use_monthly=True)
     if not model.credible:raise ProjectionValidationError('At least three observed completed annual periods are required for risk estimation.')
     if cfg['pal_balance']>=inputs['starting_investment']*cfg['pal_maintenance']:raise ProjectionValidationError('Initial PAL exceeds the configured maintenance threshold.')
@@ -55,13 +62,14 @@ def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,prog
         records=[dict(r,Integrity='LIMITED',**{'Survivorship complete':False}) for r in records]
     bias=past_bias_adjustment(records,f"{inputs['forecast_start_year']}-01-01",1)
     cma['pre_calibration_return']=cma['geometric_return'];cma['bias_adjustment']=bias;cma['geometric_return']+=bias
-    paths=generate_paths(model,context,cma,cfg,inputs['future_years'],inputs['simulation_count'],inputs['random_seed'],progress)
+    paths=generate_paths(model,context,cma,cfg,inputs['future_years'],inputs['simulation_count'],inputs['random_seed'],progress,workdir=workdir)
     names=['Rebalanced','Non-Rebalanced'] if inputs['strategy']=='Both' else [inputs['strategy']]
     weights=np.array([inputs['allocations'][s]/100 for s in inputs['holdings']]);weights/=weights.sum()
     cfg['custom_order_indices']=[inputs['holdings'].index(s) for s in cfg['custom_order'] if s in inputs['holdings']]
     cfg['custom_order_indices']+= [i for i in range(len(weights)) if i not in cfg['custom_order_indices']]
     strategies={};references={};agreement_rows=[];stresses=[];cases=[];sequences=[]
     for strategy in names:
+        if progress:progress(1,4,f'{strategy}: calculating reference returns')
         reference_cfg=dict(cfg,pal_balance=0.)
         reference_inputs=dict(inputs,withdrawal_frequency='No Withdrawal',additional_contribution=0.)
         ref=simulate(paths['returns'],reference_inputs,reference_cfg,strategy,paths['inflation'],paths['rates'])
@@ -77,9 +85,15 @@ def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,prog
         # Plan under wider parameter uncertainty when models disagree; mean log return unchanged.
         rng=np.random.default_rng(inputs['random_seed']+903)
         uncertainty=rng.normal(size=(paths['returns'].shape[1],1))*spread/12
-        plan_returns=np.expm1(np.log1p(paths['returns'])+uncertainty[None,:,:]).astype(np.float32)
-        # Do not resurrect impaired cash slots via planning uncertainty.
-        plan_returns[paths['returns']==0]=0
+        from pathlib import Path
+        plan_returns=np.memmap(Path(workdir)/('planning-'+strategy+'.bin'),mode='w+',dtype=np.float32,shape=paths['returns'].shape)
+        for month in range(len(plan_returns)):
+            original=paths['returns'][month]
+            adjusted=np.expm1(np.log1p(original)+uncertainty).astype(np.float32)
+            adjusted[original==0]=0
+            plan_returns[month]=adjusted
+        plan_returns.flush()
+        if progress:progress(2,4,f'{strategy}: calculating spending, taxes and borrowing')
         plan_paths=dict(paths,returns=plan_returns)
         case=simulate(plan_returns,inputs,cfg,strategy,paths['inflation'],paths['rates'])
         case['summary']['Expected Investment Return']=float(np.dot(weights,[r['Expected geometric return'] for r in paths['decomposition'][:len(weights)]]))
@@ -92,6 +106,7 @@ def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,prog
         else:case['sustainable']={'status':'Not requested'}
         # Sequence tests use same shock moved in time, on a disclosed subset.
         k=min(500,len(cagr));base=plan_returns[:,:k]
+        if progress:progress(3,4,f'{strategy}: calculating sequence and stress tests')
         for name,start in ([('Early bear',0),('Middle bear',max(0,len(base)//2-6)),('Late bear',max(0,len(base)-12))] if cfg.get('run_diagnostics',True) else []):
             stressed=base.copy();stressed[start:start+12]=np.expm1(np.log1p(stressed[start:start+12])+np.log(.65)/12)
             seq=simulate(stressed,inputs,cfg,strategy,paths['inflation'][:,:k],paths['rates'][:,:k],detail=False)
@@ -111,6 +126,7 @@ def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,prog
         # Keep exports compact; no huge per-path cubes in session-saved results.
         for key in ('balances','ending','fully_funded','surviving','drawdown','final_holdings','final_basis'):case.pop(key,None)
         strategies[strategy]=case;references[strategy]=ref['table']
+        del ref,plan_paths,base,plan_returns
     corr=paths['correlation'];cov=paths['risk_covariance'];portvar=weights@cov@weights
     contribution=weights*(cov@weights)/max(portvar,1e-12)
     sectors={c:float(sum(w for w,cat in zip(weights,model.categories) if cat==c)) for c in set(model.categories)}
@@ -133,7 +149,7 @@ def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,prog
             'Effective independent holdings (correlation approximation)':float(1/max(weights@corr@weights,1e-9)),
             'Top risk contributor':model.symbols[int(np.argmax(contribution))],'Risk contributions':dict(zip(model.symbols,contribution.tolist())),
             'Factor concentration':'See current market portfolio diagnostics; no complete factor exposures available'},
-        'audit':{'model_version':'5.11.35','risk_covariance':cov.tolist(),'risk_source':paths['risk_source'],'regime_correlations':paths['regime_correlations'],
+        'audit':{'model_version':'5.11.36','risk_covariance':cov.tolist(),'risk_source':paths['risk_source'],'regime_correlations':paths['regime_correlations'],
             'regime_parameters':paths['scenario_parameters'],'transition_matrix':paths['transition_matrix'],
             'parameters':cfg,'simulation_count':inputs['simulation_count'],'seed':inputs['random_seed'],
             'data_as_of':data_as_of,'impairment_events':paths['impairment_events'],
