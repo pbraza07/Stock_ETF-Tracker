@@ -74,16 +74,17 @@ def render(market,years,monthly_loader,live_loader):
     if not bundle:
         st.info('Choose your constraints and evaluate the universe. No rankings are calculated automatically.');return
     r=bundle['result']
-    st.caption(f"Completed run: {r['generated_at']} • Data through: {r['data_through']} • Model {r['model_version']} • Stock universe: {r['universe_count']} • Scored: {len(r['table'])} • Excluded: {len(r['excluded'])}")
+    st.caption(f"Completed run: {r['generated_at']} • Data through: {r['data_through']} • Model {r['model_version']} • Stock universe: {r['universe_count']} • Scored: {len(r['table'])} • Not scored: {len(r['excluded'])}")
     st.caption('Results retain the last completed run settings. Submit again after changing inputs or refreshing data.')
     with st.expander('Completed run settings and data-source warnings'):
         st.json(r['settings']);st.write(r['context_failures'])
-    if r['leaders'].empty:st.info('No stocks currently meet your return target and risk constraints. No substitute list has been fabricated.')
-    else:
-        st.subheader('Up to five qualified opportunities per sector')
-        _table(r['leaders'])
-    with st.expander('All evaluated stocks and failed constraints'):_table(r['table'])
-    with st.expander('Excluded stocks and missing evidence'):st.dataframe(r['excluded'],width='stretch',hide_index=True)
+    from opportunity_results import result_table
+    all_results=result_table(r,bundle['market'])
+    st.subheader('All stock results — criteria highlighted')
+    st.caption('Every stock is shown, ordered by criteria met (out of five), highest first. Ties use target probability, then quality score. Unassessable stocks appear last. Red cells mark unmet numeric thresholds; amber notes explain failures and required values. Green means all screening criteria met. Gray NOT SCORED rows explain unavailable estimates. ETFs remain outside this stock screen.')
+    if r['leaders'].empty:st.info('No stocks meet every configured criterion. All results remain visible below.')
+    _table(all_results,r['settings'])
+    with st.expander('Qualified sector shortlist — up to five per sector'):_table(r['leaders'])
     with st.expander('How these estimates were calculated'):
         st.write('Quality uses sector-relative ranks when at least five observed peers exist per metric; otherwise explicit absolute heuristic scales. Missing fields score zero. Financials omit debt/equity and cash-flow yield; this is not a full bank capital model. Growth durability, competitive advantages, credit ratings and revision histories are not fully verified.')
         st.write('Risk uses actual monthly history. Forward returns reuse the governed Forward Planning CMA, fundamentals, signal-horizon weights, fat tails, regime correlations and impairment assumptions—not extrapolated stock CAGR. Probabilities are conditional on these assumptions. Expected Investment Return is the first-year geometric drift before modeled impairments, gap events and costs; Planning Return is the net-path P25 CAGR. Neither is a sustainable withdrawal rate.')
@@ -114,22 +115,26 @@ def render(market,years,monthly_loader,live_loader):
     st.subheader('Validation & forward paper record')
     st.warning(r['validation'])
     st.write('No high-probability certification is issued. Download this timestamped research snapshot to begin a forward paper record. Historical testing must use dated universe, fundamentals and macro vintages—not today’s selected winners. The accompanying walk-forward runner accepts those records; no empirical backtest history is bundled.')
-    st.download_button('Download dated research audit (JSON)',json.dumps(dict(screen=r,portfolio=p),default=_json,indent=2),file_name='quality_opportunities_audit.json',mime='application/json')
+    st.download_button('Download dated research audit (JSON)',json.dumps(dict(screen=r,portfolio=p,all_stock_results=all_results),default=_json,indent=2),file_name='quality_opportunities_audit.json',mime='application/json')
     st.caption('Optional paper record contains selected tickers, model estimates and timestamps. Saving uses the configured GitHub repository when its existing token permits writes; repository readers can see the record. It does not place trades or certify subsequent performance.')
     if st.button('Save timestamped paper research record'):
         from opportunity_paper import save_record
         try:
-            payload=json.loads(json.dumps(dict(screen=r,portfolio=p),default=_json))
+            payload=json.loads(json.dumps(dict(screen=r,portfolio=p,all_stock_results=all_results),default=_json))
             record_id,durable,message=save_record(payload)
             st.success('Paper record '+record_id+' • '+message) if durable else st.warning('Paper record '+record_id+' • '+message)
         except Exception as exc:st.error('Paper record could not be saved: '+str(exc))
-    if not r['table'].empty:st.download_button('Download all stock results (CSV)',r['table'].to_csv(index=False),file_name='quality_opportunities.csv',mime='text/csv')
+    if not all_results.empty:st.download_button('Download all stock results (CSV)',all_results.to_csv(index=False),file_name='quality_opportunities.csv',mime='text/csv')
 
-def _table(df):
+def _table(df,cfg=None):
     if df.empty:st.write('No results.');return
-    columns=['Ticker','Company','Sector','Price','Quality score','Evidence coverage','Expected Investment Return','Planning return (P25 CAGR)',
+    columns=['Rank','Ticker','Criteria met','Criteria assessed','Company','Sector','Status','Notes','Price','Quality score','Evidence coverage','Expected Investment Return','Planning return (P25 CAGR)',
         'Target probability','Loss probability','Loss >20% probability','Median return','P10 return','Worst-decile mean return',
         'Model disagreement (CAGR spread)','Fundamentals retrieved','Confidence','Qualifies','Failed constraints','Why selected']
     config={k:st.column_config.NumberColumn(k,format='percent') for k in columns if any(v in k for v in ['probability','return','Return','coverage','CAGR'])}
     config['Price']=st.column_config.NumberColumn('Price',format='dollar')
-    st.dataframe(df[[k for k in columns if k in df]],column_config=config,width='stretch',hide_index=True)
+    view=df[[k for k in columns if k in df]]
+    if cfg:
+        from opportunity_results import highlight
+        view=view.style.apply(highlight,axis=1,cfg=cfg)
+    st.dataframe(view,column_config=config,width='stretch',hide_index=True)

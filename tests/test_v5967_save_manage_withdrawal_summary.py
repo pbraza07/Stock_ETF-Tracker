@@ -9,7 +9,7 @@ CSS = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 
 def test_release_version_5967():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.38"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.39"
 
 
 def test_save_manage_repeats_active_annual_withdrawal_kpis():
