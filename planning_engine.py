@@ -149,7 +149,7 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
             'Effective independent holdings (correlation approximation)':float(1/max(weights@corr@weights,1e-9)),
             'Top risk contributor':model.symbols[int(np.argmax(contribution))],'Risk contributions':dict(zip(model.symbols,contribution.tolist())),
             'Factor concentration':'See current market portfolio diagnostics; no complete factor exposures available'},
-        'audit':{'model_version':'5.11.36','risk_covariance':cov.tolist(),'risk_source':paths['risk_source'],'regime_correlations':paths['regime_correlations'],
+        'audit':{'model_version':'5.11.38','risk_covariance':cov.tolist(),'risk_source':paths['risk_source'],'regime_correlations':paths['regime_correlations'],
             'regime_parameters':paths['scenario_parameters'],'transition_matrix':paths['transition_matrix'],
             'parameters':cfg,'simulation_count':inputs['simulation_count'],'seed':inputs['random_seed'],
             'data_as_of':data_as_of,'impairment_events':paths['impairment_events'],

@@ -8,6 +8,15 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from time import monotonic
 from uuid import uuid4
+import logging
+
+_log=logging.getLogger('marketscope.projection')
+_log.setLevel(logging.INFO)
+if not _log.handlers:
+    _handler=logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
+    _log.addHandler(_handler)
+_log.propagate=False
 
 _pool=ThreadPoolExecutor(max_workers=1,thread_name_prefix='projection-job')
 _lock=Lock();_jobs={}
@@ -24,7 +33,17 @@ def submit(task):
         job={'progress':(0,1,'Preparing projection'),'created':monotonic()}
         def progress(completed,total,label):
             with _lock:job['progress']=(completed,total,label)
-        job['future']=_pool.submit(task,progress)
+        def run():
+            _log.info('Projection started job=%s',token[:8])
+            try:
+                result=task(progress)
+                _log.info('Projection completed job=%s elapsed_seconds=%.1f',token[:8],monotonic()-job['created'])
+                return result
+            except Exception as exc:
+                # No holdings, balances, API keys or full recovery token in logs.
+                _log.error('Projection failed job=%s error_type=%s elapsed_seconds=%.1f',token[:8],type(exc).__name__,monotonic()-job['created'])
+                raise
+        job['future']=_pool.submit(run)
         _jobs[token]=job
         return token
 

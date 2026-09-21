@@ -16,6 +16,7 @@ LIVE_FILES = {
     "data/universe_change_history.json",
 }
 SKIP_DIRS = {
+    "quality_paper_records",
     ".git",
     ".cache",
     ".pytest_cache",

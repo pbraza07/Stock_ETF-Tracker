@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.36: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.38: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -9,6 +9,8 @@ from pathlib import Path
 from html import escape
 from typing import Dict, List
 
+from production_runtime import configure as _configure_production_runtime
+_configure_production_runtime()
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -2691,18 +2693,25 @@ _top_tab_labels = [
     "◈ Sector Performance",
     "🔔 Alerts & Help",
     "Recession Indicators",
+    "Quality Growth & Return Opportunities",
 ]
 from runtime_performance import preserve_navigation_state
 preserve_navigation_state()
 if bool(st.session_state.pop("future_projection_focus", False)):
     st.session_state["workspace_navigation"] = "Future Projection"
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab = st.tabs(
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab = st.tabs(
         _top_tab_labels,
         default="Future Projection",
         key="workspace_navigation", on_change="rerun",
     )
 else:
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+
+if quality_tab.open:
+    with quality_tab:
+        from quality_opportunities_ui import render as render_quality_opportunities
+        render_quality_opportunities(market,list(YEAR_RETURN_COLS),cached_future_projection_monthly_returns,
+            lambda symbols: cached_future_projection_live_context(tuple(symbols),market))
 
 
 if recession_tab.open:

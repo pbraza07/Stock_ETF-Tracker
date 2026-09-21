@@ -5,7 +5,7 @@ services:
     plan: free
     region: virginia
     buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: streamlit run app.py --server.address=0.0.0.0 --server.port=$PORT --server.headless=true --browser.gatherUsageStats=false
+    startCommand: python start_marketscope.py
     healthCheckPath: /_stcore/health
     autoDeploy: true
     envVars:

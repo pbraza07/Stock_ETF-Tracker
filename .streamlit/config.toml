@@ -9,4 +9,7 @@ font = "sans serif"
 [server]
 enableStaticServing = true
 headless = true
-runOnSave = true
+runOnSave = false
+fileWatcherType = "none"
+disconnectedSessionTTL = 1800
+websocketPingInterval = 30
