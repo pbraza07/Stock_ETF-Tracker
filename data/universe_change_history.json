@@ -2374,5 +2374,17 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-22T20:13:58.843357-04:00",
+    "occurred_at_display_et": "Sep 22, 2026 08:13:58 PM EDT",
+    "first_detected_at_et": "2026-09-22T20:13:58.843357-04:00",
+    "first_detected_display_et": "Sep 22, 2026 08:13:58 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "ASX",
+    "name": "ASE Technology Holding Co. Ltd. American Depositary Shares (each representing Two Common Shares)",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
