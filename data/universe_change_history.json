@@ -2386,5 +2386,53 @@
     "from": "Outside >$100B universe",
     "to": "Included >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "occurred_at_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "first_detected_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "first_detected_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "AEM",
+    "name": "Agnico Eagle Mines Limited Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "occurred_at_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "first_detected_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "first_detected_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "ASX",
+    "name": "ASE Technology Holding Co. Ltd. American Depositary Shares (each representing Two Common Shares)",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "occurred_at_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "first_detected_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "first_detected_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "IBN",
+    "name": "ICICI Bank Limited Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "occurred_at_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "first_detected_at_et": "2026-09-23T20:21:25.638717-04:00",
+    "first_detected_display_et": "Sep 23, 2026 08:21:25 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "TXN",
+    "name": "Texas Instruments Incorporated Common Stock",
+    "from": "Strong Buy",
+    "to": "Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
