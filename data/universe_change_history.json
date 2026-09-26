@@ -2434,5 +2434,29 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-25T20:28:34.656576-04:00",
+    "occurred_at_display_et": "Sep 25, 2026 08:28:34 PM EDT",
+    "first_detected_at_et": "2026-09-25T20:28:34.656576-04:00",
+    "first_detected_display_et": "Sep 25, 2026 08:28:34 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "SNY",
+    "name": "Sanofi ADS",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-25T20:28:34.656576-04:00",
+    "occurred_at_display_et": "Sep 25, 2026 08:28:34 PM EDT",
+    "first_detected_at_et": "2026-09-25T20:28:34.656576-04:00",
+    "first_detected_display_et": "Sep 25, 2026 08:28:34 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "TTE",
+    "name": "TotalEnergies SE Ordinary Shares",
+    "from": "Strong Buy",
+    "to": "Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
