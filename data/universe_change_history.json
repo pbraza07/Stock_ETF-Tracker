@@ -2458,5 +2458,41 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-28T21:43:14.650305-04:00",
+    "occurred_at_display_et": "Sep 28, 2026 09:43:14 PM EDT",
+    "first_detected_at_et": "2026-09-28T21:43:14.650305-04:00",
+    "first_detected_display_et": "Sep 28, 2026 09:43:14 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "SNY",
+    "name": "Sanofi ADS",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-28T21:43:14.650305-04:00",
+    "occurred_at_display_et": "Sep 28, 2026 09:43:14 PM EDT",
+    "first_detected_at_et": "2026-09-28T21:43:14.650305-04:00",
+    "first_detected_display_et": "Sep 28, 2026 09:43:14 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "EQIX",
+    "name": "Equinix Inc. Common Stock REIT",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-28T21:43:14.650305-04:00",
+    "occurred_at_display_et": "Sep 28, 2026 09:43:14 PM EDT",
+    "first_detected_at_et": "2026-09-28T21:43:14.650305-04:00",
+    "first_detected_display_et": "Sep 28, 2026 09:43:14 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "GSK",
+    "name": "GSK plc American Depositary Shares (Each representing two Ordinary Shares)",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
