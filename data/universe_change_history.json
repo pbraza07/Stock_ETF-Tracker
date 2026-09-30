@@ -2494,5 +2494,29 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-29T21:12:04.764709-04:00",
+    "occurred_at_display_et": "Sep 29, 2026 09:12:04 PM EDT",
+    "first_detected_at_et": "2026-09-29T21:12:04.764709-04:00",
+    "first_detected_display_et": "Sep 29, 2026 09:12:04 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "GSK",
+    "name": "GSK plc American Depositary Shares (Each representing two Ordinary Shares)",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-09-29T21:12:04.764709-04:00",
+    "occurred_at_display_et": "Sep 29, 2026 09:12:04 PM EDT",
+    "first_detected_at_et": "2026-09-29T21:12:04.764709-04:00",
+    "first_detected_display_et": "Sep 29, 2026 09:12:04 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "MCK",
+    "name": "McKesson Corporation Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
