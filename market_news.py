@@ -130,11 +130,15 @@ def make_item(title, description, url, published, source, retrieved=None):
     excerpt = ' '.join(plain(description).split()[:25])
     summary = [excerpt or 'This source supplied a headline without a feed description.',
                analysis['channel'], analysis['reason']]
-    return dict(id=hashlib.sha256(url.encode()).hexdigest()[:24], url=url, title=title, excerpt=excerpt,
+    row = dict(id=hashlib.sha256(url.encode()).hexdigest()[:24], url=url, title=title, excerpt=excerpt,
                 summary=summary, publisher=source['publisher'], source_id=source['id'], published_at=timestamp(published),
                 first_seen_at=retrieved, last_seen_at=retrieved, analysis=analysis,
                 content_scope='Feed excerpt and MarketScope context; linked article not analyzed',
                 headline_group=hashlib.sha256(re.sub(r'\W+', '',title.lower()).encode()).hexdigest()[:20])
+    from news_context import story_context, story_summary
+    row['scoped_impacts']=story_context(row)
+    row['story_summary']=story_summary(row)
+    return row
 
 
 def parse_feed(data, source, retrieved=None):

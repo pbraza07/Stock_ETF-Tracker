@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.48: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.50: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -2685,28 +2685,28 @@ active_signal_count = int(active_signal_mask.sum())
 # v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
 # v5.9.24 compatibility contract previously used: market_tab, portfolio_tab, compare_tab, alerts_tab = st.tabs
 _top_tab_labels = [
+    "📰 Market News",
     "◈ Market Navigator",
     "Favorite Picks",
     "◫ Portfolio Simulator",
     "Future Projection",
     "⚖ Stock & ETF Comparison",
     "◈ Sector Performance",
-    "🔔 Alerts & Help",
     "Recession Indicators",
     "Quality Growth & Return Opportunities",
-    "📰 Market News",
+    "🔔 Alerts & Help",
 ]
 from runtime_performance import preserve_navigation_state
 preserve_navigation_state()
 if bool(st.session_state.pop("future_projection_focus", False)):
     st.session_state["workspace_navigation"] = "Future Projection"
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab, news_tab = st.tabs(
+    news_tab, market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, recession_tab, quality_tab, alerts_tab = st.tabs(
         _top_tab_labels,
         default="Future Projection",
         key="workspace_navigation", on_change="rerun",
     )
 else:
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab, news_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+    news_tab, market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, recession_tab, quality_tab, alerts_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
 
 if news_tab.open:
     with news_tab:
