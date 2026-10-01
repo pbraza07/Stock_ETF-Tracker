@@ -1,18 +1,24 @@
 {
-  "refreshed_at_et": "2026-09-29T21:12:04.764709-04:00",
-  "refreshed_at_display_et": "Sep 29, 2026 09:12:04 PM EDT",
+  "refreshed_at_et": "2026-09-30T21:11:05.236997-04:00",
+  "refreshed_at_display_et": "Sep 30, 2026 09:11:05 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
   "stock_count": 162,
   "etf_count": 213,
-  "added_count": 1,
-  "removed_count": 1,
+  "added_count": 4,
+  "removed_count": 4,
   "added_symbols": [
-    "GSK"
+    "ASX",
+    "EQIX",
+    "MCK",
+    "TT"
   ],
   "removed_symbols": [
-    "MCK"
+    "BNY",
+    "CCZ",
+    "GSK",
+    "SNY"
   ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
