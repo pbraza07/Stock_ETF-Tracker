@@ -7,6 +7,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_FILES = {
+    "data/market_news_archive.json",
     "data/market_snapshot.csv",
     "data/snapshot_metadata.json",
     "data/saved_portfolio_simulations.json",
@@ -41,7 +42,7 @@ def stage(destination):
             continue
         if str(relative) in LIVE_FILES or source.name in {".env", "secrets.toml"}:
             continue
-        if source.suffix in {".pyc", ".zip", ".tmp", ".log"}:
+        if source.suffix in {".pyc", ".zip", ".tmp", ".log", ".lock"}:
             continue
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)

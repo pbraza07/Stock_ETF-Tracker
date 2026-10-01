@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.47: custom-date simulations, reports, sector leaders and weekly calendar.
+# v5.11.48: custom-date simulations, reports, sector leaders and weekly calendar.
 
 import json
 import os
@@ -2694,18 +2694,24 @@ _top_tab_labels = [
     "🔔 Alerts & Help",
     "Recession Indicators",
     "Quality Growth & Return Opportunities",
+    "📰 Market News",
 ]
 from runtime_performance import preserve_navigation_state
 preserve_navigation_state()
 if bool(st.session_state.pop("future_projection_focus", False)):
     st.session_state["workspace_navigation"] = "Future Projection"
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab = st.tabs(
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab, news_tab = st.tabs(
         _top_tab_labels,
         default="Future Projection",
         key="workspace_navigation", on_change="rerun",
     )
 else:
-    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+    market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, alerts_tab, recession_tab, quality_tab, news_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+
+if news_tab.open:
+    with news_tab:
+        from market_news_ui import render_market_news
+        render_market_news()
 
 if quality_tab.open:
     with quality_tab:
@@ -2752,6 +2758,8 @@ with alerts_tab:
 with market_tab:
     from economic_calendar import render_economic_calendar
     if market_tab.open:
+        st.button("📰 Open Market News · Drivers & Outlook",key="open_market_news",
+            on_click=lambda: st.session_state.update(workspace_navigation="📰 Market News"),width="stretch")
         render_economic_calendar()
     st.markdown(
         '<div class="universe-status-strip">'
