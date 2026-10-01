@@ -132,9 +132,17 @@ def load_calendar(provider='Investing.com',force=False):
     return with_snapshot(key,result)
 
 
+def earnings_calendar_url():
+    # User-requested economic-widget parameters; provider support on this
+    # full-page earnings endpoint is unverified. Do not claim enforced filters.
+    from urllib.parse import parse_qsl, urlsplit
+    params = dict(parse_qsl(urlsplit(calendar_url()).query))
+    params['importance'] = '2,3'
+    return 'https://www.investing.com/earnings-calendar/?' + urlencode(params)
+
+
 def earnings_embed():
-    # Use the provider's public page, not an unverified legacy widget URL.
-    return '<style>html,body{margin:0;background:#06101A}iframe{width:100%;height:720px;border:0;color-scheme:normal}</style><iframe title="Investing.com earnings calendar" src="https://www.investing.com/earnings-calendar/" loading="eager"></iframe>'
+    return '<style>html,body{margin:0;background:#06101A}iframe{width:100%;height:520px;border:0;filter:invert(.94) hue-rotate(180deg);color-scheme:light}</style><iframe title="Investing.com earnings calendar" src="'+escape(earnings_calendar_url(),quote=True)+'"></iframe>'
 
 
 def _switch_calendar():
@@ -147,15 +155,15 @@ def render_economic_calendar():
     import streamlit.components.v1 as components
     earnings=st.session_state.get('dashboard_calendar_kind','economic')=='earnings'
     if earnings:
-        st.subheader('U.S. earnings calendar — ★★ and ★★★ importance')
-        st.caption('Inside Investing.com select This Week, United States, and importance two and three stars. These filters are not applied automatically; the embedded page may initially show other events. Reporting dates and times are supplied by Investing.com.')
+        st.subheader('Earnings calendar — requested: U.S. · This week · ★★ / ★★★')
+        st.caption('The iframe requests the same settings as the economic widget, with importance two and three stars. Investing.com may ignore these parameters on its earnings page: filters are not applied automatically with verified support. Check or select This Week, United States, and importance two and three inside the calendar. Other events may appear.')
     else:
         st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
         st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
     st.button('← Back to Economic Calendar' if earnings else '📊 Show Earnings Calendar',
         key='dashboard_calendar_switch',on_click=_switch_calendar)
     if earnings:
-        components.html(earnings_embed(),height=725,scrolling=False)
+        components.html(earnings_embed(),height=525,scrolling=False)
         st.markdown('Earnings Calendar provided by [Investing.com](https://www.investing.com/earnings-calendar/). If the provider blocks the embedded page, open the source calendar. The page content, colors and filters are controlled by Investing.com.')
     else:
         components.html(calendar_embed(),height=525,scrolling=False)
