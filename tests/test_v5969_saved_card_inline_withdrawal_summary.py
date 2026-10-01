@@ -29,8 +29,8 @@ def _namespace():
 
 
 def test_release_version_5969():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.44"
-    assert "v5.11.44" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.45"
+    assert "v5.11.45" in APP
 
 
 def test_saved_withdrawal_strip_is_inside_same_library_card():

@@ -9,7 +9,7 @@ def test_calendar_switch_round_trip():
     assert not app.exception
     assert app.button[0].label=='← Back to Economic Calendar'
     assert 'https://www.investing.com/earnings-calendar/' in app.get('iframe')[0].proto.srcdoc
-    assert 'importance=3' in app.get('iframe')[0].proto.srcdoc
+    assert 'importance=2%2C3' in app.get('iframe')[0].proto.srcdoc
     assert 'height:520px' in app.get('iframe')[0].proto.srcdoc
     assert 'not applied automatically' in app.caption[0].value
     assert len(app.slider)==2

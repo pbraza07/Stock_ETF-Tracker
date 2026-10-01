@@ -137,7 +137,7 @@ def earnings_calendar_url():
     # full-page earnings endpoint is unverified. Do not claim enforced filters.
     from urllib.parse import parse_qsl, urlsplit
     params = dict(parse_qsl(urlsplit(calendar_url()).query))
-    params['importance'] = '3'
+    params['importance'] = '2,3'
     return 'https://www.investing.com/earnings-calendar/?' + urlencode(params)
 
 
@@ -152,7 +152,7 @@ def earnings_embed(top_crop=250, bottom_crop=65):
         'iframe{position:absolute;left:0;top:-'+str(top_crop)+'px;display:block;'
         'width:125%;height:'+str(inner_height)+'px;border:0;transform:scale(.8);'
         'transform-origin:top left;filter:invert(.94) hue-rotate(180deg);color-scheme:light}'
-        '</style><div class="earnings-frame"><iframe title="Investing.com earnings calendar" '
+        '</style><div class="earnings-frame"><iframe title="Investing.com earnings calendar" sandbox="allow-scripts allow-same-origin allow-forms" '
         'src="'+escape(earnings_calendar_url(),quote=True)+'"></iframe></div>'
     )
 
@@ -167,14 +167,15 @@ def render_economic_calendar():
     import streamlit.components.v1 as components
     earnings=st.session_state.get('dashboard_calendar_kind','economic')=='earnings'
     if earnings:
-        st.subheader('Earnings calendar — requested: U.S. · This week · ★★★')
-        st.caption('The iframe requests the same settings as the economic widget, with importance three stars only. Investing.com may ignore these parameters on its earnings page: filters are not applied automatically with verified support. Check or select This Week, United States, and importance three stars inside the calendar. Other events may appear.')
+        st.subheader('Earnings calendar — requested: U.S. · This week · ★★ / ★★★')
+        st.caption('The iframe requests the same settings as the economic widget, with importance two and three stars. Investing.com may ignore these parameters on its earnings page: filters are not applied automatically with verified support. Check or select This Week, United States, and importance two and three stars inside the calendar. Other events may appear.')
     else:
         st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
         st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
     st.button('← Back to Economic Calendar' if earnings else '📊 Show Earnings Calendar',
         key='dashboard_calendar_switch',on_click=_switch_calendar)
     if earnings:
+        st.caption('New-window pop-ups, browser alert dialogs, and redirects of MarketScope are blocked. In-page ads, cookie banners, and sign-in overlays may still appear.')
         with st.expander('Adjust calendar view'):
             st.caption('Navigation is cropped, not removed. If the date/filter controls are cut off or navigation reappears, adjust these offsets. Set both to zero for the full frame. Provider layout changes may require readjustment.')
             top_crop=st.slider('Hide top navigation (pixels)',0,450,250,5,key='earnings_top_crop')
