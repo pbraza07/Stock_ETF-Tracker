@@ -132,10 +132,31 @@ def load_calendar(provider='Investing.com',force=False):
     return with_snapshot(key,result)
 
 
+def earnings_embed():
+    # Use the provider's public page, not an unverified legacy widget URL.
+    return '<style>html,body{margin:0;background:#06101A}iframe{width:100%;height:720px;border:0;color-scheme:normal}</style><iframe title="Investing.com earnings calendar" src="https://www.investing.com/earnings-calendar/" loading="eager"></iframe>'
+
+
+def _switch_calendar():
+    import streamlit as st
+    st.session_state['dashboard_calendar_kind']='economic' if st.session_state.get('dashboard_calendar_kind','economic')=='earnings' else 'earnings'
+
+
 def render_economic_calendar():
     import streamlit as st
     import streamlit.components.v1 as components
-    st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
-    st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
-    components.html(calendar_embed(),height=525,scrolling=False)
-    st.markdown('Economic Calendar provided by [Investing.com](https://www.investing.com/economic-calendar/). If the embedded calendar is blocked by your browser, open the source calendar.')
+    earnings=st.session_state.get('dashboard_calendar_kind','economic')=='earnings'
+    if earnings:
+        st.subheader('U.S. earnings calendar — ★★ and ★★★ importance')
+        st.caption('Inside Investing.com select This Week, United States, and importance two and three stars. These filters are not applied automatically; the embedded page may initially show other events. Reporting dates and times are supplied by Investing.com.')
+    else:
+        st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
+        st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
+    st.button('← Back to Economic Calendar' if earnings else '📊 Show Earnings Calendar',
+        key='dashboard_calendar_switch',on_click=_switch_calendar)
+    if earnings:
+        components.html(earnings_embed(),height=725,scrolling=False)
+        st.markdown('Earnings Calendar provided by [Investing.com](https://www.investing.com/earnings-calendar/). If the provider blocks the embedded page, open the source calendar. The page content, colors and filters are controlled by Investing.com.')
+    else:
+        components.html(calendar_embed(),height=525,scrolling=False)
+        st.markdown('Economic Calendar provided by [Investing.com](https://www.investing.com/economic-calendar/). If the embedded calendar is blocked by your browser, open the source calendar.')
