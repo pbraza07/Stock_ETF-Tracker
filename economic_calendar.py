@@ -141,10 +141,20 @@ def earnings_calendar_url():
     return 'https://www.investing.com/earnings-calendar/?' + urlencode(params)
 
 
-def earnings_embed():
-    # Scale the full cross-origin page to 80%; this cannot edit its internal CSS.
-    # Compensate both dimensions so the visible viewport remains 100% x 520px.
-    return '<style>html,body{margin:0;background:#06101A}.earnings-frame{width:100%;height:520px;overflow:hidden}iframe{display:block;width:125%;height:650px;border:0;transform:scale(.8);transform-origin:top left;filter:invert(.94) hue-rotate(180deg);color-scheme:light}</style><div class="earnings-frame"><iframe title="Investing.com earnings calendar" src="'+escape(earnings_calendar_url(),quote=True)+'"></iframe></div>'
+def earnings_embed(top_crop=250, bottom_crop=65):
+    # Visual clipping only: cross-origin provider DOM cannot be edited here.
+    top_crop = max(0, min(450, int(top_crop)))
+    bottom_crop = max(0, min(150, int(bottom_crop)))
+    inner_height = (520 + top_crop + bottom_crop) / .8
+    return (
+        '<style>html,body{margin:0;background:#06101A}'
+        '.earnings-frame{position:relative;width:100%;height:520px;overflow:hidden}'
+        'iframe{position:absolute;left:0;top:-'+str(top_crop)+'px;display:block;'
+        'width:125%;height:'+str(inner_height)+'px;border:0;transform:scale(.8);'
+        'transform-origin:top left;filter:invert(.94) hue-rotate(180deg);color-scheme:light}'
+        '</style><div class="earnings-frame"><iframe title="Investing.com earnings calendar" '
+        'src="'+escape(earnings_calendar_url(),quote=True)+'"></iframe></div>'
+    )
 
 
 def _switch_calendar():
@@ -165,8 +175,11 @@ def render_economic_calendar():
     st.button('← Back to Economic Calendar' if earnings else '📊 Show Earnings Calendar',
         key='dashboard_calendar_switch',on_click=_switch_calendar)
     if earnings:
-        st.caption('Compact view: embedded page scaled to 80% for smaller text. Investing.com controls its internal layout; this is not the compact economic widget.')
-        components.html(earnings_embed(),height=525,scrolling=False)
+        with st.expander('Adjust calendar view'):
+            st.caption('Navigation is cropped, not removed. If the date/filter controls are cut off or navigation reappears, adjust these offsets. Set both to zero for the full frame. Provider layout changes may require readjustment.')
+            top_crop=st.slider('Hide top navigation (pixels)',0,450,250,5,key='earnings_top_crop')
+            bottom_crop=st.slider('Hide bottom navigation (pixels)',0,150,65,5,key='earnings_bottom_crop')
+        components.html(earnings_embed(top_crop,bottom_crop),height=525,scrolling=False)
         st.markdown('Earnings Calendar provided by [Investing.com](https://www.investing.com/earnings-calendar/). If the provider blocks the embedded page, open the source calendar. The page content, colors and filters are controlled by Investing.com.')
     else:
         components.html(calendar_embed(),height=525,scrolling=False)

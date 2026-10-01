@@ -12,6 +12,9 @@ def test_calendar_switch_round_trip():
     assert 'importance=3' in app.get('iframe')[0].proto.srcdoc
     assert 'height:520px' in app.get('iframe')[0].proto.srcdoc
     assert 'not applied automatically' in app.caption[0].value
+    assert len(app.slider)==2
+    app.slider[0].set_value(100).run()
+    assert 'top:-100px' in app.get('iframe')[0].proto.srcdoc
     app.button[0].click().run()
     assert 'economic calendar' in app.subheader[0].value
     assert 'sslecal2.investing.com' in app.get('iframe')[0].proto.srcdoc
