@@ -1,5 +1,6 @@
 """Investing.com iframe dashboard; legacy collectors retained for compatibility."""
 import os
+import streamlit as st
 import json
 from macro_snapshots import with_snapshot
 from datetime import datetime, timedelta, timezone
@@ -157,11 +158,14 @@ def earnings_embed(top_crop=250, bottom_crop=65):
     )
 
 
-def _switch_calendar():
-    import streamlit as st
-    st.session_state['dashboard_calendar_kind']='economic' if st.session_state.get('dashboard_calendar_kind','economic')=='earnings' else 'earnings'
+def _switch_calendar(destination):
+    # Explicit destination: repeated/queued back clicks cannot toggle to earnings.
+    if destination not in ('economic', 'earnings'):
+        raise ValueError('Unknown calendar destination')
+    st.session_state['dashboard_calendar_kind'] = destination
 
 
+@st.fragment
 def render_economic_calendar():
     import streamlit as st
     import streamlit.components.v1 as components
@@ -172,16 +176,20 @@ def render_economic_calendar():
     else:
         st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
         st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
+    destination = 'economic' if earnings else 'earnings'
     st.button('← Back to Economic Calendar' if earnings else '📊 Show Earnings Calendar',
-        key='dashboard_calendar_switch',on_click=_switch_calendar)
+        key='dashboard_calendar_to_' + destination,
+        on_click=_switch_calendar, args=(destination,))
     if earnings:
         st.caption('New-window pop-ups, browser alert dialogs, and redirects of MarketScope are blocked. In-page ads, cookie banners, and sign-in overlays may still appear.')
         with st.expander('Adjust calendar view'):
             st.caption('Navigation is cropped, not removed. If the date/filter controls are cut off or navigation reappears, adjust these offsets. Set both to zero for the full frame. Provider layout changes may require readjustment.')
             top_crop=st.slider('Hide top navigation (pixels)',0,450,250,5,key='earnings_top_crop')
             bottom_crop=st.slider('Hide bottom navigation (pixels)',0,150,65,5,key='earnings_bottom_crop')
-        components.html(earnings_embed(top_crop,bottom_crop),height=525,scrolling=False)
+        with st.container(key='dashboard_earnings_frame'):
+            components.html(earnings_embed(top_crop,bottom_crop),height=525,scrolling=False)
         st.markdown('Earnings Calendar provided by [Investing.com](https://www.investing.com/earnings-calendar/). If the provider blocks the embedded page, open the source calendar. The page content, colors and filters are controlled by Investing.com.')
     else:
-        components.html(calendar_embed(),height=525,scrolling=False)
+        with st.container(key='dashboard_economic_frame'):
+            components.html(calendar_embed(),height=525,scrolling=False)
         st.markdown('Economic Calendar provided by [Investing.com](https://www.investing.com/economic-calendar/). If the embedded calendar is blocked by your browser, open the source calendar.')

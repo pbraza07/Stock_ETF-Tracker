@@ -18,8 +18,8 @@ def _functions(*names):
 
 
 def test_release_version_5972():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.45"
-    assert "v5.11.45" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.46"
+    assert "v5.11.46" in APP
 
 
 def test_annual_engine_persists_positive_years_and_years_modeled():
