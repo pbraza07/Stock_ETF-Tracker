@@ -1,0 +1,11 @@
+{
+  "stock_market_cap_rule": "> $100,000,000,000",
+  "stock_primary_source": "Nasdaq Stock Screener (direct only)",
+  "stock_refresh_method": "scripts/update_universe.py",
+  "stock_refresh_schedule": "Daily at 6:00 PM America/New_York via GitHub Actions",
+  "requested_etf_count": 213,
+  "requested_etf_file": "data/etf_allowlist.csv",
+  "symbol_normalization": "Yahoo Finance convention (for example BRK/B -> BRK-B)",
+  "manual_additions": "Explicitly manually persisted symbols are preserved outside the automatic >$100B screen",
+  "note": "Market capitalization changes continuously. The deployment refreshes the direct Nasdaq >$100B stock universe daily and preserves the 213-ETF CSV allowlist."
+}

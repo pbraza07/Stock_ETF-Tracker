@@ -1,0 +1,35 @@
+name: Refresh macro snapshots
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 */6 * * *'
+permissions:
+  contents: write
+concurrency:
+  group: marketscope-macro-snapshots
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'pandas>=2.2,<3' 'numpy>=2,<3' 'requests>=2.32,<3'
+      - name: Collect macro data
+        id: collect
+        continue-on-error: true
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python scripts/update_macro_snapshots.py
+      - name: Save successful snapshots
+        run: python scripts/publish_macro_snapshots.py
+      - name: Report incomplete collection
+        if: steps.collect.outcome == 'failure'
+        run: |
+          echo 'One or more providers failed. Successful downloads were saved; inspect Collect macro data for diagnostics.'
+          exit 1

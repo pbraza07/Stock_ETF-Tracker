@@ -1,0 +1,302 @@
+from __future__ import annotations
+
+import base64
+import json
+import os
+from datetime import datetime
+from io import StringIO
+from pathlib import Path
+from typing import Optional, Tuple
+from zoneinfo import ZoneInfo
+
+import pandas as pd
+import requests
+
+ET = ZoneInfo("America/New_York")
+DEFAULT_REPO = os.getenv("MARKETSCOPE_GITHUB_REPO", "pbraza07/Stock_ETF-Tracker")
+DEFAULT_BRANCH = os.getenv("MARKETSCOPE_GITHUB_BRANCH", "main")
+SNAPSHOT_PATH = "data/market_snapshot.csv"
+METADATA_PATH = "data/snapshot_metadata.json"
+UNIVERSE_METADATA_PATH = "data/universe_metadata.json"
+UNIVERSE_CHANGE_HISTORY_PATH = "data/universe_change_history.json"
+FAVORITE_PICKS_HISTORY_PATH = "data/favorite_picks_history.json"
+UNIVERSE_PATH = "data/default_universe.csv"
+
+
+def now_et() -> datetime:
+    return datetime.now(ET)
+
+
+def format_et(dt: Optional[datetime] = None) -> str:
+    dt = dt or now_et()
+    return dt.astimezone(ET).strftime("%b %d, %Y %I:%M:%S %p %Z")
+
+
+def _raw_url(path: str) -> str:
+    return f"https://raw.githubusercontent.com/{DEFAULT_REPO}/{DEFAULT_BRANCH}/{path}"
+
+
+def load_remote_csv(path: str, timeout: int = 10) -> pd.DataFrame:
+    """Load an arbitrary durable MarketScope CSV from the configured GitHub branch."""
+    try:
+        response = requests.get(_raw_url(str(path).lstrip("/")), timeout=timeout)
+        response.raise_for_status()
+        return pd.read_csv(StringIO(response.text))
+    except Exception:
+        return pd.DataFrame()
+
+
+def load_remote_snapshot(timeout: int = 8) -> pd.DataFrame:
+    try:
+        response = requests.get(_raw_url(SNAPSHOT_PATH), timeout=timeout)
+        response.raise_for_status()
+        return pd.read_csv(StringIO(response.text))
+    except Exception:
+        return pd.DataFrame()
+
+
+def load_remote_metadata(timeout: int = 8) -> dict:
+    try:
+        response = requests.get(_raw_url(METADATA_PATH), timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def load_remote_universe_metadata(timeout: int = 8) -> dict:
+    try:
+        response = requests.get(_raw_url(UNIVERSE_METADATA_PATH), timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def load_remote_universe_change_history(timeout: int = 8) -> list[dict]:
+    """Load the append-only Nasdaq universe/rating change history from GitHub."""
+    try:
+        response = requests.get(_raw_url(UNIVERSE_CHANGE_HISTORY_PATH), timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, list) else []
+    except Exception:
+        return []
+
+
+def load_remote_favorite_picks_history(timeout: int = 8) -> dict:
+    """Load the durable Favorite Picks run/change ledger from GitHub."""
+    try:
+        response = requests.get(_raw_url(FAVORITE_PICKS_HISTORY_PATH), timeout=timeout)
+        response.raise_for_status()
+        payload = response.json()
+        return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+
+
+def _headers(token: str) -> dict:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "MarketScope-Render",
+    }
+
+
+def _put_text_file(path: str, text: str, message: str, token: str) -> Tuple[bool, str]:
+    url = f"https://api.github.com/repos/{DEFAULT_REPO}/contents/{path}"
+    headers = _headers(token)
+    try:
+        current = requests.get(url, headers=headers, params={"ref": DEFAULT_BRANCH}, timeout=15)
+        sha = (current.json() or {}).get("sha") if current.status_code == 200 else None
+        if current.status_code not in (200, 404):
+            return False, f"GitHub read failed ({current.status_code})"
+        body = {
+            "message": message,
+            "content": base64.b64encode(text.encode("utf-8")).decode("ascii"),
+            "branch": DEFAULT_BRANCH,
+        }
+        if sha:
+            body["sha"] = sha
+        saved = requests.put(url, headers=headers, json=body, timeout=30)
+        if saved.status_code not in (200, 201):
+            return False, f"GitHub save failed ({saved.status_code}): {saved.text[:220]}"
+        return True, "Saved to GitHub"
+    except Exception as exc:
+        return False, f"GitHub persistence error: {exc}"
+
+
+def persist_universe_refresh(
+    universe_path: Path,
+    metadata_path: Path,
+    history_path: Optional[Path] = None,
+) -> Tuple[bool, str]:
+    """Persist a manual Nasdaq-universe refresh locally and durably in GitHub.
+
+    The updater writes both files locally first. This helper mirrors those exact
+    generated files to GitHub using the existing Contents read/write token, so
+    the manual button does not require GitHub Actions permissions.
+    """
+    try:
+        universe_text = universe_path.read_text(encoding="utf-8")
+        metadata_text = metadata_path.read_text(encoding="utf-8")
+        history_text = (
+            history_path.read_text(encoding="utf-8")
+            if history_path is not None and history_path.exists()
+            else None
+        )
+    except Exception as exc:
+        return False, f"Universe refresh completed locally, but persistence files could not be read: {exc}"
+
+    token = os.getenv("MARKETSCOPE_GITHUB_TOKEN", "").strip()
+    if not token:
+        return False, (
+            "Nasdaq universe refreshed on the current Render server. Durable GitHub persistence requires "
+            "MARKETSCOPE_GITHUB_TOKEN with repository Contents read/write permission."
+        )
+
+    stamp = format_et(now_et())
+    ok, msg = _put_text_file(
+        UNIVERSE_PATH, universe_text, f"data: manual Nasdaq universe refresh {stamp}", token
+    )
+    if not ok:
+        return False, msg
+    ok, msg = _put_text_file(
+        UNIVERSE_METADATA_PATH, metadata_text, f"data: manual Nasdaq universe metadata {stamp}", token
+    )
+    if not ok:
+        return False, msg
+    if history_text is not None:
+        ok, msg = _put_text_file(
+            UNIVERSE_CHANGE_HISTORY_PATH,
+            history_text,
+            f"data: manual Nasdaq universe change history {stamp}",
+            token,
+        )
+        if not ok:
+            return False, msg
+    return True, (
+        "Nasdaq universe, refresh metadata, and change history saved permanently "
+        "to GitHub and locally on Render."
+    )
+
+
+def persist_favorite_picks_history(history: dict, local_path: Path) -> Tuple[bool, str]:
+    """Save the Favorite Picks append-only ledger locally and durably."""
+
+    if not isinstance(history, dict):
+        return False, "Favorite Picks history could not be saved because its data format is invalid."
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    history_text = json.dumps(history, indent=2) + "\n"
+    temporary = local_path.with_suffix(".tmp")
+    try:
+        temporary.write_text(history_text, encoding="utf-8")
+        temporary.replace(local_path)
+    except Exception as exc:
+        return False, f"Favorite Picks history could not be saved on this server: {exc}"
+
+    token = os.getenv("MARKETSCOPE_GITHUB_TOKEN", "").strip()
+    if not token:
+        return False, (
+            "Favorite Picks history was saved on this server. Permanent cross-restart history requires "
+            "MARKETSCOPE_GITHUB_TOKEN with repository Contents read/write permission."
+        )
+    # Use an optimistic read/merge/write loop so a daily workflow and a manual
+    # browser run cannot silently replace one another's append-only events.
+    from favorite_picks_history import merge_favorite_picks_ledgers
+
+    url = f"https://api.github.com/repos/{DEFAULT_REPO}/contents/{FAVORITE_PICKS_HISTORY_PATH}"
+    headers = _headers(token)
+    candidate = history
+    for _ in range(3):
+        try:
+            current = requests.get(url, headers=headers, params={"ref": DEFAULT_BRANCH}, timeout=15)
+            if current.status_code == 200:
+                current_body = current.json() or {}
+                encoded = str(current_body.get("content") or "").replace("\n", "")
+                remote_payload = json.loads(base64.b64decode(encoded).decode("utf-8")) if encoded else {}
+                sha = current_body.get("sha")
+            elif current.status_code == 404:
+                remote_payload = {}
+                sha = None
+            else:
+                return False, f"GitHub history read failed ({current.status_code})"
+            candidate = merge_favorite_picks_ledgers(remote_payload, candidate)
+            candidate_text = json.dumps(candidate, indent=2) + "\n"
+            body = {
+                "message": f"data: append Favorite Picks change history {format_et(now_et())}",
+                "content": base64.b64encode(candidate_text.encode("utf-8")).decode("ascii"),
+                "branch": DEFAULT_BRANCH,
+            }
+            if sha:
+                body["sha"] = sha
+            saved = requests.put(url, headers=headers, json=body, timeout=30)
+            if saved.status_code in (200, 201):
+                final_temporary = local_path.with_suffix(".tmp")
+                final_temporary.write_text(candidate_text, encoding="utf-8")
+                final_temporary.replace(local_path)
+                return True, "Favorite Picks run and first-detected change history saved permanently to GitHub."
+            if saved.status_code not in (409, 422):
+                return False, f"GitHub history save failed ({saved.status_code})"
+        except Exception as exc:
+            return False, f"GitHub Favorite Picks history persistence error: {exc}"
+    return False, "GitHub Favorite Picks history changed concurrently; retry Pick Fav to save this run permanently."
+
+
+def persist_snapshot(df: pd.DataFrame, local_path: Path, source: str, updated_count: int) -> Tuple[bool, str]:
+    """Save immediately on Render and durably in GitHub.
+
+    Render Free storage is ephemeral. GitHub is the durable source of truth,
+    while the local copy makes the refreshed data immediately visible to every
+    browser hitting the current Render process.
+    """
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    csv_text = df.to_csv(index=False)
+    local_path.write_text(csv_text, encoding="utf-8")
+
+    stamp = now_et()
+    year_cols = sorted(
+        [str(c) for c in df.columns if str(c).isdigit() and len(str(c)) == 4],
+        key=int,
+        reverse=True,
+    )
+    annual_coverage_by_year = {
+        year: int(pd.to_numeric(df[year], errors="coerce").notna().sum())
+        for year in year_cols
+    }
+    oldest_annual_year = next(
+        (year for year in reversed(year_cols) if annual_coverage_by_year.get(year, 0) > 0),
+        None,
+    )
+    metadata = {
+        "updated_at_et": stamp.isoformat(),
+        "updated_at_display_et": format_et(stamp),
+        "timezone": "America/New_York",
+        "source": source,
+        "updated_instruments": int(updated_count),
+        "snapshot_rows": int(len(df)),
+        "annual_history_year_count": int(len(year_cols)),
+        "oldest_annual_year_with_data": oldest_annual_year,
+        "annual_coverage_by_year": annual_coverage_by_year,
+    }
+    meta_text = json.dumps(metadata, indent=2) + "\n"
+    (local_path.parent / "snapshot_metadata.json").write_text(meta_text, encoding="utf-8")
+
+    token = os.getenv("MARKETSCOPE_GITHUB_TOKEN", "").strip()
+    if not token:
+        return False, (
+            "Refresh data was saved on the current Render server and is available immediately. "
+            "For permanent cross-restart/cross-device persistence, set MARKETSCOPE_GITHUB_TOKEN in Render; "
+            "the scheduled 6:00 PM ET GitHub Action remains durable automatically."
+        )
+
+    ok, msg = _put_text_file(SNAPSHOT_PATH, csv_text, f"data: manual MarketScope refresh {format_et(stamp)}", token)
+    if not ok:
+        return False, msg
+    ok, msg = _put_text_file(METADATA_PATH, meta_text, f"data: MarketScope refresh metadata {format_et(stamp)}", token)
+    if not ok:
+        return False, msg
+    return True, "Saved permanently to GitHub and locally on Render; every device will use this refreshed snapshot."
