@@ -158,38 +158,50 @@ def earnings_embed(top_crop=250, bottom_crop=65):
     )
 
 
-def _switch_calendar(destination):
-    # Explicit destination: repeated/queued back clicks cannot toggle to earnings.
-    if destination not in ('economic', 'earnings'):
-        raise ValueError('Unknown calendar destination')
-    st.session_state['dashboard_calendar_kind'] = destination
+def calendar_panel():
+    """Switch locally: no WebSocket, callback, fragment, or app rerun required."""
+    _, week_start, week_end = week_events([])
+    config = json.dumps({'economic': calendar_embed(), 'earnings': earnings_embed(), 'week': f'{week_start:%b %d} – {week_end:%b %d, %Y}'}).replace('<', r'\u003c')
+    return r'''<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;background:#06101a;color:#e2e8f0;font:14px system-ui,sans-serif}
+h2{font-size:22px;margin:0 0 12px}p{color:#91a4b1;line-height:1.5}
+button{padding:12px 18px;border:1px solid #3b4c5b;border-radius:10px;background:#0b1a2a;color:#e2e8f0;cursor:pointer;margin-bottom:16px;font:inherit;touch-action:manipulation}
+button:focus-visible{outline:2px solid #37dc89}iframe{width:100%;height:525px;border:0;display:block}a{color:#64baff}
+</style></head><body>
+<h2 id="title"></h2><p id="description"></p>
+<button id="switch" type="button"></button>
+<details id="crop" hidden><summary>Adjust calendar view</summary><p>Visual cropping only. Set to zero to restore hidden controls.</p><label>Top crop <input id="top" type="range" min="0" max="450" step="5" value="250"></label><label>Bottom crop <input id="bottom" type="range" min="0" max="150" step="5" value="65"></label></details><div id="calendar"></div><p><a id="source" target="_blank" rel="noopener noreferrer">Calendar provided by Investing.com</a></p>
+<script>
+const documents=CONFIG;
+let active='economic';
+const button=document.getElementById('switch');
+function showCalendar(destination){
+ active=destination;
+ const earnings=destination==='earnings';
+ document.getElementById('title').textContent=earnings?'Earnings calendar — '+documents.week:'This week’s U.S. economic calendar — ★★★ high importance';
+ document.getElementById('description').textContent=earnings?'Choose This Week inside the calendar to show this week’s reports. If that control is hidden, set Top crop to zero in Adjust calendar view. U.S. and two/three-star filters must be verified there; the provider may ignore URL settings.':'United States · three-star importance · announcement times default to Eastern Time.';
+ button.textContent=earnings?'← Back to Economic Calendar':'📊 Show Earnings Calendar';
+ button.setAttribute('aria-label',button.textContent);
+ const frame=document.createElement('iframe');
+ frame.title=earnings?'Earnings calendar':'Economic calendar';
+ let markup=documents[destination];
+ if(earnings){
+  const top=Number(document.getElementById('top').value), bottom=Number(document.getElementById('bottom').value);
+  markup=markup.replace('top:-250px','top:-'+top+'px').replace('height:1043.75px','height:'+((520+top+bottom)/.8)+'px');
+ }
+ document.getElementById('crop').hidden=!earnings;
+ frame.srcdoc=markup;
+ document.getElementById('calendar').replaceChildren(frame);
+ document.getElementById('source').href=earnings?'https://www.investing.com/earnings-calendar/':'https://www.investing.com/economic-calendar/';
+}
+button.addEventListener('click',()=>showCalendar(active==='earnings'?'economic':'earnings'));
+document.getElementById('top').addEventListener('change',()=>showCalendar(active));
+document.getElementById('bottom').addEventListener('change',()=>showCalendar(active));
+showCalendar('economic');
+</script></body></html>'''.replace('CONFIG',config)
 
 
-@st.fragment
 def render_economic_calendar():
-    import streamlit as st
     import streamlit.components.v1 as components
-    earnings=st.session_state.get('dashboard_calendar_kind','economic')=='earnings'
-    if earnings:
-        st.subheader('Earnings calendar — requested: U.S. · This week · ★★ / ★★★')
-        st.caption('The iframe requests the same settings as the economic widget, with importance two and three stars. Investing.com may ignore these parameters on its earnings page: filters are not applied automatically with verified support. Check or select This Week, United States, and importance two and three stars inside the calendar. Other events may appear.')
-    else:
-        st.subheader('This week’s U.S. economic calendar — ★★★ high importance')
-        st.caption('United States only; three-star importance only. Announcement times default to Eastern Time (US & Canada). Use the calendar timezone control for local times.')
-    destination = 'economic' if earnings else 'earnings'
-    st.button('← Back to Economic Calendar' if earnings else '📊 Show Earnings Calendar',
-        key='dashboard_calendar_to_' + destination,
-        on_click=_switch_calendar, args=(destination,))
-    if earnings:
-        st.caption('New-window pop-ups, browser alert dialogs, and redirects of MarketScope are blocked. In-page ads, cookie banners, and sign-in overlays may still appear.')
-        with st.expander('Adjust calendar view'):
-            st.caption('Navigation is cropped, not removed. If the date/filter controls are cut off or navigation reappears, adjust these offsets. Set both to zero for the full frame. Provider layout changes may require readjustment.')
-            top_crop=st.slider('Hide top navigation (pixels)',0,450,250,5,key='earnings_top_crop')
-            bottom_crop=st.slider('Hide bottom navigation (pixels)',0,150,65,5,key='earnings_bottom_crop')
-        with st.container(key='dashboard_earnings_frame'):
-            components.html(earnings_embed(top_crop,bottom_crop),height=525,scrolling=False)
-        st.markdown('Earnings Calendar provided by [Investing.com](https://www.investing.com/earnings-calendar/). If the provider blocks the embedded page, open the source calendar. The page content, colors and filters are controlled by Investing.com.')
-    else:
-        with st.container(key='dashboard_economic_frame'):
-            components.html(calendar_embed(),height=525,scrolling=False)
-        st.markdown('Economic Calendar provided by [Investing.com](https://www.investing.com/economic-calendar/). If the embedded calendar is blocked by your browser, open the source calendar.')
+    components.html(calendar_panel(), height=780, scrolling=True)
