@@ -11,7 +11,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,6 +20,8 @@ jobs:
       - run: pip install 'requests>=2.32,<3' 'beautifulsoup4>=4.12,<5'
       - name: Collect and merge news archive
         env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MARKETSCOPE_NEWS_SUMMARY_MODEL: ${{ vars.MARKETSCOPE_NEWS_SUMMARY_MODEL }}
           MARKETSCOPE_GITHUB_TOKEN: ${{ github.token }}
           MARKETSCOPE_GITHUB_REPO: ${{ github.repository }}
           MARKETSCOPE_GITHUB_BRANCH: ${{ github.ref_name }}

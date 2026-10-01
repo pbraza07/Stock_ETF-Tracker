@@ -45,7 +45,7 @@ def test_story_summary_excludes_generic_boilerplate():
 
 def test_preview_css_enforces_five_lines_and_reader_remains_available():
     ui=Path('market_news_ui.py').read_text()
-    assert '-webkit-line-clamp:5' in ui and 'max-height:7.5em' in ui
+    assert 'max-height:none' in ui and "completed['lines']" in ui
     assert "story_summary(row)" in ui and "read_story(row)" in ui
 
 def test_exchange_mention_not_broad_market_signal():

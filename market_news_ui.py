@@ -10,6 +10,7 @@ import streamlit as st
 from market_news import SOURCES, SOURCE_BY_ID, collect, utcnow, official_release, canonical_url
 import news_archive
 from news_context import story_context, story_summary, impact_html
+from article_summary import configured as summaries_configured, summarize_article, SummaryUnavailable
 
 ET=ZoneInfo('America/New_York')
 _REFRESH_LOCK=threading.Lock()
@@ -53,6 +54,10 @@ def read_story(row):
     st.caption(row['publisher']+' · '+date_label(row.get('published_at')))
     context=story_context(row)
     st.markdown(impact_html(context),unsafe_allow_html=True)
+    if row.get('article_summary'):
+        st.markdown('**Five-line article summary**')
+        for line in row['article_summary']['lines']:st.write(line)
+        st.caption('AI paraphrase · '+date_label(row['article_summary']['created_at'])+' · '+row['article_summary']['basis'])
     st.markdown('**Publisher feed excerpt**')
     st.text(row['excerpt'] or 'No excerpt supplied.')
     st.markdown('**MarketScope interpretation**')
@@ -105,7 +110,9 @@ def _refresh(progress):
 def render_market_news():
     st.subheader('Market News · Drivers & Outlook')
     st.caption('Dated reporting from financial publishers and economic agencies. Auto-checks every 15 minutes while this tab is open; all collected feed summaries are archived.')
-    st.markdown('<style>.news-meta{font-size:12px;color:#8ba5b6}[class*="st-key-news_summary_"] button p{display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;max-height:7.5em;text-align:left}[class*="st-key-news_summary_"] button{justify-content:flex-start}.news-rule{height:1px;background:#203b4d;margin:18px 0}</style>',unsafe_allow_html=True)
+    if not summaries_configured():
+        st.info('Full-article summaries are not configured. Set OPENAI_API_KEY and MARKETSCOPE_NEWS_SUMMARY_MODEL on the server. Feed excerpts remain clearly labeled below.')
+    st.markdown('<style>.news-meta{font-size:12px;color:#8ba5b6}[class*="st-key-news_summary_"] button p{display:-webkit-box;-webkit-line-clamp:unset;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;max-height:none;text-align:left}[class*="st-key-news_summary_"] button{justify-content:flex-start}.news-rule{height:1px;background:#203b4d;margin:18px 0}</style>',unsafe_allow_html=True)
     try:payload=news_archive.load()
     except (ValueError,OSError) as exc:
         st.error('The news archive could not be read. Existing data has been left untouched. '+str(exc));return
@@ -160,7 +167,7 @@ def render_market_news():
         st.write('Downside case: weaker earnings, tighter financial conditions or escalating shocks could pressure equities.')
         st.write('Mixed case: offsetting growth, inflation and valuation signals can produce volatile or range-bound markets. News alone cannot establish the next market move.')
         st.caption('These are standing scenarios, not forecasts inferred from today’s headlines. Labels use transparent headline rules with LOW confidence, not an investment recommendation.')
-    st.caption(f'{len(rows):,} matching stories · {len(payload["articles"]):,} archived. Click a story summary to open its reader. Previews show up to five lines; the reader shows the available excerpt and separate impact explanations.')
+    st.caption(f'{len(rows):,} matching stories · {len(payload["articles"]):,} archived. Click a story summary to open its reader. Full-article summaries contain five concise sentences, one per line; lines may wrap on phones. Stories without a completed summary are marked as feed excerpts.')
     if not rows:st.info('No stories match these filters. Undated stories can be found under All archived news.');return
     pages=max(1,(len(rows)+19)//20)
     if st.session_state.get('news_page',1)>pages:st.session_state['news_page']=1
@@ -169,8 +176,22 @@ def render_market_news():
         context=story_context(row)
         st.markdown(f'<div class="news-meta">{escape(row["publisher"])} · {escape(date_label(row.get("published_at")))}</div>'+impact_html(context),unsafe_allow_html=True)
         st.markdown('**'+escape(row['title']).replace('$',r'\$')+'**')
+        completed=row.get('article_summary')
+        st.caption('Full-article summary · AI paraphrase' if completed else 'Feed excerpt only — full-article summary not yet available')
         with st.container(key='news_summary_'+row['id']):
-            if st.button(story_summary(row),key='news_read_'+row['id'],width='stretch',help='Read this specific story and its stock, sector and market impact. Preview limited to five lines; source feed text only.'):
+            if st.button('\n\n'.join(completed['lines']) if completed else story_summary(row),key='news_read_'+row['id'],width='stretch',help='Open the story reader. A full-article summary uses five concise lines; the status identifies feed-only previews.'):
                 read_story(row)
+        if not completed and summaries_configured():
+            if st.button('Read full article & summarize in five lines',key='summarize_'+row['id'],width='stretch'):
+                try:
+                    with st.spinner('Reading the original article and summarizing its full accessible body…'):
+                        summary=summarize_article(row)
+                        news_archive.add([{**row,'article_summary':summary}],{})
+                        news_archive.sync()
+                    st.rerun(scope='fragment')
+                except (SummaryUnavailable,ValueError,OSError) as exc:
+                    st.warning('Full-article summary unavailable: '+str(exc))
+                except Exception:
+                    st.warning('The article could not be read. Use the original source; no summary was substituted.')
         st.link_button('Original source ↗',row['url'])
         st.markdown('<div class="news-rule"></div>',unsafe_allow_html=True)
