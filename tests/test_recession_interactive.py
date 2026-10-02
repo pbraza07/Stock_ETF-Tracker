@@ -13,7 +13,7 @@ class Scripts(HTMLParser):
     def handle_endtag(self,tag):
         if tag=='script': self.active=False
 
-@pytest.mark.parametrize('series',['USPHCI','RECPROUSM156N','SAHMREALTIME'])
+@pytest.mark.parametrize('series',['USPHCI','RECPROUSM156N','SAHMREALTIME','JHGDPBRINDX'])
 @pytest.mark.parametrize('years',[None,5,10,20])
 def test_interactive_is_self_contained_with_full_history(series,years):
     rows=[{'date':str(d.date()),'value':float(i%20)/10} for i,d in enumerate(pd.date_range('1959-01-01','2026-07-01',freq='MS'))]

@@ -56,6 +56,6 @@ def test_collector_isolates_failure_and_reports_each_series(tmp_path,monkeypatch
     monkeypatch.setattr(module,'save_result',lambda key,result: saved.append(key) or True)
     summary=tmp_path/'summary.md';monkeypatch.setenv('GITHUB_STEP_SUMMARY',str(summary))
     assert module.main()==1
-    assert set(saved)=={'RECPROUSM156N','SAHMREALTIME'}
+    assert set(saved)=={'RECPROUSM156N','SAHMREALTIME','JHGDPBRINDX'}
     assert 'USPHCI | Failed' in summary.read_text()
     assert 'secret' not in summary.read_text()

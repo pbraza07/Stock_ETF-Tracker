@@ -22,7 +22,7 @@ def save_result(key,result,directory=ROOT):
 
 def main():
     failed=[]
-    keys=('USPHCI','RECPROUSM156N','SAHMREALTIME')
+    keys=('USPHCI','RECPROUSM156N','SAHMREALTIME','JHGDPBRINDX')
     print('FRED_API_KEY configured:', bool(os.getenv('FRED_API_KEY','').strip()), flush=True)
     summary=['## Macro snapshot refresh', '', '| Series | Result | Details |', '| --- | --- | --- |']
     def collect(key):

@@ -6,21 +6,21 @@ from recession_shading import PERIODS
 
 
 def indicator_svg(series, records, years=10):
-    from recession_indicators import SERIES
+    from recession_indicators import SERIES, PROBABILITY_SERIES
     spec = SERIES[series]
     frame = pd.DataFrame(records)
     frame['date'] = pd.to_datetime(frame['date'])
     frame = frame.sort_values('date').drop_duplicates('date', keep='last')
     if years:
         frame = frame[frame.date >= frame.date.max()-pd.DateOffset(years=years)]
-    frame = frame.set_index('date').asfreq('MS').reset_index()
+    frame = frame.set_index('date').asfreq(spec.get('cadence','MS')).reset_index()
     values = [float(v) for v in frame.value if pd.notna(v) and math.isfinite(float(v))]
     if not values:
         raise ValueError('No finite observations to chart')
     start, end = frame.date.min(), frame.date.max()
     span = max((end-start).total_seconds(), 86400)
     lo, hi = min(values), max(values)
-    if series == 'RECPROUSM156N':
+    if series in PROBABILITY_SERIES:
         lo, hi = 0, 100
     else:
         if series == 'SAHMREALTIME': lo, hi = min(lo,.5), max(hi,.5)
@@ -42,13 +42,17 @@ def indicator_svg(series, records, years=10):
     for i in range(6):
         v=lo+(hi-lo)*i/5
         svg.append(f'<path d="M90 {y(v):.2f} H980" stroke="#20394A"/>')
-        text(80,y(v)+4,f'{v:,.2f}'+('%' if series=='RECPROUSM156N' else ''),'end')
+        text(80,y(v)+4,f'{v:,.2f}'+('%' if series in PROBABILITY_SERIES else ''),'end')
         # Scale by a fraction first: multiplying a 60+ year Timedelta by 5 overflows nanoseconds.
         d=start+(end-start)*(i/5)
         text(x(d),335,f'{d:%b %Y}','middle',size=12)
     if series=='SAHMREALTIME':
         svg.append(f'<path d="M90 {y(.5):.2f} H980" stroke="#FB7185" stroke-dasharray="6 4"/>')
         text(975,y(.5)-7,'Sahm threshold: 0.50 pp','end','#FB7185')
+    if series=='JHGDPBRINDX':
+        for value,label,color in ((67,'Entry threshold: above 67%','#FB7185'),(33,'Exit threshold: below 33% after entry','#34D399')):
+            svg.append(f'<path d="M90 {y(value):.2f} H980" stroke="{color}" stroke-dasharray="6 4"/>')
+            text(975,y(value)-7,label,'end',color)
     segments=[]; segment=[]
     for row in frame.itertuples():
         if pd.isna(row.value) or not math.isfinite(float(row.value)):
@@ -61,5 +65,5 @@ def indicator_svg(series, records, years=10):
         else:
             path=' '.join(('M' if i==0 else 'L')+f'{px:.2f},{py:.2f}' for i,(px,py) in enumerate(segment))
             svg.append(f'<path d="{path}" fill="none" stroke="{spec["color"]}" stroke-width="2.5"/>')
-    text(535,367,'Observation month','middle')
+    text(535,367,'Observation quarter' if series=='JHGDPBRINDX' else 'Observation month','middle')
     return ''.join(svg)+'</svg>'

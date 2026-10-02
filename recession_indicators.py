@@ -1,4 +1,4 @@
-"""Native FRED charts; monthly observations, never third-party page embeds."""
+"""Native FRED charts; monthly and quarterly observations."""
 from concurrent.futures import ThreadPoolExecutor
 from io import StringIO
 import json
@@ -26,7 +26,15 @@ SERIES = {
         'adjustment':'Seasonally adjusted',
         'explanation':'This monthly indicator compares the three-month average unemployment rate with the lowest three-month average over the previous 12 months. A reading of 0.50 percentage points or more triggers the Sahm Rule recession signal. The dashed line marks that threshold. A reading below it means the rule is not triggered for that month; it does not rule out a recession. This is not a recession probability or an official recession declaration. “Real-time” refers to unemployment data available in each historical month, not a continuously updating feed.',
     },
+    'JHGDPBRINDX': {
+        'name':'GDP-Based Recession Indicator Index',
+        'units':'Recession probability (%)', 'source':'James Hamilton', 'color':'#34D399',
+        'frequency':'Quarterly', 'cadence':'QS', 'adjustment':'Not seasonally adjusted',
+        'explanation':'This quarterly GDP-based model estimates whether the U.S. economy was in recession during the indicated quarter. Higher values mean stronger recession evidence. A reading above 67% is the model’s recession-entry signal; after that signal, a reading below 33% indicates an end. The dashed lines mark these thresholds. Values between them require the preceding signal history for interpretation. The estimate covers the quarter before the latest available GDP quarter and uses information available one quarter after the observation quarter; published index values are not subsequently revised. It is a lagging assessment, not a forecast or an official NBER declaration. FRED labels the units percentage points; its series notes interpret the index as a probability measured in percent.',
+    },
 }
+
+PROBABILITY_SERIES={'RECPROUSM156N','JHGDPBRINDX'}
 
 
 def parse_fred(text, series):
@@ -37,7 +45,7 @@ def parse_fred(text, series):
     frame = pd.DataFrame({'date':pd.to_datetime(frame[date_col],errors='coerce'), 'value':pd.to_numeric(frame[series],errors='coerce')})
     frame = frame.dropna().drop_duplicates('date',keep='last').sort_values('date')
     frame = frame[frame.value.map(lambda x: float('-inf') < x < float('inf'))]
-    if series=='RECPROUSM156N' and not frame.value.between(0,100).all():
+    if series in PROBABILITY_SERIES and not frame.value.between(0,100).all():
         raise ValueError('Recession probability must be between 0 and 100 percent')
     if frame.empty:
         raise ValueError('FRED returned no valid observations')
@@ -81,20 +89,23 @@ def indicator_figure(series, records, years=10):
     frame['date']=pd.to_datetime(frame.date)
     if years:
         frame=frame[frame.date >= frame.date.max()-pd.DateOffset(years=years)]
-    frame=frame.set_index('date').asfreq('MS').reset_index()
     spec=SERIES[series]
+    frame=frame.set_index('date').asfreq(spec.get('cadence','MS')).reset_index()
     fig=go.Figure(go.Scatter(x=frame.date,y=frame.value,mode='lines',name=spec['name'],
         line={'color':spec['color'],'width':2.5},connectgaps=False,
-        hovertemplate='%{x|%b %Y}<br>%{y:.2f}'+('%' if series=='RECPROUSM156N' else ' pp' if series=='SAHMREALTIME' else '')+'<extra></extra>'))
+        hovertemplate='%{x|%b %Y}<br>%{y:.2f}'+('%' if series in PROBABILITY_SERIES else ' pp' if series=='SAHMREALTIME' else '')+'<extra></extra>'))
     shade_recessions(fig, frame.date.min(), frame.date.max())
     if series=='SAHMREALTIME':
         fig.add_hline(y=.5,line_color='#FB7185',line_dash='dash',annotation_text='Sahm threshold: 0.50 pp',annotation_font_color='#FB7185')
-    if series=='RECPROUSM156N':
+    if series=='JHGDPBRINDX':
+        for value,label,color in ((67,'Entry threshold: above 67%','#FB7185'),(33,'Exit threshold: below 33% after entry','#34D399')):
+            fig.add_hline(y=value,line_color=color,line_dash='dash',annotation_text=label,annotation_font_color=color)
+    if series in PROBABILITY_SERIES:
         fig.update_yaxes(range=[0,100],ticksuffix='%')
     fig.update_layout(template='plotly_dark',paper_bgcolor='#06101A',plot_bgcolor='#091825',
         font={'family':'Arial, sans-serif','color':'#E2E8F0'},height=380,
         margin={'l':15,'r':20,'t':35,'b':30},showlegend=False,hovermode='x unified',
-        xaxis={'title':'Observation month','gridcolor':'#20394A'},
+        xaxis={'title':'Observation quarter' if series=='JHGDPBRINDX' else 'Observation month','gridcolor':'#20394A'},
         yaxis={'title':spec['units'],'gridcolor':'#20394A','zerolinecolor':'#345168'})
     return fig
 
@@ -102,11 +113,11 @@ def indicator_figure(series, records, years=10):
 def render_recession_indicators():
     import streamlit as st
     st.subheader('Recession Indicators — United States')
-    st.caption('Monthly economic evidence from FRED. Charts are built from downloaded observations in MarketScope.')
+    st.caption('Monthly and quarterly economic evidence from FRED. Charts are built from downloaded observations in MarketScope.')
     st.markdown('🟥 **Historical recession periods** — '+RECESSION_NOTE)
     st.markdown(f'Recession dates: [FRED / NBER chronology]({RECESSION_SOURCE}).')
     refresh=st.button('Refresh recession data',key='refresh_recession_data')
-    window=st.selectbox('Chart history',['10 years','5 years','20 years','All history'],key='recession_history_window')
+    window=st.selectbox('Chart history',['10 years','5 years','20 years','All history'],index=3,key='recession_history_window')
     interactive=st.checkbox('Use interactive charts (requires browser chart scripts)',value=False,key='recession_interactive_charts')
     years={'10 years':10,'5 years':5,'20 years':20,'All history':None}[window]
     with st.spinner('Loading FRED observations…'):
@@ -122,9 +133,11 @@ def render_recession_indicators():
                 st.warning('The refresh failed. Showing the last valid downloaded observations; these may be outdated.')
             records=result['data'];last=records[-1];date=pd.Timestamp(last['date']).strftime('%b %Y')
             a,b,c=st.columns(3)
-            a.metric('Latest observation',f"{last['value']:.2f}"+('%' if series=='RECPROUSM156N' else ' pp' if series=='SAHMREALTIME' else ''))
-            b.metric('Observation month',date)
-            if series=='RECPROUSM156N':
+            a.metric('Latest observation',f"{last['value']:.2f}"+('%' if series in PROBABILITY_SERIES else ' pp' if series=='SAHMREALTIME' else ''))
+            b.metric('Observation quarter' if series=='JHGDPBRINDX' else 'Observation month',str(pd.Period(last['date'],freq='Q')) if series=='JHGDPBRINDX' else date)
+            if series=='JHGDPBRINDX':
+                c.metric('Estimate type','GDP-based probability')
+            elif series=='RECPROUSM156N':
                 c.metric('Estimate type', 'Smoothed probability')
             elif series=='SAHMREALTIME':
                 c.metric('Sahm threshold', 'Triggered' if last['value']>=.5 else 'Not triggered')
@@ -132,7 +145,7 @@ def render_recession_indicators():
                 lookup={row['date']:row['value'] for row in records}
                 prior=lookup.get((pd.Timestamp(last['date'])-pd.DateOffset(months=1)).strftime('%Y-%m-%d'))
                 c.metric('Monthly change',f"{(last['value']/prior-1)*100:+.2f}%" if prior else 'Unavailable')
-            st.caption(f"{result['status']} · Downloaded {result['retrieved_at']} · Monthly · {spec['adjustment']}")
+            st.caption(f"{result['status']} · Downloaded {result['retrieved_at']} · {spec.get('frequency','Monthly')} · {spec['adjustment']}")
             if interactive:
                 from recession_interactive import interactive_html
                 import streamlit.components.v1 as components

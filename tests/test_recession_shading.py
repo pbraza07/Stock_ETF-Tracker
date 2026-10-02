@@ -4,7 +4,7 @@ from recession_indicators import indicator_figure, SERIES
 
 @pytest.mark.parametrize('series', SERIES)
 def test_all_graphs_show_historical_recessions(series):
-    records=[{'date':str(d.date()),'value':1.0} for d in pd.date_range('1959-01-01','2026-08-01',freq='MS')]
+    records=[{'date':str(d.date()),'value':1.0} for d in pd.date_range('1959-01-01','2026-08-01',freq=SERIES[series].get('cadence','MS'))]
     fig=indicator_figure(series,records,None)
     bands=[s for s in fig.layout.shapes if s.type=='rect']
     assert len(bands)==9
