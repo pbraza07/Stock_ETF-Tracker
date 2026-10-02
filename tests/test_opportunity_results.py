@@ -13,7 +13,7 @@ def test_all_stocks_ranked_by_count_then_existing_order():
     assert out.Ticker.tolist()==['C','B','A','D']
     assert out['Criteria met'].iloc[:3].tolist()==[5,4,3]
     assert out.Rank.tolist()==[1,2,3,4]
-    assert pd.isna(out.iloc[-1]['Criteria met'])
+    assert out.iloc[-1]['Criteria met']==0
     assert 'Missing fundamentals' in out.to_csv(index=False)
     assert pd.isna(out.iloc[-1]['Target probability'])
 
@@ -24,7 +24,8 @@ def test_failure_notes_and_styles():
     assert '#54252d' in colors['Target probability']
     assert colors['Quality score']==''
     assert '#4ade80' in highlight(out.loc['C'],r['settings'])['Status']
-    assert '#253244' in highlight(out.loc['D'],r['settings'])['Status']
+    assert '#49351b' in highlight(out.loc['D'],r['settings'])['Status']
+    assert out.loc['D','Status']=='EVALUATED — LIMITED DATA'
 
 def test_boundaries_and_negative_tail_requirement():
     m,r=sample();r['table'].loc[0,'Worst-decile mean return']=-.6

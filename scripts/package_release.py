@@ -7,6 +7,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_FILES = {
+    "data/quality_fundamentals_cache.json",
     "data/market_news_archive.json",
     "data/market_snapshot.csv",
     "data/snapshot_metadata.json",

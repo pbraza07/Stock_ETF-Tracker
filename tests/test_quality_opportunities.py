@@ -32,11 +32,16 @@ def test_missing_fundamentals_never_rewarded_or_filled():
     assert q.loc['AAA','Quality score']==0
     r=screen(market,YEARS,monthly_fixture(24),context,permissive())
     assert 'AAA' in r['excluded'].Ticker.tolist()
+    row=r['table'].set_index('Ticker').loc['AAA']
+    assert row['Forecast available'] and row['Quality score']==0 and not row['Qualifies']
+    assert row['Data status']=='LIMITED'
 
 def test_weak_profitability_not_rescued_by_sector_percentiles():
     m,c=fixture();c['fundamentals']['AAA']['operating_margin']=-.02
     r=screen(m,YEARS,monthly_fixture(24),c,permissive())
-    assert 'AAA' in r['excluded'].Ticker.tolist()
+    row=r['table'].set_index('Ticker').loc['AAA']
+    assert row['Forecast available'] and not row['Qualifies']
+    assert 'Positive operating margin' in row['Failed constraints']
 
 def test_historical_winner_does_not_raise_forward_drift():
     m,c=fixture();a=screen(m,YEARS,monthly_fixture(24),c,permissive())

@@ -11,7 +11,7 @@ from planning_assumptions import settings, forward_cma, number
 from planning_paths import generate_paths, observed_blocks
 from future_projection import prepare_projection_model
 
-MODEL_VERSION='5.11.38-quality-1'
+MODEL_VERSION='5.11.54-quality-2'
 MODES=('Next 12 months','Annualized over horizon','At least target every year')
 DEFAULTS=dict(target=.25,mode=MODES[0],years=1,count=2000,seed=1234,
     min_quality=60.,min_probability=.60,max_loss_probability=.35,
@@ -41,14 +41,15 @@ def quality_table(market,context):
         cap=number(f.get('market_cap'),number(r.get('MarketCap')))
         fcf=number(f.get('free_cash_flow'))
         rows.append({'Ticker':s,'Company':str(r.get('Name') or s),'Sector':sector,
-            'Price':number(r.get('Price')),'ROIC / ROE proxy':number(f.get('return_on_invested_capital'),number(f.get('return_on_equity'))),
+            'Price':number(r.get('Price'),number(f.get('current_price'))),'ROIC / ROE proxy':number(f.get('return_on_invested_capital'),number(f.get('return_on_equity'))),
             'Operating margin':number(f.get('operating_margin')),
             'Cash-flow yield':fcf/cap if fcf is not None and cap and cap>0 and not financial else None,
             'Revenue growth':number(f.get('revenue_growth')),'Earnings growth':number(f.get('forward_eps_growth'),number(f.get('earnings_growth'))),
             'Debt / equity':number(f.get('debt_to_equity')) if not financial else None,
             'Forward P/E':number(f.get('forward_pe')),'Financial-sector treatment':financial,
             'Fundamentals retrieved':str(f.get('retrieved_at') or 'Unavailable'),
-            'Fundamentals source':str(f.get('source') or 'Unavailable')})
+            'Fundamentals source':str(f.get('source') or 'Unavailable'),
+            'Cached fundamental fields':f.get('cached_fields',{})})
     frame=pd.DataFrame(rows)
     if frame.empty:return frame
     fields=['ROIC / ROE proxy','Operating margin','Cash-flow yield','Revenue growth','Earnings growth','Debt / equity']
@@ -79,6 +80,7 @@ def quality_table(market,context):
         components.append(parts)
     frame['Quality score']=scores;frame['Evidence coverage']=coverage;frame['Quality basis']=bases
     frame['Quality component scores']=components
+    frame['Missing quality fields']=[', '.join(k for k,v in part.items() if v is None) for part in components]
     return frame
 
 def path_metrics(returns,assignment,cfg,weights=None,rebalanced=False):
@@ -128,21 +130,29 @@ def qualifies(row,cfg):
     return reasons
 
 def screen(market,year_columns,monthly,context,values=None,planning=None,progress=None):
-    cfg=controls(values);pcfg=settings(planning);cma=forward_cma(context,pcfg)
+    cfg=controls(values);pcfg=settings(planning)
+    try:cma=forward_cma(context,pcfg)
+    except ValueError as exc:cma={'unavailable_reason':str(exc)}
     quality=quality_table(market,context);rows=[];excluded=[];audit={}
     for i,r in quality.iterrows():
         symbol=r['Ticker']
         if progress:progress(i,len(quality),'Evaluating eligible stocks')
-        reason=None
-        if r.Sector.casefold() in ('','unknown','nan','none','n/a'):reason='Missing sector'
-        elif r['Evidence coverage']<.75:reason='Insufficient fundamental evidence (minimum 75%)'
-        elif number(r['Price']) is None or r['Price']<=0:reason='No valid current/snapshot price'
-        elif number(r['Forward P/E']) is None or r['Forward P/E']<=0:reason='No valid valuation evidence'
-        elif number(r['ROIC / ROE proxy']) is None or r['ROIC / ROE proxy']<=0:reason='Positive profitability evidence required'
-        elif number(r['Operating margin']) is None or r['Operating margin']<=0:reason='Positive operating margin required'
-        elif not r['Financial-sector treatment'] and number(r['Cash-flow yield']) is not None and r['Cash-flow yield']<=0:reason='Nonpositive free cash flow'
-        if reason:excluded.append({'Ticker':symbol,'Reason':reason});continue
+        row=r.to_dict();gaps=[];gates=[]
+        if r.Sector.casefold() in ('','unknown','nan','none','n/a'):gaps.append('Missing sector')
+        if r['Evidence coverage']<.75:gaps.append('Fundamental coverage below 75%; cannot qualify')
+        if r['Missing quality fields']:gaps.append('Missing quality fields: '+r['Missing quality fields'])
+        if number(r['Price']) is None or r['Price']<=0:gaps.append('No valid current/snapshot price')
+        if number(r['Forward P/E']) is None or r['Forward P/E']<=0:gaps.append('No valid forward valuation evidence')
+        if number(r['ROIC / ROE proxy']) is not None and r['ROIC / ROE proxy']<=0:gates.append('Positive profitability required')
+        if number(r['Operating margin']) is not None and r['Operating margin']<=0:gates.append('Positive operating margin required')
+        if not r['Financial-sector treatment'] and number(r['Cash-flow yield']) is not None and r['Cash-flow yield']<=0:gates.append('Positive free cash flow required')
+        if number(r['ROIC / ROE proxy']) is None:gaps.append('Profitability not verified')
+        if number(r['Operating margin']) is None:gaps.append('Operating margin not verified')
+        # Data/quality gates affect qualification, never whether the stock is evaluated.
+        row.update({'Evaluation notes':'; '.join(gaps+gates),'Qualifies':False,
+                    'Confidence':'LOW — strategy unvalidated','Forecast available':False})
         try:
+            if 'unavailable_reason' in cma:raise ValueError(cma['unavailable_reason'])
             model=prepare_projection_model(market,[symbol],year_columns,monthly_returns=monthly,use_monthly=True)
             if not model.credible:raise ValueError('Insufficient completed annual risk history')
             history,_=observed_blocks(model)
@@ -150,20 +160,31 @@ def screen(market,year_columns,monthly,context,values=None,planning=None,progres
             seed=cfg['seed']+int(hashlib.sha256(symbol.encode()).hexdigest()[:6],16)
             paths=generate_paths(model,context,cma,pcfg,cfg['years'],cfg['count'],seed)
             metrics=path_metrics(paths['returns'],paths['model_assignment'],cfg)
-            row=r.to_dict();row.update(metrics)
+            row.update(metrics)
             row['Expected Investment Return']=paths['decomposition'][0]['Expected geometric return']
             row['History months']=len(history)
             row['Confidence']='LOW — strategy unvalidated'
-            fails=qualifies(row,cfg);row['Qualifies']=not fails;row['Failed constraints']=', '.join(fails)
+            row['Forecast available']=True
+            fails=qualifies(row,cfg);row['Qualifies']=not(fails or gaps or gates);row['Failed constraints']='; '.join(fails+gaps+gates)
             row['Why selected']=f"Quality {row['Quality score']:.0f}/100; model target chance {metrics['Target probability']:.0%}; loss >20% chance {metrics['Loss >20% probability']:.0%}; {len(history)} observed months."
-            rows.append(row);audit[symbol]=paths['decomposition']
-        except (ValueError,KeyError,np.linalg.LinAlgError) as exc:excluded.append({'Ticker':symbol,'Reason':str(exc)})
+            audit[symbol]=paths['decomposition']
+        except (ValueError,KeyError,TypeError,np.linalg.LinAlgError) as exc:
+            gaps.append('Return/risk estimates unavailable: '+str(exc))
+            row['Evaluation notes']='; '.join(gaps+gates)
+            row['Failed constraints']='; '.join(gaps+gates)
+            row['Why selected']='Available quality evidence evaluated; missing return/risk estimates are not invented.'
+        row['Data status']='LIMITED' if gaps else 'COMPLETE'
+        if gaps:excluded.append({'Ticker':symbol,'Reason':'; '.join(gaps)})
+        rows.append(row)
     table=pd.DataFrame(rows)
     leaders=table
     if not table.empty:
+        for field in ('Target probability','Loss probability','Loss >20% probability','Worst-decile mean return'):
+            if field not in table:table[field]=np.nan
         table=table.sort_values(['Target probability','Quality score','Ticker'],ascending=[False,False,True]).reset_index(drop=True)
         leaders=table[table.Qualifies].groupby('Sector',sort=False).head(cfg['max_per_sector']).copy()
-    return {'table':table,'leaders':leaders,'excluded':pd.DataFrame(excluded),'decomposition':audit,'settings':cfg,'planning':pcfg,'cma':cma,
+    if progress:progress(len(quality),len(quality),'All stocks evaluated')
+    return {'table':table,'leaders':leaders,'excluded':pd.DataFrame(excluded,columns=['Ticker','Reason']),'decomposition':audit,'settings':cfg,'planning':pcfg,'cma':cma,
         'model_version':MODEL_VERSION,'generated_at':datetime.now(timezone.utc).isoformat(),
         'data_through':context.get('history_through') or context.get('snapshot_as_of') or 'Unavailable',
         'universe_count':len(quality),'context_failures':context.get('failures',[]),

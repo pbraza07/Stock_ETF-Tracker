@@ -43,9 +43,15 @@ def render(market,years,monthly_loader,live_loader):
         def task(progress):
             stocks=tuple(universe(market)['Symbol'])
             progress(0,3,'Loading existing fundamental and macro sources')
-            context=live_loader(stocks)
+            try:context=live_loader(stocks)
+            except Exception as exc:context={'fundamentals':{},'failures':['Live data unavailable: '+type(exc).__name__]}
+            context=dict(context,requested_symbols=list(stocks))
+            from opportunity_data import retain_observed_fundamentals
+            context=retain_observed_fundamentals(context)
             progress(1,3,'Loading actual monthly history')
-            monthly=monthly_loader(stocks,tuple(years))
+            try:monthly=monthly_loader(stocks,tuple(years))
+            except Exception as exc:
+                monthly={};context['failures']=[*context.get('failures',[]),'Monthly history unavailable: '+type(exc).__name__]
             result=screen(market,years,monthly,context,cfg,planning,progress)
             return dict(result=result,market=market.copy(),monthly=monthly,context=context,years=list(years))
         try:st.session_state.qo_job=submit(task);st.session_state.qo_job_kind='screen';st.rerun()
@@ -74,19 +80,23 @@ def render(market,years,monthly_loader,live_loader):
     if not bundle:
         st.info('Choose your constraints and evaluate the universe. No rankings are calculated automatically.');return
     r=bundle['result']
-    st.caption(f"Completed run: {r['generated_at']} • Data through: {r['data_through']} • Model {r['model_version']} • Stock universe: {r['universe_count']} • Scored: {len(r['table'])} • Not scored: {len(r['excluded'])}")
+    from quality_opportunities import MODEL_VERSION
+    if r.get('model_version')!=MODEL_VERSION:
+        st.info('This saved run used an earlier screening model. Available quality evidence is shown below; choose Evaluate current stock universe to calculate the updated return/risk results.')
+    st.caption(f"Completed run: {r['generated_at']} • Data through: {r['data_through']} • Model {r['model_version']} • Stock universe: {r['universe_count']} • Stocks with data limitations: {len(r['excluded'])}")
     st.caption('Results retain the last completed run settings. Submit again after changing inputs or refreshing data.')
     with st.expander('Completed run settings and data-source warnings'):
         st.json(r['settings']);st.write(r['context_failures'])
     from opportunity_results import result_table
-    all_results=result_table(r,bundle['market'])
+    all_results=result_table(r,bundle['market'],bundle['context'])
+    st.caption(f"Evaluated: {len(all_results)} stocks. A zero evidence-adjusted quality score with zero coverage means no usable fundamental evidence, not proven poor business quality.")
     st.subheader('All stock results — criteria highlighted')
-    st.caption('Every stock is shown, ordered by criteria met (out of five), highest first. Ties use target probability, then quality score. Unassessable stocks appear last. Red cells mark unmet numeric thresholds; amber notes explain failures and required values. Green means all screening criteria met. Gray NOT SCORED rows explain unavailable estimates. ETFs remain outside this stock screen.')
+    st.caption('Every stock is evaluated and ranked by criteria met (out of five), highest first. Ties use target probability, then quality score. Missing criteria never count as passing. Red cells mark unmet thresholds; amber notes identify missing data and failures. LIMITED DATA estimates use available fundamentals and explicit model assumptions; they cannot qualify for the shortlist. ETFs remain outside this stock screen.')
     if r['leaders'].empty:st.info('No stocks meet every configured criterion. All results remain visible below.')
     _table(all_results,r['settings'])
     with st.expander('Qualified sector shortlist — up to five per sector'):_table(r['leaders'])
     with st.expander('How these estimates were calculated'):
-        st.write('Quality uses sector-relative ranks when at least five observed peers exist per metric; otherwise explicit absolute heuristic scales. Missing fields score zero. Financials omit debt/equity and cash-flow yield; this is not a full bank capital model. Growth durability, competitive advantages, credit ratings and revision histories are not fully verified.')
+        st.write('Quality uses sector-relative ranks when at least five observed peers exist per metric; otherwise explicit absolute heuristic scales. Missing fields contribute zero to the evidence-adjusted score. Recent observed fundamentals can be recovered from a local cache for up to seven days, with original field dates in the audit. No cache is used in point-in-time backtests. Financials omit debt/equity and cash-flow yield; this is not a full bank capital model. Growth durability, competitive advantages, credit ratings and revision histories are not fully verified.')
         st.write('Risk uses actual monthly history. Forward returns reuse the governed Forward Planning CMA, fundamentals, signal-horizon weights, fat tails, regime correlations and impairment assumptions—not extrapolated stock CAGR. Probabilities are conditional on these assumptions. Expected Investment Return is the first-year geometric drift before modeled impairments, gap events and costs; Planning Return is the net-path P25 CAGR. Neither is a sustainable withdrawal rate.')
         st.write('MC sampling intervals measure finite-simulation noise only. They do not include model error. Model disagreement is the spread of component mean CAGRs; historical mean return is removed from bootstrap sequences.')
         st.json(r['cma']);st.json(r['decomposition'])
@@ -128,7 +138,7 @@ def render(market,years,monthly_loader,live_loader):
 
 def _table(df,cfg=None):
     if df.empty:st.write('No results.');return
-    columns=['Rank','Ticker','Criteria met','Criteria assessed','Company','Sector','Status','Notes','Price','Quality score','Evidence coverage','Expected Investment Return','Planning return (P25 CAGR)',
+    columns=['Rank','Ticker','Criteria met','Criteria assessed','Company','Sector','Status','Notes','Price','Quality score','Evidence coverage','Missing quality fields','Forecast available','Expected Investment Return','Planning return (P25 CAGR)',
         'Target probability','Loss probability','Loss >20% probability','Median return','P10 return','Worst-decile mean return',
         'Model disagreement (CAGR spread)','Fundamentals retrieved','Confidence','Qualifies','Failed constraints','Why selected']
     config={k:st.column_config.NumberColumn(k,format='percent') for k in columns if any(v in k for v in ['probability','return','Return','coverage','CAGR'])}
