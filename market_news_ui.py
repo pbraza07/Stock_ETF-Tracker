@@ -11,6 +11,7 @@ from market_news import SOURCES, SOURCE_BY_ID, collect, utcnow, official_release
 import news_archive
 from news_context import story_context, story_summary, impact_html
 from news_keywords import library_rows, VERSION as KEYWORD_VERSION
+from news_stock_index import stock_index
 from article_summary import configured as summaries_configured, summarize_article, SummaryUnavailable
 
 ET=ZoneInfo('America/New_York')
@@ -159,14 +160,32 @@ def render_market_news():
 
     if not payload['articles']:
         st.warning('No news has been collected yet. Review source status above. No sample or invented news is shown.');return
+    stocks=stock_index(payload)
+    stock_options=['']+sorted(stocks)
+    if st.session_state.get('news_stock','') not in stock_options:
+        st.session_state['news_stock']=''
+    selected_stock=st.selectbox('Stock referenced in saved news',stock_options,key='news_stock',
+        format_func=lambda symbol: 'All stocks / all news' if not symbol else f"{symbol} — {stocks[symbol]['company']} · {len(stocks[symbol]['article_ids'])} stories",
+        help='Search by ticker or company. Options include every identified stock in the full saved archive, including neutral and older stories. Selecting a stock resets the filters to show all its saved stories.')
+    publishers=sorted({r['publisher'] for r in payload['articles'].values()})
+    if selected_stock!=st.session_state.get('news_stock_previous',''):
+        st.session_state.update(news_period='All archived news',news_direction='All',
+                                news_publishers=publishers,news_query='',news_page=1,
+                                news_stock_previous=selected_stock)
+    if selected_stock:
+        entry=stocks[selected_stock]
+        st.caption(f"{selected_stock} · {entry['company']} · {entry['sector']} · {len(entry['article_ids']):,} saved stories. You can narrow these using the filters below.")
+    st.caption('Stock references are identified in saved headlines and publisher excerpts using the tracked stock universe. Unidentified companies and references found only in full articles may not appear.')
     options={'Last 24 hours':1,'Last 7 days':7,'Last 30 days':30,'All archived news':None}
     a,b=st.columns(2)
     with a:period=st.selectbox('News period',list(options),index=1,key='news_period')
     with b:direction=st.selectbox('Potential overall-market effect',['All','bullish','bearish','mixed','unclear'],key='news_direction')
-    publishers=sorted({r['publisher'] for r in payload['articles'].values()})
     chosen=st.multiselect('Sources',publishers,default=publishers,key='news_publishers')
     query=st.text_input('Search headlines and excerpts',key='news_query')
     rows=filtered(payload,options[period],chosen,direction,query)
+    if selected_stock:
+        matching_ids=stocks[selected_stock]['article_ids']
+        rows=[row for row in rows if row['id'] in matching_ids]
     recent=filtered(payload,7)
     counts,topics=overview(recent)
     st.markdown('**What is driving the discussion? · Last 7 days**')
