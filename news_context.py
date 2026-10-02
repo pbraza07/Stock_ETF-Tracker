@@ -8,7 +8,8 @@ from pathlib import Path
 import re
 from html import escape
 
-from market_news import classify, plain
+from market_news import plain
+from news_keywords import classify_clause, VERSION, GUARD
 
 SECTORS={
  'Technology':r'\b(?:technology (?:stocks|shares|sector)|tech (?:stocks|shares|sector)|chipmakers|semiconductor (?:stocks|sector))\b',
@@ -36,7 +37,9 @@ def _universe(path,mtime):
         name=re.split(r'\b(?:Inc\.?|Corporation|Corp\.?|PLC|plc|Ltd\.?|Limited|Class|Common|Ordinary|American Depositary)\b',name)[0].strip(' ,.-')
         if len(name)<4:continue
         if name=='Amazon.com':name='Amazon'
-        result.append((row.get('Symbol',''),name,row.get('Sector') or 'Sector unavailable'))
+        sector=row.get('Sector') or 'Sector unavailable'
+        sector={'Health Care':'Healthcare','Finance':'Financials','Basic Materials':'Materials','Consumer Cyclical':'Consumer Discretionary','Consumer Defensive':'Consumer Staples'}.get(sector,sector)
+        result.append((row.get('Symbol',''),name,sector))
     return result
 
 
@@ -55,9 +58,9 @@ def matches(text,symbol,name):
 
 
 def result(name,text,reason_if_unknown):
-    analysis=classify(text)
+    analysis=classify_clause(text,macro=not text.startswith('Stocks'))
     return dict(name=name,direction=analysis['direction'],reason=analysis['reason'] if analysis['direction']!='unclear' else reason_if_unknown,
-                evidence=text,confidence='LOW')
+                evidence=text,confidence='LOW',matches=analysis['matches'])
 
 
 def combine(name,parts,unknown):
@@ -65,23 +68,29 @@ def combine(name,parts,unknown):
     directions={x['direction'] for x in signals if x['direction']!='unclear'}
     direction=next(iter(directions)) if len(directions)==1 else 'mixed' if directions else 'unclear'
     return dict(name=name,direction=direction,reason=' '.join(dict.fromkeys(x['reason'] for x in signals if x['direction']!='unclear')) or unknown,
-                evidence='; '.join(parts),confidence='LOW')
+                evidence='; '.join(parts),confidence='LOW',matches=[h for x in signals for h in x['matches']])
 
 
 def story_context(row,universe=None):
     text=row['title']+'. '+row.get('excerpt','')
-    clauses=[s.strip() for s in re.split(r'[.!?;]|\b(?:but|while|whereas)\b',text) if s.strip()]
+    # Preserve question marks for the uncertainty guard and decimals/company dots.
+    clauses=[s.strip() for s in re.split(r'\.(?:\s+|$)|;|\b(?:but|while|whereas)\b',text) if s.strip()]
     holdings=[]
     for symbol,name,sector in (securities() if universe is None else universe):
         if not symbol or not matches(text,symbol,name):continue
         parts=[]
         for clause in clauses:
             if matches(clause,symbol,name):
-                # Only company-linked share movement or guidance is eligible.
                 normalized=re.sub(re.escape(name),symbol,clause,flags=re.I)
+                normalized=re.sub(r'(?:\$|\b(?:NASDAQ|NYSE):\s*)(?='+re.escape(symbol)+r'\b)','',normalized)
                 normalized=re.sub(r'(?<!\w)'+re.escape(symbol)+r'(?:\s+(?:stock|shares))?\b','Stocks',normalized)
-                if re.search(r'\bStocks\s+(?:rise|rises|rally|rallies|surge|surges|gain|gains|climb|climbs|fall|falls|drop|drops|plunge|plunges|slide|slides|tumble|tumbles|raises?|raised|lifts?|cuts?|lowers?|slashed)\b',normalized,re.I):
-                    parts.append(normalized)
+                # Direct subject only: "Apple supplier cuts" must not become Apple cuts.
+                # Coordinated predicates inherit the subject only without another company.
+                segments=[normalized] if GUARD.search(normalized) else re.split(r'\s+and\s+',normalized,flags=re.I)
+                parts.append(segments[0])
+                for segment in segments[1:]:
+                    if not any(matches(segment,s,n) for s,n,_ in (securities() if universe is None else universe) if s!=symbol):
+                        parts.append(segment if segment.startswith('Stocks') else 'Stocks '+segment)
         record=combine(symbol,parts,'Company mentioned; its directional effect is not established by this feed item.')
         record['reason']=record['reason'].replace('equity-market move','move in the named stock')
         record['evidence']='; '.join(c for c in clauses if matches(c,symbol,name))
@@ -98,9 +107,12 @@ def story_context(row,universe=None):
         broad=bool(re.search(r'\b(?:s&p(?: 500)?|nasdaq|dow|wall street|u\.s\. (?:stocks|equities)|stock market)\b',clause,re.I))
         unqualified=bool(re.match(r'\s*(?:u\.s\. )?(?:stocks|equities|stock futures)\b',clause,re.I))
         macro=bool(re.search(r'\binflation\b',clause,re.I))
-        if (broad and not re.search(r'\b(?:NASDAQ|NYSE):',clause)) or unqualified or macro:market_parts.append(clause)
+        if (broad and not re.search(r'\b(?:NASDAQ|NYSE):',clause)) or unqualified or macro:
+            normalized=re.sub(r'^(?:the )?(?:S&P(?: 500)?|Nasdaq|Dow(?: Jones)?|Wall Street|U\.S\. (?:stocks|equities)|stock market|stock futures|equities)\b','Stocks',clause,flags=re.I)
+            normalized=re.sub(r'^stocks\b','Stocks',normalized,flags=re.I)
+            market_parts.append(normalized)
     market=combine('Overall U.S. market',market_parts,'No clear broad-market direction can be established from this feed item.')
-    return dict(stocks=holdings,sectors=sectors,market=market,basis='Headline and short feed excerpt; scoped rules v2; LOW confidence')
+    return dict(stocks=holdings,sectors=sectors,market=market,basis='Headline and short feed excerpt; keyword library '+VERSION+'; LOW confidence')
 
 
 def story_summary(row):
@@ -114,7 +126,7 @@ def story_summary(row):
 
 def impact_html(context):
     styles={'bullish':('▲','Potentially bullish','#35ec87'),'bearish':('▼','Potentially bearish','#ff667b'),
-            'mixed':('↕','Mixed','#facc15'),'unclear':('↔','Neutral / unclear','#9daebe')}
+            'mixed':('↔','Neutral / conflicting evidence','#9daebe'),'unclear':('↔','Neutral / unclear','#9daebe')}
     sections=[]
     for label,rows in [('Stock',context['stocks']),('Sector',context['sectors']),('Market',[context['market']])]:
         if not rows:
@@ -122,6 +134,7 @@ def impact_html(context):
         badges=[]
         for row in rows:
             arrow,status,color=styles[row['direction']]
-            badges.append(f'<span title="{escape(row["reason"],quote=True)}" style="color:{color};display:inline-block;margin:3px 12px 3px 0">{arrow} {escape(row["name"])} · {status}</span>')
+            identity=(row.get('company','')+' ('+row['name']+') · '+row.get('sector','Sector unavailable')) if row.get('company') else row['name']
+            badges.append(f'<span title="{escape(row["reason"],quote=True)}" style="color:{color};display:inline-block;margin:3px 12px 3px 0">{arrow} {escape(identity)} · {status}</span>')
         sections.append('<div><b>'+label+':</b> '+' '.join(badges)+'</div>')
     return '<div style="font-size:13px;line-height:1.5;padding:8px 0">'+''.join(sections)+'<div style="color:#8ba5b6;font-size:11px">Potential impact · Low confidence · Neutral means unclear, not zero effect</div></div>'

@@ -10,12 +10,13 @@ import streamlit as st
 from market_news import SOURCES, SOURCE_BY_ID, collect, utcnow, official_release, canonical_url
 import news_archive
 from news_context import story_context, story_summary, impact_html
+from news_keywords import library_rows, VERSION as KEYWORD_VERSION
 from article_summary import configured as summaries_configured, summarize_article, SummaryUnavailable
 
 ET=ZoneInfo('America/New_York')
 _REFRESH_LOCK=threading.Lock()
 LABELS={'bullish':('▲','Potentially bullish','#35ec87'),'bearish':('▼','Potentially bearish','#ff667b'),
-        'mixed':('↕','Mixed evidence','#facc15'),'unclear':('↔','Direction unclear','#9daebe')}
+        'mixed':('↔','Neutral / conflicting evidence','#9daebe'),'unclear':('↔','Neutral / unclear','#9daebe')}
 
 
 def date_label(value):
@@ -64,6 +65,8 @@ def read_story(row):
     for group,items in [('Stock',context['stocks']),('Sector',context['sectors']),('Market',[context['market']])]:
         for impact in items:
             st.write(f"{group} — {impact['name']}: {impact['reason']}")
+            for match in impact.get('matches',[]):
+                st.caption('Matched wording: “'+match['phrase']+'” · '+match['category']+' · '+match['reason'])
     st.caption(context['basis'])
     st.caption('Low-confidence headline/excerpt rules, not full-article analysis. Reported price moves describe the past. A potential catalyst can be priced in, offset, or affect only one sector.')
     st.markdown('**What to watch next**')
@@ -110,6 +113,13 @@ def _refresh(progress):
 def render_market_news():
     st.subheader('Market News · Drivers & Outlook')
     st.caption('Dated reporting from financial publishers and economic agencies. Auto-checks every 15 minutes while this tab is open; all collected feed summaries are archived.')
+    with st.expander('News keyword library & indicator rules'):
+        st.caption('Library '+KEYWORD_VERSION+' · Expandable phrase families, not an exhaustive dictionary. Green/red show low-confidence potential impact; conflicting, conditional, negated or unsupported wording stays neutral. Company news is not automatically a sector or market signal. Full-article summaries do not change this headline/excerpt analysis.')
+        keyword_query=st.text_input('Search keyword library',key='news_keyword_query')
+        rules=library_rows()
+        visible=[r for r in rules if keyword_query.lower() in ' '.join(r.values()).lower()]
+        st.dataframe(visible,width='stretch',hide_index=True)
+        st.download_button('Download keyword library (JSON)',json.dumps(rules,indent=2),file_name='marketscope_news_keywords.json',mime='application/json',key='news_keywords_download')
     if not summaries_configured():
         st.info('Full-article summaries are not configured. Set OPENAI_API_KEY and MARKETSCOPE_NEWS_SUMMARY_MODEL on the server. Feed excerpts remain clearly labeled below.')
     st.markdown('<style>.news-meta{font-size:12px;color:#8ba5b6}[class*="st-key-news_summary_"] button p{display:-webkit-box;-webkit-line-clamp:unset;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;max-height:none;text-align:left}[class*="st-key-news_summary_"] button{justify-content:flex-start}.news-rule{height:1px;background:#203b4d;margin:18px 0}</style>',unsafe_allow_html=True)
