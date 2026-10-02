@@ -24845,7 +24845,22 @@
         },
         "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
       },
-      "story_summary": "The average price of a litre of diesel hit 193.3p this week, according to NI Consumer Council data."
+      "story_summary": "The average price of a litre of diesel hit 193.3p this week, according to NI Consumer Council data.",
+      "article_summary": {
+        "lines": [
+          "Diesel prices in Northern Ireland reach highest level since Iran conflict, averaging 193.3p per litre last week.",
+          "Prices rose from 132p before the US-Israeli Iran attack; some stations charge up to £2 per litre now.",
+          "NI drivers rely more on diesel than UK average; US export ban proposals may impact global diesel supply.",
+          "Middle East conflict disrupts oil supplies, causing surges; US may restrict exports, raising foreign prices.",
+          "Residents report increased costs and changing travel habits; uncertainty remains on future price shifts."
+        ],
+        "model": "gpt-4.1-mini",
+        "created_at": "2026-10-02T12:33:23.127563+00:00",
+        "body_sha256": "403090a826ab9e9316246adf4e3489a74ae847b8c9455b3dcdb53de15368aae5",
+        "word_count": 869,
+        "basis": "All extracted public article-body paragraphs; AI paraphrase, review against original",
+        "url": "https://www.bbc.co.uk/news/articles/c64g7gn4v99go?at_medium=RSS&at_campaign=rss"
+      }
     },
     "783626c851d0e8063a7d20aa": {
       "id": "783626c851d0e8063a7d20aa",
@@ -29500,5 +29515,5 @@
       "error": ""
     }
   },
-  "updated_at": "2026-10-02T12:32:41.464620+00:00"
+  "updated_at": "2026-10-02T12:33:23.128767+00:00"
 }
