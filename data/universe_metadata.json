@@ -1,15 +1,24 @@
 {
-  "refreshed_at_et": "2026-10-02T06:38:39.201391-04:00",
-  "refreshed_at_display_et": "Oct 02, 2026 06:38:39 AM EDT",
+  "refreshed_at_et": "2026-10-02T06:58:31.292958-04:00",
+  "refreshed_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 159,
+  "stock_count": 156,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 0,
-  "added_symbols": [],
-  "removed_symbols": [],
+  "added_count": 2,
+  "removed_count": 5,
+  "added_symbols": [
+    "MCK",
+    "TT"
+  ],
+  "removed_symbols": [
+    "CM",
+    "FCX",
+    "HOOD",
+    "ING",
+    "SNY"
+  ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
 }

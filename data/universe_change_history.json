@@ -5458,5 +5458,89 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "MCK",
+    "name": "McKesson Corporation Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "TT",
+    "name": "Trane Technologies plc",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "CM",
+    "name": "Canadian Imperial Bank of Commerce Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "FCX",
+    "name": "Freeport-McMoRan Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HOOD",
+    "name": "Robinhood Markets Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "ING",
+    "name": "ING Group N.V. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "occurred_at_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-02T06:58:31.292958-04:00",
+    "first_detected_display_et": "Oct 02, 2026 06:58:31 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "SNY",
+    "name": "Sanofi ADS",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
