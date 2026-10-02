@@ -26443,7 +26443,22 @@
         },
         "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
       },
-      "story_summary": "Nike's shares plummeted in premarket trading, continuing a second straight day of declines after it reported falling revenue and plans to lay off staff."
+      "story_summary": "Nike's shares plummeted in premarket trading, continuing a second straight day of declines after it reported falling revenue and plans to lay off staff.",
+      "article_summary": {
+        "lines": [
+          "Nike's shares dropped over 10% after reporting Q1 revenue down 4% to $11.2B and announcing layoffs.",
+          "Declines in Greater China impacted revenue; North America growth partly offset losses.",
+          "Company expects 2027 revenues to fall in high-single digits amid restructuring.",
+          "Nike plans $2.5B cost savings by 2031 through new 'Pace' model, layoffs from 2027.",
+          "Analysts remain neutral, noting cost cuts amid pressure but unclear impact until 2029."
+        ],
+        "model": "gpt-4.1-mini",
+        "created_at": "2026-10-02T10:37:54.749976+00:00",
+        "body_sha256": "a731954de963579969a2b53586f2b2b9ce49944ed53781a91100cce2301fd24b",
+        "word_count": 532,
+        "basis": "All extracted public article-body paragraphs; AI paraphrase, review against original",
+        "url": "https://www.cnbc.com/2026/10/02/nike-nke-stock-q1-earnings-layoffs.html"
+      }
     },
     "a6039a3709b03db3d8a30e28": {
       "id": "a6039a3709b03db3d8a30e28",
@@ -27186,5 +27201,5 @@
       "error": ""
     }
   },
-  "updated_at": "2026-10-02T10:23:03.199413+00:00"
+  "updated_at": "2026-10-02T10:37:54.751114+00:00"
 }
