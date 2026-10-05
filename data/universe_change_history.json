@@ -6586,5 +6586,101 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "ASX",
+    "name": "ASE Technology Holding Co. Ltd. American Depositary Shares (each representing Two Common Shares)",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CM",
+    "name": "Canadian Imperial Bank of Commerce Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CNQ",
+    "name": "Canadian Natural Resources Limited Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "EQIX",
+    "name": "Equinix Inc. Common Stock REIT",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "FCX",
+    "name": "Freeport-McMoRan Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "HOOD",
+    "name": "Robinhood Markets Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "ING",
+    "name": "ING Group N.V. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "occurred_at_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "first_detected_at_et": "2026-10-05T09:58:31.020455-04:00",
+    "first_detected_display_et": "Oct 05, 2026 09:58:31 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "SPOT",
+    "name": "Spotify Technology S.A. Ordinary Shares",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
