@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="utf-8"><script src="./plotly.min.js?v=5.11.56"></script><style>body{margin:0;background:#06101A;color:#E2E8F0;font:13px Arial}#fallback svg{width:100%;height:auto}#chart{height:400px}#status{padding:6px}</style></head><body><div id="fallback"></div><div id="chart"></div><div id="status"></div><script>
+const send=(type,data={})=>parent.postMessage({isStreamlitMessage:true,type,...data},'*');
+window.addEventListener('message',event=>{
+ if(event.source!==parent || event.data.type!=='streamlit:render')return;
+ const args=event.data.args,chart=document.getElementById('chart'),fallback=document.getElementById('fallback'),status=document.getElementById('status');
+ fallback.innerHTML=args.fallback;fallback.style.display='block';chart.style.display='none';
+ function failed(){status.textContent='Interactive chart unavailable; the static graph remains available.';chart.style.display='none';fallback.style.display='block';send('streamlit:setFrameHeight',{height:445});}
+ try {chart.style.display='block';const f=JSON.parse(args.figure);Plotly.react(chart,f.data,f.layout,{responsive:true,displaylogo:false,scrollZoom:true}).then(()=>{fallback.style.display='none';status.textContent='Hover for values · Drag to zoom · Double-click to reset';send('streamlit:setFrameHeight',{height:445});}).catch(failed);}catch(e){failed();}
+});send('streamlit:componentReady',{apiVersion:1});send('streamlit:setFrameHeight',{height:445});
+</script></body></html>

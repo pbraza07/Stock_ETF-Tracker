@@ -14,7 +14,7 @@ PDF = (ROOT / "portfolio_simulations.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5966():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.55"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.56"
     assert "v5.9.66" in APP
 
 
@@ -120,7 +120,7 @@ def test_snapshot_quality_prefers_target_populated_candidate_when_history_is_equ
     assert ns["_snapshot_quality_key"](targets) > ns["_snapshot_quality_key"](base)
 
 
-def test_hydrator_bypasses_cached_empty_result_with_direct_symbol_retry():
+def test_hydrator_does_not_block_on_pending_targets_and_uses_completed_refresh():
     nodes = _app_functions(
         "_valid_price_target", "_price_target_registry", "_remember_price_targets",
         "_apply_remembered_price_targets", "_hydrate_price_targets"
@@ -156,7 +156,11 @@ def test_hydrator_bypasses_cached_empty_result_with_direct_symbol_retry():
     }])
     out = ns["_hydrate_price_targets"](frame, ["TEST"])
     row = out.iloc[0]
-    assert calls == ["TEST"]
+    assert calls == []
+    assert pd.isna(row['Price Target Low'])
+    ns['cached_price_targets']=lambda symbols:{'TEST':FakeProvider().get_price_targets('TEST')}
+    row=ns['_hydrate_price_targets'](frame,['TEST']).iloc[0]
+    assert calls == ['TEST']
     assert row["Price Target Low"] == 90.0
     assert row["Price Target Average"] == 110.0
     assert row["Price Target High"] == 130.0

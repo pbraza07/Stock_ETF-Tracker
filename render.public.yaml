@@ -1,0 +1,64 @@
+# Opt-in public deployment. Provisioning these resources incurs hosting charges.
+services:
+  - type: web
+    name: marketscope-stock-etf-tracker
+    runtime: python
+    plan: 1c-2g
+    region: virginia
+    buildCommand: pip install -r requirements.txt
+    startCommand: python start_marketscope.py
+    healthCheckPath: /_stcore/health
+    envVars:
+      - fromGroup: marketscope-shared
+      - key: MARKETSCOPE_EXTERNAL_WORKER
+        value: '1'
+      - key: MARKETSCOPE_DATABASE_URL
+        fromDatabase:
+          name: marketscope-data
+          property: connectionString
+  - type: worker
+    name: marketscope-calculations
+    runtime: python
+    plan: 2c-4g
+    region: virginia
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m performance_worker
+    envVars:
+      - fromGroup: marketscope-shared
+      - key: MARKETSCOPE_DATABASE_URL
+        fromDatabase:
+          name: marketscope-data
+          property: connectionString
+  - type: cron
+    name: marketscope-data-collector
+    runtime: python
+    schedule: '*/15 * * * *'
+    buildCommand: pip install -r requirements.txt
+    startCommand: python collect_public_data.py
+    envVars:
+      - fromGroup: marketscope-shared
+      - key: MARKETSCOPE_DATABASE_URL
+        fromDatabase:
+          name: marketscope-data
+          property: connectionString
+
+databases:
+  - name: marketscope-data
+    region: virginia
+    plan: basic-256mb
+
+envVarGroups:
+  - name: marketscope-shared
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
+      - key: PYTHONUNBUFFERED
+        value: '1'
+      - key: FRED_API_KEY
+        sync: false
+      - key: MARKETSCOPE_GITHUB_TOKEN
+        sync: false
+      - key: MARKETSCOPE_GITHUB_REPO
+        value: pbraza07/Stock_ETF-Tracker
+      - key: MARKETSCOPE_GITHUB_BRANCH
+        value: main

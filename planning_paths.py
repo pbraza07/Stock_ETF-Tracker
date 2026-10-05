@@ -51,6 +51,13 @@ def generate_paths(model,context,cma,cfg,years,count,seed,progress=None,workdir=
     months=years*12;n=len(model.symbols)
     if months*count*n*4>300_000_000:
         raise ValueError('This planning run exceeds the memory budget. Reduce simulation quality or holdings; requested paths are never silently reduced.')
+    # Account for additional inflation/rate/cashflow arrays and scratch buffers.
+    # This is conservative admission control, not a measured exact peak-RSS prediction.
+    import os
+    estimated=months*count*(n*4+8+8*8)+count*n*8*20+128_000_000
+    budget=int(os.getenv('MARKETSCOPE_JOB_MEMORY_MB','2048'))*1_000_000
+    if estimated>budget:
+        raise ValueError(f'Estimated working memory {estimated/1e6:.0f} MB exceeds the configured {budget/1e6:.0f} MB worker budget. Increase worker capacity or explicitly choose a smaller run. Simulation count is never silently reduced.')
     # Per-path parameter uncertainty and period draws are horizon independent.
     rng=np.random.default_rng(seed)
     if workdir:

@@ -37,3 +37,12 @@ fallback.style.display='none';status.textContent='Hover for values · Drag to zo
 function failed(error){chart.style.display='none';fallback.style.display='block';status.textContent='Interactive chart could not load. The static graph remains available.';}
 })();
 </script></body></html>'''
+
+
+def render_interactive(series,records,years=None):
+    from pathlib import Path
+    import streamlit.components.v1 as components
+    from recession_indicators import indicator_figure
+    component=components.declare_component('marketscope_recession',path=str(Path(__file__).parent/'recession_component'))
+    fig=indicator_figure(series,records,years);fig.update_layout(height=400,dragmode='zoom')
+    component(figure=fig.to_json(),fallback=indicator_svg(series,records,years),key='recession_'+series,default=None)

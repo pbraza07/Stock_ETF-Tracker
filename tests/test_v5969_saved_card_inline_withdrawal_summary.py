@@ -29,8 +29,8 @@ def _namespace():
 
 
 def test_release_version_5969():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.55"
-    assert "v5.11.55" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.56"
+    assert "v5.11.56" in APP
 
 
 def test_saved_withdrawal_strip_is_inside_same_library_card():
@@ -47,7 +47,7 @@ def test_saved_withdrawal_strip_is_inside_same_library_card():
 
 
 def test_old_separate_saved_withdrawal_section_is_removed():
-    library = APP[APP.index("for rec in saved_simulations:"):APP.index("with market_tab:")]
+    library = APP[APP.index("for rec in saved_simulations[(saved_page-1)*10:saved_page*10]:"):APP.index("with market_tab:")]
     assert "_saved_withdrawal_title" not in library
     assert "saved-withdrawal-summary-title" not in library
     assert "saved-withdrawal-summary-title" not in CSS

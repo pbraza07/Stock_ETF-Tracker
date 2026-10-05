@@ -10,6 +10,7 @@ import pandas as pd
 import yfinance as yf
 
 from .base import MarketDataProvider
+from provider_cache import symbol_cache,histories_cache
 
 
 class YahooFinanceProvider(MarketDataProvider):
@@ -21,6 +22,7 @@ class YahooFinanceProvider(MarketDataProvider):
     def _clean_symbols(symbols: Iterable[str]) -> List[str]:
         return list(dict.fromkeys(str(s).strip().upper() for s in symbols if str(s).strip()))
 
+    @histories_cache
     def download_daily_history(self, symbols: Iterable[str], period: str = "max") -> Dict[str, pd.DataFrame]:
         symbols = self._clean_symbols(symbols)
         if not symbols:
@@ -71,6 +73,7 @@ class YahooFinanceProvider(MarketDataProvider):
                     continue
         return result
 
+    @histories_cache
     def download_daily_history_since(
         self,
         symbols: Iterable[str],
@@ -400,6 +403,7 @@ class YahooFinanceProvider(MarketDataProvider):
                 output[symbol] = url
         return output
 
+    @symbol_cache(1800)
     def get_price_targets(self, symbol: str) -> dict:
         """Return Yahoo analyst low/mean/high price targets for one stock.
 
@@ -549,6 +553,7 @@ class YahooFinanceProvider(MarketDataProvider):
         return output
 
 
+    @symbol_cache(21600)
     def get_income_metrics(self, symbol: str) -> dict:
         """Return a trailing/regular cash yield estimate for one stock or ETF.
 
@@ -762,6 +767,7 @@ class YahooFinanceProvider(MarketDataProvider):
                     output[symbol] = {"symbol": symbol, "name": symbol, "sector": "Unknown", "industry": "Unknown"}
         return output
 
+    @symbol_cache(1800)
     def get_projection_fundamentals(self, symbol: str) -> dict:
         """Return auditable, bounded inputs for Future Projection conditioning.
 

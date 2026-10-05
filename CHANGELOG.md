@@ -1,3 +1,14 @@
+## 5.11.56 — Performance and public deployment architecture
+
+- Isolated active workspaces and Portfolio subtabs; retained keyed input values and Build results.
+- Served saved source snapshots immediately, with background refresh and indexed news queries.
+- Moved projection inputs and calculations into durable, bounded worker jobs, with cancellation and recovery IDs.
+- Added PostgreSQL shared storage/connection pooling and a separate-worker Render Blueprint.
+- Reused security data across overlapping stock baskets, bounded caches, and provider request budgets.
+- Prepared reports by requested format, retained artifacts, and paginated saved portfolio cards.
+- Reused a versioned local Plotly component asset; retained static recession charts and all history.
+- Preserved financial model mathematics; added resource admission checks and regression coverage.
+
 # 5.11.12 - 2026-09-09
 
 - Removed the invalid `History Pending` fallback from cards, comparisons,

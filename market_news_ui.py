@@ -110,7 +110,7 @@ def _refresh(progress):
     return payload,message+' · '+sync_message
 
 
-@st.fragment(run_every='15m')
+@st.fragment(run_every='15s')
 def render_market_news():
     st.subheader('Market News · Drivers & Outlook')
     st.caption('Dated reporting from financial publishers and economic agencies. Auto-checks every 15 minutes while this tab is open; all collected feed summaries are archived.')
@@ -124,7 +124,15 @@ def render_market_news():
     if not summaries_configured():
         st.info('Full-article summaries are not configured. Set OPENAI_API_KEY and MARKETSCOPE_NEWS_SUMMARY_MODEL on the server. Feed excerpts remain clearly labeled below.')
     st.markdown('<style>.news-meta{font-size:12px;color:#8ba5b6}[class*="st-key-news_summary_"] button p{display:-webkit-box;-webkit-line-clamp:unset;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5;max-height:none;text-align:left}[class*="st-key-news_summary_"] button{justify-content:flex-start}.news-rule{height:1px;background:#203b4d;margin:18px 0}</style>',unsafe_allow_html=True)
-    try:payload=news_archive.load()
+    try:
+        from news_repository import catalog,query_rows,recent_overview
+        payload=catalog()
+        if payload is None:
+            # Import a pre-upgrade local archive once, then query only indexed pages.
+            legacy=news_archive.load()
+            from news_repository import save as save_index
+            save_index(legacy)
+            payload=catalog()
     except (ValueError,OSError) as exc:
         st.error('The news archive could not be read. Existing data has been left untouched. '+str(exc));return
     c1,c2=st.columns([1,2])
@@ -135,13 +143,9 @@ def render_market_news():
     # Explicit manual requests bypass the automatic freshness interval.
     # The refresh lock prevents simultaneous collectors within the app process.
     if manual or due:
-        progress=st.progress(0,text='Checking saved archive and news feeds…')
-        try:
-            payload,message=refresh(progress)
-            st.session_state['market_news_storage']=message
-        except Exception as exc:
-            st.warning('Refresh did not finish ('+type(exc).__name__+'). Previously saved news remains available.')
-        finally:progress.empty()
+        from news_background import request
+        st.session_state['market_news_storage']=request()
+        st.caption(st.session_state['market_news_storage'])
     with c2:st.caption('Last collection attempt: '+(date_label(payload.get('updated_at')) if payload.get('updated_at') else 'Not yet collected'))
     st.caption(st.session_state.get('market_news_storage','Archive: '+str(news_archive.archive_path())+'. Use a persistent disk or GitHub mirroring to retain manual collections across redeploys.'))
 
@@ -155,26 +159,27 @@ def render_market_news():
                 'Items in latest feed':status.get('count',0),'Error':status.get('error',''),'Feed':source['url']})
         st.dataframe(health,hide_index=True,width='stretch')
         st.caption('A successful fetch does not mean the publisher has released new news. Unavailable sources do not erase archived articles. Scheduled collection is provided by the included GitHub workflow; it is not running until deployed.')
-        st.download_button('Download complete saved news archive',json.dumps(payload,ensure_ascii=False,indent=2),
-            file_name='MarketScope_Market_News_Archive.json',mime='application/json',width='stretch')
+        if st.button('Prepare complete archive download',key='prepare_news_archive'):
+            st.download_button('Download complete saved news archive',json.dumps(news_archive.load(),ensure_ascii=False,indent=2),
+                file_name='MarketScope_Market_News_Archive.json',mime='application/json',width='stretch')
 
-    if not payload['articles']:
+    if not payload['count']:
         st.warning('No news has been collected yet. Review source status above. No sample or invented news is shown.');return
-    stocks=stock_index(payload)
+    stocks=payload['stocks']
     stock_options=['']+sorted(stocks)
     if st.session_state.get('news_stock','') not in stock_options:
         st.session_state['news_stock']=''
     selected_stock=st.selectbox('Stock referenced in saved news',stock_options,key='news_stock',
-        format_func=lambda symbol: 'All stocks / all news' if not symbol else f"{symbol} — {stocks[symbol]['company']} · {len(stocks[symbol]['article_ids'])} stories",
+        format_func=lambda symbol: 'All stocks / all news' if not symbol else f"{symbol} — {stocks[symbol]['company']} · {stocks[symbol]['article_count']} stories",
         help='Search by ticker or company. Options include every identified stock in the full saved archive, including neutral and older stories. Selecting a stock resets the filters to show all its saved stories.')
-    publishers=sorted({r['publisher'] for r in payload['articles'].values()})
+    publishers=payload['publishers']
     if selected_stock!=st.session_state.get('news_stock_previous',''):
         st.session_state.update(news_period='All archived news',news_direction='All',
                                 news_publishers=publishers,news_query='',news_page=1,
                                 news_stock_previous=selected_stock)
     if selected_stock:
         entry=stocks[selected_stock]
-        st.caption(f"{selected_stock} · {entry['company']} · {entry['sector']} · {len(entry['article_ids']):,} saved stories. You can narrow these using the filters below.")
+        st.caption(f"{selected_stock} · {entry['company']} · {entry['sector']} · {entry['article_count']:,} saved stories. You can narrow these using the filters below.")
     st.caption('Stock references are identified in saved headlines and publisher excerpts using the tracked stock universe. Unidentified companies and references found only in full articles may not appear.')
     options={'Last 24 hours':1,'Last 7 days':7,'Last 30 days':30,'All archived news':None}
     a,b=st.columns(2)
@@ -182,12 +187,8 @@ def render_market_news():
     with b:direction=st.selectbox('Potential overall-market effect',['All','bullish','bearish','mixed','unclear'],key='news_direction')
     chosen=st.multiselect('Sources',publishers,default=publishers,key='news_publishers')
     query=st.text_input('Search headlines and excerpts',key='news_query')
-    rows=filtered(payload,options[period],chosen,direction,query)
-    if selected_stock:
-        matching_ids=stocks[selected_stock]['article_ids']
-        rows=[row for row in rows if row['id'] in matching_ids]
-    recent=filtered(payload,7)
-    counts,topics=overview(recent)
+    matching_count,_=query_rows(options[period],chosen,direction,query,selected_stock,limit=0)
+    counts,topics=recent_overview()
     st.markdown('**What is driving the discussion? · Last 7 days**')
     st.write(' · '.join(f'{topic}: {n} stories' for topic,n in topics.most_common(5)) or 'Insufficient dated reporting.')
     st.caption(f"Distinct headlines: ▲ {counts['bullish']} potentially bullish · ▼ {counts['bearish']} potentially bearish · ↕ {counts['mixed']} mixed · ↔ {counts['unclear']} unclear. These counts are not probabilities or a market forecast; coverage and syndicated stories can skew them.")
@@ -196,12 +197,13 @@ def render_market_news():
         st.write('Downside case: weaker earnings, tighter financial conditions or escalating shocks could pressure equities.')
         st.write('Mixed case: offsetting growth, inflation and valuation signals can produce volatile or range-bound markets. News alone cannot establish the next market move.')
         st.caption('These are standing scenarios, not forecasts inferred from today’s headlines. Labels use transparent headline rules with LOW confidence, not an investment recommendation.')
-    st.caption(f'{len(rows):,} matching stories · {len(payload["articles"]):,} archived. Click a story summary to open its reader. Full-article summaries contain five concise sentences, one per line; lines may wrap on phones. Stories without a completed summary are marked as feed excerpts.')
-    if not rows:st.info('No stories match these filters. Undated stories can be found under All archived news.');return
-    pages=max(1,(len(rows)+19)//20)
+    st.caption(f'{matching_count:,} matching stories · {payload['count']:,} archived. Click a story summary to open its reader. Full-article summaries contain five concise sentences, one per line; lines may wrap on phones. Stories without a completed summary are marked as feed excerpts.')
+    if not matching_count:st.info('No stories match these filters. Undated stories can be found under All archived news.');return
+    pages=max(1,(matching_count+19)//20)
     if st.session_state.get('news_page',1)>pages:st.session_state['news_page']=1
     page=st.number_input('Page',min_value=1,max_value=pages,value=1,step=1,key='news_page')
-    for row in rows[(page-1)*20:page*20]:
+    _,visible_rows=query_rows(options[period],chosen,direction,query,selected_stock,limit=20,offset=(page-1)*20)
+    for row in visible_rows:
         context=story_context(row)
         st.markdown(f'<div class="news-meta">{escape(row["publisher"])} · {escape(date_label(row.get("published_at")))}</div>'+impact_html(context),unsafe_allow_html=True)
         st.markdown('**'+escape(row['title']).replace('$',r'\$')+'**')

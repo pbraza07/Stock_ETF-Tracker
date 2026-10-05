@@ -19,3 +19,10 @@ except ModuleNotFoundError:
     yf_stub.Ticker = _unavailable
     yf_stub.Search = _unavailable
     sys.modules["yfinance"] = yf_stub
+
+import pytest
+@pytest.fixture(autouse=True)
+def isolated_performance_store(tmp_path,monkeypatch):
+    monkeypatch.setenv('MARKETSCOPE_STATE_DIR',str(tmp_path/'runtime'))
+    monkeypatch.setenv('MARKETSCOPE_EXTERNAL_WORKER','1')
+    monkeypatch.delenv('MARKETSCOPE_DATABASE_URL',raising=False)

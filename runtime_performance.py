@@ -22,6 +22,16 @@ def ranking_exports(kind, table, result, portfolio, history, backtest):
 
 
 def preserve_navigation_state():
+    """Keep keyed input widgets across lazy pages, never write button triggers.
+
+    Metadata access is covered by navigation tests and the pinned Streamlit version.
+    Non-widget session values already persist without reassignment.
+    """
+    from streamlit.runtime.state import get_session_state
+    state=get_session_state()._state
+    forbidden={'trigger_value','string_trigger_value','chat_input_value','json_trigger_value','file_uploader_state_value'}
     for key in list(st.session_state):
-        if str(key).startswith(("fp_", "t12_input_")):
-            st.session_state[key] = st.session_state[key]
+        widget_id=state._key_id_mapper.get_id_from_key(key,None)
+        metadata=state._get_widget_metadata(widget_id) if widget_id else None
+        if metadata is not None and metadata.value_type not in forbidden:
+            st.session_state[key]=st.session_state[key]

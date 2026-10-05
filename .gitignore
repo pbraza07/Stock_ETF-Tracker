@@ -26,3 +26,10 @@ Thumbs.db
 .env
 .env.*
 .streamlit/secrets.toml
+
+# Performance engine: private persisted jobs, report bytes and runtime caches
+.runtime/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+data/quality_fundamentals_cache.json

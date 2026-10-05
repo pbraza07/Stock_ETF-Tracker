@@ -17,44 +17,32 @@ def render(market,years,monthly_loader,live_loader):
     st.caption('Every eligible stock in the current MarketScope universe is considered; ETFs are excluded. Quality and valuation are separate. No candidates are forced into the results.')
     with st.form('quality_opportunity_inputs'):
         c=st.columns(3)
-        target=c[0].number_input('Target return (%)',1.,200.,25.)/100
-        mode=c[1].selectbox('Return target definition',MODES)
-        horizon=c[2].selectbox('Horizon (years; 12-month mode always uses 1)',[1,3,5,10])
+        target=c[0].number_input('Target return (%)',1.,200.,25.,key="qo_input_20")/100
+        mode=c[1].selectbox('Return target definition',MODES,key="qo_input_21")
+        horizon=c[2].selectbox('Horizon (years; 12-month mode always uses 1)',[1,3,5,10],key="qo_input_22")
         c=st.columns(3)
-        minquality=c[0].slider('Minimum quality score',0,100,60)
-        minp=c[1].slider('Minimum model target probability (%)',0,99,60)/100
-        maxloss=c[2].slider('Maximum probability of any loss (%)',0,99,35)/100
+        minquality=c[0].slider('Minimum quality score',0,100,60,key="qo_input_24")
+        minp=c[1].slider('Minimum model target probability (%)',0,99,60,key="qo_input_25")/100
+        maxloss=c[2].slider('Maximum probability of any loss (%)',0,99,35,key="qo_input_26")/100
         c=st.columns(3)
-        severe=c[0].slider('Maximum probability of losing >20% (%)',0,99,15)/100
-        tail=c[1].slider('Maximum worst-decile mean loss (%)',0,99,45)/100
-        count=c[2].selectbox('Paths per stock / portfolio',[1000,2000,5000],index=1)
+        severe=c[0].slider('Maximum probability of losing >20% (%)',0,99,15,key="qo_input_28")/100
+        tail=c[1].slider('Maximum worst-decile mean loss (%)',0,99,45,key="qo_input_29")/100
+        count=c[2].selectbox('Paths per stock / portfolio',[1000,2000,5000],index=1,key="qo_input_30")
         c=st.columns(3)
-        fee=c[0].number_input('Annual investment costs (%)',0.,10.,.1)/100
-        trade=c[1].number_input('One-way trading cost (%)',0.,5.,.1)/100
-        use_rate=c[2].checkbox('Use explicit Treasury assumption if desired',False)
-        rate=st.number_input('Explicit Treasury yield (%) — ignored unless checked',0.,20.,4.)/100
-        assumption_date=st.date_input('Explicit assumption date')
+        fee=c[0].number_input('Annual investment costs (%)',0.,10.,.1,key="qo_input_32")/100
+        trade=c[1].number_input('One-way trading cost (%)',0.,5.,.1,key="qo_input_33")/100
+        use_rate=c[2].checkbox('Use explicit Treasury assumption if desired',False,key="qo_input_34")
+        rate=st.number_input('Explicit Treasury yield (%) — ignored unless checked',0.,20.,4.,key="qo_input_35")/100
+        assumption_date=st.date_input('Explicit assumption date',key="qo_input_36")
         st.caption('Costs apply to entry, final sale and RB trades. Taxes are excluded. Loss probabilities describe terminal capital losses, not interim drawdowns. Worst-decile return uses the selected total/annualized return basis. Every-year mode uses each anniversary year, not calendar years.')
         run=st.form_submit_button('Evaluate current stock universe',disabled=bool(st.session_state.get('qo_job')))
     if run:
         cfg=dict(target=target,mode=mode,years=horizon,count=count,min_quality=minquality,min_probability=minp,
             max_loss_probability=maxloss,max_severe_probability=severe,max_tail_loss=tail,annual_fee=fee,trade_cost=trade)
         planning={'cma_inputs':{'treasury_yield':rate,'as_of':assumption_date.isoformat()}} if use_rate else {}
-        def task(progress):
-            stocks=tuple(universe(market)['Symbol'])
-            progress(0,3,'Loading existing fundamental and macro sources')
-            try:context=live_loader(stocks)
-            except Exception as exc:context={'fundamentals':{},'failures':['Live data unavailable: '+type(exc).__name__]}
-            context=dict(context,requested_symbols=list(stocks))
-            from opportunity_data import retain_observed_fundamentals
-            context=retain_observed_fundamentals(context)
-            progress(1,3,'Loading actual monthly history')
-            try:monthly=monthly_loader(stocks,tuple(years))
-            except Exception as exc:
-                monthly={};context['failures']=[*context.get('failures',[]),'Monthly history unavailable: '+type(exc).__name__]
-            result=screen(market,years,monthly,context,cfg,planning,progress)
-            return dict(result=result,market=market.copy(),monthly=monthly,context=context,years=list(years))
-        try:st.session_state.qo_job=submit(task);st.session_state.qo_job_kind='screen';st.rerun()
+        from functools import partial
+        from projection_tasks import quality
+        try:st.session_state.qo_job=submit(partial(quality,market,list(years),cfg,planning),priority=20);st.session_state.qo_job_kind='screen';st.rerun()
         except Exception as exc:st.error(str(exc))
     if st.session_state.get('qo_job'):
         @st.fragment(run_every=3)
@@ -73,7 +61,7 @@ def render(market,years,monthly_loader,live_loader):
                 finally:release(token);st.session_state.pop('qo_job',None)
                 st.rerun()
             done,total,label=job['progress'];st.progress(min(.99,done/max(1,total)),text=f'{label}: {done}/{total}')
-            st.caption('One background computation at a time on this server. Changing the form does not alter a running screen.')
+            st.caption('Calculations are queued and run outside the web interface. Changing the form does not alter a submitted screen.')
         status();return
     if st.session_state.get('qo_error'):st.error(st.session_state.pop('qo_error'))
     bundle=st.session_state.get('qo_bundle')
@@ -104,15 +92,14 @@ def render(market,years,monthly_loader,live_loader):
     qualified=[] if r['table'].empty else r['table'].loc[r['table'].Qualifies,'Ticker'].tolist()
     selected=st.multiselect('Qualified portfolio holdings',qualified,key='qo_holdings')
     c=st.columns(2)
-    maxweight=c[0].slider('Maximum position weight (%)',5,100,25)/100
-    maxsector=c[1].slider('Maximum sector weight (%)',10,100,35)/100
+    maxweight=c[0].slider('Maximum position weight (%)',5,100,25,key="qo_input_95")/100
+    maxsector=c[1].slider('Maximum sector weight (%)',10,100,35,key="qo_input_96")/100
     st.caption('Equal weight. Correlations are estimated jointly with stress-regime adjustments. Four stocks in different sectors can still share significant risks.')
     if st.button('Evaluate selected portfolio',disabled=not selected):
         try:
-            def task(progress):
-                progress(0,1,'Evaluating joint portfolio paths and correlations')
-                return portfolio(bundle['market'],bundle['years'],bundle['monthly'],bundle['context'],selected,r,maxweight,maxsector)
-            st.session_state.qo_job=submit(task);st.session_state.qo_job_kind='portfolio';st.rerun()
+            from functools import partial
+            from projection_tasks import quality_portfolio
+            st.session_state.qo_job=submit(partial(quality_portfolio,bundle,selected,maxweight,maxsector));st.session_state.qo_job_kind='portfolio';st.rerun()
         except Exception as exc:st.session_state.pop('qo_portfolio',None);st.error(str(exc))
     p=st.session_state.get('qo_portfolio')
     if p:

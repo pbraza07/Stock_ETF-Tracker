@@ -134,7 +134,11 @@ def test_walk_forward_executes_same_screen_and_keeps_future_outcomes_separate():
     assert all(x['target_hit'] for x in report['records'])
     assert report['confidence'].startswith('UNVALIDATED')
 
-def test_background_screen_completes_and_hands_off_to_ui():
+def test_background_screen_completes_and_hands_off_to_ui(monkeypatch):
+    import projection_tasks
+    m,c=fixture()
+    monkeypatch.setattr(projection_tasks,'live_context',lambda *a:c)
+    monkeypatch.setattr(projection_tasks,'monthly_history',lambda *a:monthly_fixture(24))
     from streamlit.testing.v1 import AppTest
     from projection_jobs import poll
     app=AppTest.from_string('''
@@ -146,8 +150,10 @@ render(m,YEARS,lambda *a:monthly_fixture(24),lambda *a:c)
     button=next(x for x in app.button if x.label=='Evaluate current stock universe')
     button.click().run(timeout=15)
     token=app.session_state.qo_job
+    from durable_jobs import run_one
+    assert run_one()
     poll(token)['future'].result(timeout=20)
     app.run(timeout=15)
     assert not app.exception
     assert app.session_state.qo_bundle['result']['universe_count']==4
-    assert poll(token) is None
+    assert poll(token)['state']=='done'  # retained for private recovery

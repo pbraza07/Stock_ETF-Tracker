@@ -72,7 +72,7 @@ def test_recession_tab_renders_both_native_charts(monkeypatch):
     app.selectbox[0].select('All history').run()
     assert not app.exception and len(app.get('image'))==4
     app.checkbox[0].check().run()
-    assert not app.exception and len(app.get('iframe'))==4
+    assert not app.exception and len(app.get('component_instance'))==4
     assert not app.get('plotly_chart')
 
 

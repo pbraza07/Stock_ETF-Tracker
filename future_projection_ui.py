@@ -510,19 +510,10 @@ def _render_results_tables(result: dict) -> None:
 
 
 def _render_exports(result: dict) -> None:
-    from runtime_performance import projection_exports
-    seed = int((result.get("metadata") or {}).get("random_seed") or 0)
-    columns = st.columns(3)
-    try:
-        export_result = dict(result)
-        export_result["export_chart"] = st.session_state.get("fp_export_chart")
-        excel_bytes, csv_bytes, pdf_bytes = projection_exports(export_result)
-    except Exception:
-        st.error("One or more exports could not be generated. Re-run the projection or verify export dependencies.")
-        return
-    columns[0].download_button("Download Excel", data=excel_bytes, file_name=f"MarketScope_Future_Projection_seed_{seed}.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch")
-    columns[1].download_button("Download CSV", data=csv_bytes, file_name=f"MarketScope_Future_Projection_seed_{seed}.csv", mime="text/csv", width="stretch")
-    columns[2].download_button("Download PDF", data=pdf_bytes, file_name=f"MarketScope_Future_Projection_seed_{seed}.pdf", mime="application/pdf", width="stretch")
+    from report_service import render_projection_downloads
+    export_result=dict(result)
+    export_result['export_chart']=st.session_state.get('fp_export_chart')
+    render_projection_downloads(export_result)
 
 
 def render_future_projection(
@@ -692,49 +683,28 @@ def render_future_projection(
         st.session_state.fp_running = False
     if st.session_state.get('fp_job_error'):
         st.error('Projection could not finish: ' + st.session_state.pop('fp_job_error'))
+    with st.expander("Recover a calculation after reconnecting"):
+        recovery=st.text_input("Private recovery ID",key="fp_recovery_token",type="password")
+        if st.button("Recover calculation",key="fp_recover"):
+            from projection_jobs import poll
+            if poll(recovery):
+                st.session_state.fp_job_id=recovery;st.session_state.fp_running=True;st.rerun()
+            else:st.warning("No retained calculation matches that ID.")
     run_columns = st.columns([1.5, 1, 4])
     run_clicked = run_columns[0].button("Run Projection", type="primary", disabled=bool(all_errors) or bool(st.session_state.fp_running), width="stretch")
     run_columns[1].button("Reset", disabled=bool(st.session_state.fp_running), width="stretch", on_click=_reset_projection)
     if run_clicked:
         st.session_state.fp_running = True
-        monthly_payload = {}
-        live_context = {}
-        needs_monthly = projection_inputs.get('planning_engine') or projection_inputs["withdrawal_frequency"] == "Monthly" or (projection_inputs["strategy"] in {"Rebalanced", "Both"} and projection_inputs["rebalancing_frequency"] in {"Quarterly", "Monthly"})
-        if needs_monthly and monthly_loader is not None:
-            with st.spinner("Loading actual monthly return history and identifying explicit fallback periods..."):
-                try:
-                    monthly_payload = monthly_loader(tuple(projection_inputs["holdings"]), tuple(annual_year_columns)) or {}
-                except Exception:
-                    monthly_payload = {"unavailable": True, "returns": {}, "reason": "Actual monthly history loader did not complete."}
-        if live_loader is not None:
-            with st.spinner("Building the current market state from recent market, fundamental, volatility, and official macro data..."):
-                try:
-                    live_context = live_loader(tuple(projection_inputs["holdings"])) or {}
-                    if projection_inputs.get('planning_engine'):
-                        from projection_macro import fetch_one
-                        try:
-                            _, inflation_series = fetch_one('inflation_expectation','T10YIE')
-                            live_context.setdefault('macro',{})['inflation_expectation'] = inflation_series
-                        except Exception:
-                            live_context.setdefault('failures',[]).append('Breakeven inflation unavailable; explicit planning inflation assumption used.')
-                except Exception as exc:
-                    live_context = {"failures": [f"Live adaptive loader did not complete ({type(exc).__name__})."]}
-        key = projection_cache_key(projection_inputs, market, annual_year_columns, monthly_payload, data_as_of, live_context)
-        cache = dict(st.session_state.fp_result_cache or {})
-        if key in cache:
-            st.session_state.fp_result = cache[key]
+        from functools import partial
+        from projection_tasks import projection
+        try:
+            st.session_state.fp_job_id = submit_projection(partial(projection,market,projection_inputs,
+                list(annual_year_columns),data_as_of,model_as_of))
+            st.session_state.fp_running = True
+            st.rerun()
+        except Exception as exc:
             st.session_state.fp_running = False
-            st.success("Loaded an identical projection from the in-session result cache.")
-        else:
-            try:
-                st.session_state.fp_job_id = submit_projection(lambda callback: run_future_projection(
-                    market, projection_inputs, annual_year_columns, monthly_payload, data_as_of, model_as_of, callback, live_context))
-                st.session_state.fp_job_cache_key = key
-                st.session_state.fp_running = True
-                st.rerun()
-            except Exception as exc:
-                st.session_state.fp_running = False
-                st.error(str(exc))
+            st.error(str(exc))
 
     if st.session_state.get('fp_job_id'):
         render_status()

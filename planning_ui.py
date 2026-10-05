@@ -112,11 +112,6 @@ def render(result):
         st.dataframe(result['decomposition'],width='stretch',hide_index=True)
         st.json(result['concentration']);st.json(result['audit'])
         for warning in result['warnings']:st.caption(warning)
-    from planning_exports import excel_export,pdf_export
     with st.expander('Export planning report'):
-        if st.button('Prepare planning PDF and Excel'):
-            st.session_state['planning_export_bytes']=(id(result),pdf_export(result),excel_export(result))
-        cached=st.session_state.get('planning_export_bytes')
-        if cached and cached[0]==id(result):
-            st.download_button('Download planning PDF',cached[1],'MarketScope_Forward_Planning.pdf','application/pdf')
-            st.download_button('Download planning Excel',cached[2],'MarketScope_Forward_Planning.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        from report_service import render_projection_downloads
+        render_projection_downloads(result)

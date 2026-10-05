@@ -11,7 +11,7 @@ YAHOO = (ROOT / "providers" / "yahoo.py").read_text(encoding="utf-8")
 
 
 def test_release_version_5960():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.55"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.56"
     assert "v5.9.66" in APP
 
 
@@ -63,7 +63,7 @@ def test_positive_months_renderer_preserves_both_full_counts():
 
 
 def test_logo_cache_recovers_quickly_from_transient_failure():
-    assert "@st.cache_data(ttl=30 * 60, show_spinner=False)" in APP
+    assert "ttl=1800,default={},background=True" in APP
     assert "provider.get_logo_urls_many(clean, max_workers=3)" in APP
 
 

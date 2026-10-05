@@ -8,3 +8,7 @@ reportlab>=4.2,<5.0
 openpyxl>=3.1,<4.0
 plotly>=5.24,<7.0
 beautifulsoup4>=4.12,<5
+
+cloudpickle>=3.1,<4
+psycopg[binary]>=3.2,<4
+psycopg_pool>=3.2,<4

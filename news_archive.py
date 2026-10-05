@@ -33,9 +33,18 @@ def validate(payload):
 
 
 def load(path=None):
+    if path is None:
+        from news_repository import load as database_load
+        stored=database_load()
+        if stored is not None:return validate(stored)
     path=Path(path or archive_path())
     if not path.exists():return empty()
-    return validate(json.loads(path.read_text(encoding='utf-8')))
+    payload=validate(json.loads(path.read_text(encoding='utf-8')))
+    # Import the existing file without deleting or rewriting it.
+    if path==archive_path():
+        from news_repository import save as database_save
+        database_save(payload)
+    return payload
 
 
 def merge(left,right):
@@ -73,6 +82,12 @@ def locked(path):
 
 
 def save(payload,path=None):
+    if path is None:
+        from news_repository import save as database_save,load as database_load
+        if database_load() is None and archive_path().exists():
+            database_save(validate(json.loads(archive_path().read_text(encoding="utf-8"))))
+        database_save(validate(payload))
+        return database_load()
     path=Path(path or archive_path())
     with locked(path):
         payload=merge(load(path),payload)

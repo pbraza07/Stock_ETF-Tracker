@@ -38,6 +38,18 @@ def test_manual_refresh_pulls_all_feeds_even_just_after_refresh(monkeypatch,tmp_
     for _ in range(2):
         app.button(key='refresh_market_news').click().run()
         assert not app.exception
+        import time
+        from performance_store import get
+        until=time.monotonic()+3
+        while time.monotonic()<until:
+            if len(fetched)>=13*(_+1) and len(news_archive.load()['sources'])==13:break
+            time.sleep(.02)
+        # Wait for the collector lease to finish before another manual request.
+        from performance_store import database
+        while time.monotonic()<until:
+            with database() as db:busy=db.execute("SELECT 1 FROM leases WHERE key='news:refresh'").fetchone()
+            if not busy:break
+            time.sleep(.02)
     assert len(fetched)==26
     assert set(fetched)=={s['id'] for s in market_news.SOURCES}
     assert len(news_archive.load()['sources'])==13

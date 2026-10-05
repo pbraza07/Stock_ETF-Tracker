@@ -71,7 +71,7 @@ def combine(name,parts,unknown):
                 evidence='; '.join(parts),confidence='LOW',matches=[h for x in signals for h in x['matches']])
 
 
-def story_context(row,universe=None):
+def _story_context(row,universe=None):
     text=row['title']+'. '+row.get('excerpt','')
     # Preserve question marks for the uncertainty guard and decimals/company dots.
     clauses=[s.strip() for s in re.split(r'\.(?:\s+|$)|;|\b(?:but|while|whereas)\b',text) if s.strip()]
@@ -138,3 +138,13 @@ def impact_html(context):
             badges.append(f'<span title="{escape(row["reason"],quote=True)}" style="color:{color};display:inline-block;margin:3px 12px 3px 0">{arrow} {escape(identity)} · {status}</span>')
         sections.append('<div><b>'+label+':</b> '+' '.join(badges)+'</div>')
     return '<div style="font-size:13px;line-height:1.5;padding:8px 0">'+''.join(sections)+'<div style="color:#8ba5b6;font-size:11px">Potential impact · Low confidence · Neutral means unclear, not zero effect</div></div>'
+
+
+@lru_cache(maxsize=10000)
+def _cached_story(serialized,universe,version):
+    import json
+    return _story_context(json.loads(serialized),universe)
+
+def story_context(row,universe=None):
+    import json
+    return _cached_story(json.dumps({'title':row.get('title',''),'excerpt':row.get('excerpt','')},sort_keys=True),tuple(securities() if universe is None else universe),VERSION)
