@@ -1,15 +1,26 @@
 {
-  "refreshed_at_et": "2026-10-05T22:09:33.890426-04:00",
-  "refreshed_at_display_et": "Oct 05, 2026 10:09:33 PM EDT",
+  "refreshed_at_et": "2026-10-06T21:22:16.594532-04:00",
+  "refreshed_at_display_et": "Oct 06, 2026 09:22:16 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
   "stock_count": 162,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 0,
-  "added_symbols": [],
-  "removed_symbols": [],
-  "analyst_rating_change_count": 0,
-  "analyst_rating_changes": []
+  "added_count": 1,
+  "removed_count": 1,
+  "added_symbols": [
+    "PWR"
+  ],
+  "removed_symbols": [
+    "CNQ"
+  ],
+  "analyst_rating_change_count": 1,
+  "analyst_rating_changes": [
+    {
+      "symbol": "UBS",
+      "name": "UBS Group AG Registered Ordinary Shares",
+      "from": "Buy",
+      "to": "Strong Buy"
+    }
+  ]
 }

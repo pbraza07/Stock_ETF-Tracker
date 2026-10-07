@@ -6982,5 +6982,41 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-06T21:22:16.594532-04:00",
+    "occurred_at_display_et": "Oct 06, 2026 09:22:16 PM EDT",
+    "first_detected_at_et": "2026-10-06T21:22:16.594532-04:00",
+    "first_detected_display_et": "Oct 06, 2026 09:22:16 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "PWR",
+    "name": "Quanta Services Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-06T21:22:16.594532-04:00",
+    "occurred_at_display_et": "Oct 06, 2026 09:22:16 PM EDT",
+    "first_detected_at_et": "2026-10-06T21:22:16.594532-04:00",
+    "first_detected_display_et": "Oct 06, 2026 09:22:16 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "CNQ",
+    "name": "Canadian Natural Resources Limited Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-06T21:22:16.594532-04:00",
+    "occurred_at_display_et": "Oct 06, 2026 09:22:16 PM EDT",
+    "first_detected_at_et": "2026-10-06T21:22:16.594532-04:00",
+    "first_detected_display_et": "Oct 06, 2026 09:22:16 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "UBS",
+    "name": "UBS Group AG Registered Ordinary Shares",
+    "from": "Buy",
+    "to": "Strong Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
