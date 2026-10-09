@@ -7090,5 +7090,65 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "occurred_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "first_detected_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "first_detected_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "CM",
+    "name": "Canadian Imperial Bank of Commerce Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "occurred_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "first_detected_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "first_detected_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HOOD",
+    "name": "Robinhood Markets Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "occurred_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "first_detected_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "first_detected_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "IBN",
+    "name": "ICICI Bank Limited Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "occurred_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "first_detected_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "first_detected_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "ING",
+    "name": "ING Group N.V. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "occurred_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "first_detected_at_et": "2026-10-08T21:55:18.733883-04:00",
+    "first_detected_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "MDT",
+    "name": "Medtronic plc. Ordinary Shares",
+    "from": "Strong Buy",
+    "to": "Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]

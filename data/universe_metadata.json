@@ -1,15 +1,27 @@
 {
-  "refreshed_at_et": "2026-10-07T21:42:39.067547-04:00",
-  "refreshed_at_display_et": "Oct 07, 2026 09:42:39 PM EDT",
+  "refreshed_at_et": "2026-10-08T21:55:18.733883-04:00",
+  "refreshed_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 166,
+  "stock_count": 162,
   "etf_count": 213,
   "added_count": 0,
-  "removed_count": 0,
+  "removed_count": 4,
   "added_symbols": [],
-  "removed_symbols": [],
-  "analyst_rating_change_count": 0,
-  "analyst_rating_changes": []
+  "removed_symbols": [
+    "CM",
+    "HOOD",
+    "IBN",
+    "ING"
+  ],
+  "analyst_rating_change_count": 1,
+  "analyst_rating_changes": [
+    {
+      "symbol": "MDT",
+      "name": "Medtronic plc. Ordinary Shares",
+      "from": "Strong Buy",
+      "to": "Buy"
+    }
+  ]
 }
