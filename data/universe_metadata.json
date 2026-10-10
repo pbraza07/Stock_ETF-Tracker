@@ -1,25 +1,25 @@
 {
-  "refreshed_at_et": "2026-10-08T21:55:18.733883-04:00",
-  "refreshed_at_display_et": "Oct 08, 2026 09:55:18 PM EDT",
+  "refreshed_at_et": "2026-10-09T21:37:27.974078-04:00",
+  "refreshed_at_display_et": "Oct 09, 2026 09:37:27 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 162,
+  "stock_count": 161,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 4,
-  "added_symbols": [],
+  "added_count": 1,
+  "removed_count": 2,
+  "added_symbols": [
+    "CNQ"
+  ],
   "removed_symbols": [
-    "CM",
-    "HOOD",
-    "IBN",
-    "ING"
+    "EQIX",
+    "LITE"
   ],
   "analyst_rating_change_count": 1,
   "analyst_rating_changes": [
     {
-      "symbol": "MDT",
-      "name": "Medtronic plc. Ordinary Shares",
+      "symbol": "PSX",
+      "name": "Phillips 66 Common Stock",
       "from": "Strong Buy",
       "to": "Buy"
     }

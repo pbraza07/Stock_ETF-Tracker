@@ -7150,5 +7150,53 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "occurred_at_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "first_detected_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "first_detected_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CNQ",
+    "name": "Canadian Natural Resources Limited Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "occurred_at_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "first_detected_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "first_detected_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "EQIX",
+    "name": "Equinix Inc. Common Stock REIT",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "occurred_at_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "first_detected_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "first_detected_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "LITE",
+    "name": "Lumentum Holdings Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "occurred_at_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "first_detected_at_et": "2026-10-09T21:37:27.974078-04:00",
+    "first_detected_display_et": "Oct 09, 2026 09:37:27 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "PSX",
+    "name": "Phillips 66 Common Stock",
+    "from": "Strong Buy",
+    "to": "Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
