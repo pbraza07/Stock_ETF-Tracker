@@ -7198,5 +7198,53 @@
     "from": "Strong Buy",
     "to": "Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "occurred_at_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "first_detected_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "first_detected_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "CME",
+    "name": "CME Group Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "occurred_at_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "first_detected_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "first_detected_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "DDOG",
+    "name": "Datadog Inc. Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "occurred_at_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "first_detected_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "first_detected_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "EQIX",
+    "name": "Equinix Inc. Common Stock REIT",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "occurred_at_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "first_detected_at_et": "2026-10-12T22:56:56.431721-04:00",
+    "first_detected_display_et": "Oct 12, 2026 10:56:56 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "AXP",
+    "name": "American Express Company Common Stock",
+    "from": "Buy",
+    "to": "Strong Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
