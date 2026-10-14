@@ -7246,5 +7246,41 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-13T21:02:56.956744-04:00",
+    "occurred_at_display_et": "Oct 13, 2026 09:02:56 PM EDT",
+    "first_detected_at_et": "2026-10-13T21:02:56.956744-04:00",
+    "first_detected_display_et": "Oct 13, 2026 09:02:56 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "IBN",
+    "name": "ICICI Bank Limited Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-13T21:02:56.956744-04:00",
+    "occurred_at_display_et": "Oct 13, 2026 09:02:56 PM EDT",
+    "first_detected_at_et": "2026-10-13T21:02:56.956744-04:00",
+    "first_detected_display_et": "Oct 13, 2026 09:02:56 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "SO",
+    "name": "Southern Company (The) Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-13T21:02:56.956744-04:00",
+    "occurred_at_display_et": "Oct 13, 2026 09:02:56 PM EDT",
+    "first_detected_at_et": "2026-10-13T21:02:56.956744-04:00",
+    "first_detected_display_et": "Oct 13, 2026 09:02:56 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "CME",
+    "name": "CME Group Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
