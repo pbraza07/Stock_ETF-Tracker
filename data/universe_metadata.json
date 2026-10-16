@@ -1,17 +1,26 @@
 {
-  "refreshed_at_et": "2026-10-14T20:23:25.932237-04:00",
-  "refreshed_at_display_et": "Oct 14, 2026 08:23:25 PM EDT",
+  "refreshed_at_et": "2026-10-15T20:12:26.121786-04:00",
+  "refreshed_at_display_et": "Oct 15, 2026 08:12:26 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 166,
+  "stock_count": 163,
   "etf_count": 213,
-  "added_count": 1,
-  "removed_count": 0,
+  "added_count": 3,
+  "removed_count": 6,
   "added_symbols": [
-    "CM"
+    "ABNB",
+    "CME",
+    "HCA"
   ],
-  "removed_symbols": [],
+  "removed_symbols": [
+    "ASX",
+    "CEG",
+    "DDOG",
+    "EQIX",
+    "FCX",
+    "PWR"
+  ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
 }
