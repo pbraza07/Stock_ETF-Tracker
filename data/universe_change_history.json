@@ -7474,5 +7474,17 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-20T17:19:19.246601-04:00",
+    "occurred_at_display_et": "Oct 20, 2026 05:19:19 PM EDT",
+    "first_detected_at_et": "2026-10-20T17:19:19.246601-04:00",
+    "first_detected_display_et": "Oct 20, 2026 05:19:19 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "FCX",
+    "name": "Freeport-McMoRan Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
