@@ -7558,5 +7558,53 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "occurred_at_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "first_detected_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "first_detected_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "ADBE",
+    "name": "Adobe Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "occurred_at_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "first_detected_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "first_detected_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "HCA",
+    "name": "HCA Healthcare Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "occurred_at_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "first_detected_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "first_detected_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "change_type": "Stock Added",
+    "symbol": "SNY",
+    "name": "Sanofi ADS",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "occurred_at_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "first_detected_at_et": "2026-10-23T08:42:20.719374-04:00",
+    "first_detected_display_et": "Oct 23, 2026 08:42:20 AM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "TT",
+    "name": "Trane Technologies plc",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
