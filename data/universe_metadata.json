@@ -1,27 +1,18 @@
 {
-  "refreshed_at_et": "2026-10-21T20:33:11.080653-04:00",
-  "refreshed_at_display_et": "Oct 21, 2026 08:33:11 PM EDT",
+  "refreshed_at_et": "2026-10-22T20:30:21.626458-04:00",
+  "refreshed_at_display_et": "Oct 22, 2026 08:30:21 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 166,
+  "stock_count": 164,
   "etf_count": 213,
-  "added_count": 2,
-  "removed_count": 1,
-  "added_symbols": [
+  "added_count": 0,
+  "removed_count": 2,
+  "added_symbols": [],
+  "removed_symbols": [
     "HCA",
     "SNY"
   ],
-  "removed_symbols": [
-    "FCX"
-  ],
-  "analyst_rating_change_count": 1,
-  "analyst_rating_changes": [
-    {
-      "symbol": "TTE",
-      "name": "TotalEnergies SE Ordinary Shares",
-      "from": "Buy",
-      "to": "Strong Buy"
-    }
-  ]
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }

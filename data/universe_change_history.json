@@ -7534,5 +7534,29 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-22T20:30:21.626458-04:00",
+    "occurred_at_display_et": "Oct 22, 2026 08:30:21 PM EDT",
+    "first_detected_at_et": "2026-10-22T20:30:21.626458-04:00",
+    "first_detected_display_et": "Oct 22, 2026 08:30:21 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HCA",
+    "name": "HCA Healthcare Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-22T20:30:21.626458-04:00",
+    "occurred_at_display_et": "Oct 22, 2026 08:30:21 PM EDT",
+    "first_detected_at_et": "2026-10-22T20:30:21.626458-04:00",
+    "first_detected_display_et": "Oct 22, 2026 08:30:21 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "SNY",
+    "name": "Sanofi ADS",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
