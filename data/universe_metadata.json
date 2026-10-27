@@ -1,6 +1,6 @@
 {
-  "refreshed_at_et": "2026-10-25T20:01:53.018351-04:00",
-  "refreshed_at_display_et": "Oct 25, 2026 08:01:53 PM EDT",
+  "refreshed_at_et": "2026-10-26T21:21:23.489317-04:00",
+  "refreshed_at_display_et": "Oct 26, 2026 09:21:23 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
@@ -10,6 +10,13 @@
   "removed_count": 0,
   "added_symbols": [],
   "removed_symbols": [],
-  "analyst_rating_change_count": 0,
-  "analyst_rating_changes": []
+  "analyst_rating_change_count": 1,
+  "analyst_rating_changes": [
+    {
+      "symbol": "TXN",
+      "name": "Texas Instruments Incorporated Common Stock",
+      "from": "Buy",
+      "to": "Strong Buy"
+    }
+  ]
 }
