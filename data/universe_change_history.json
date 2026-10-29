@@ -7654,5 +7654,41 @@
     "from": "Buy",
     "to": "Strong Buy",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-28T21:40:49.352721-04:00",
+    "occurred_at_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+    "first_detected_at_et": "2026-10-28T21:40:49.352721-04:00",
+    "first_detected_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "BNY",
+    "name": "The Bank of New York Mellon Corporation Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-28T21:40:49.352721-04:00",
+    "occurred_at_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+    "first_detected_at_et": "2026-10-28T21:40:49.352721-04:00",
+    "first_detected_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "ADBE",
+    "name": "Adobe Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-28T21:40:49.352721-04:00",
+    "occurred_at_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+    "first_detected_at_et": "2026-10-28T21:40:49.352721-04:00",
+    "first_detected_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "HCA",
+    "name": "HCA Healthcare Inc. Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
