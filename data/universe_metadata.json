@@ -1,20 +1,29 @@
 {
-  "refreshed_at_et": "2026-10-28T21:40:49.352721-04:00",
-  "refreshed_at_display_et": "Oct 28, 2026 09:40:49 PM EDT",
+  "refreshed_at_et": "2026-10-29T21:47:39.375259-04:00",
+  "refreshed_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 167,
+  "stock_count": 164,
   "etf_count": 213,
   "added_count": 1,
-  "removed_count": 2,
+  "removed_count": 4,
   "added_symbols": [
-    "BNY"
-  ],
-  "removed_symbols": [
-    "ADBE",
     "HCA"
   ],
-  "analyst_rating_change_count": 0,
-  "analyst_rating_changes": []
+  "removed_symbols": [
+    "ABNB",
+    "DDOG",
+    "GSK",
+    "TT"
+  ],
+  "analyst_rating_change_count": 1,
+  "analyst_rating_changes": [
+    {
+      "symbol": "PG",
+      "name": "Procter & Gamble Company (The) Common Stock",
+      "from": "Strong Buy",
+      "to": "Buy"
+    }
+  ]
 }

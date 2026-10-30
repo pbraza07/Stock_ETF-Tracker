@@ -7690,5 +7690,77 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "occurred_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "first_detected_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "first_detected_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "change_type": "Stock Added",
+    "symbol": "HCA",
+    "name": "HCA Healthcare Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "occurred_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "first_detected_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "first_detected_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "ABNB",
+    "name": "Airbnb Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "occurred_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "first_detected_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "first_detected_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "DDOG",
+    "name": "Datadog Inc. Class A Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "occurred_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "first_detected_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "first_detected_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "GSK",
+    "name": "GSK plc American Depositary Shares (Each representing two Ordinary Shares)",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "occurred_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "first_detected_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "first_detected_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "change_type": "Stock Removed",
+    "symbol": "TT",
+    "name": "Trane Technologies plc",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "occurred_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "first_detected_at_et": "2026-10-29T21:47:39.375259-04:00",
+    "first_detected_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+    "change_type": "Analyst Rating",
+    "symbol": "PG",
+    "name": "Procter & Gamble Company (The) Common Stock",
+    "from": "Strong Buy",
+    "to": "Buy",
+    "source": "Nasdaq Stock Screener"
   }
 ]
