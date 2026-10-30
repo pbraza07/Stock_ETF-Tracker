@@ -1,27 +1,23 @@
 {
-  "refreshed_at_et": "2026-10-29T21:47:39.375259-04:00",
-  "refreshed_at_display_et": "Oct 29, 2026 09:47:39 PM EDT",
+  "refreshed_at_et": "2026-10-30T16:21:47.927190-04:00",
+  "refreshed_at_display_et": "Oct 30, 2026 04:21:47 PM EDT",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 164,
+  "stock_count": 166,
   "etf_count": 213,
-  "added_count": 1,
-  "removed_count": 4,
+  "added_count": 2,
+  "removed_count": 0,
   "added_symbols": [
-    "HCA"
+    "EQIX",
+    "GD"
   ],
-  "removed_symbols": [
-    "ABNB",
-    "DDOG",
-    "GSK",
-    "TT"
-  ],
+  "removed_symbols": [],
   "analyst_rating_change_count": 1,
   "analyst_rating_changes": [
     {
-      "symbol": "PG",
-      "name": "Procter & Gamble Company (The) Common Stock",
+      "symbol": "AXP",
+      "name": "American Express Company Common Stock",
       "from": "Strong Buy",
       "to": "Buy"
     }
