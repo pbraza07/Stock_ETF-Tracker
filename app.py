@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.61: lazy workspaces, shared caches, durable calculation jobs and on-demand reports.
+# v5.11.62: lazy workspaces, shared caches, durable calculation jobs and on-demand reports.
 
 import json
 import os
@@ -788,7 +788,7 @@ def _normalize_snapshot(df: pd.DataFrame) -> pd.DataFrame:
     # v5.7 intentionally does not map legacy CAGR columns into calendar-year returns.
     # Annual return cells remain blank until a real historical refresh computes
     # each completed calendar year from adjusted year-end closes.
-    numeric = [
+    numeric = ["Price Target Median",
         "MarketCap", "Price", "NAV", *PRICE_TARGET_COLS, *ALL_RETURN_COLS,
         "Verified Years", "Verification Available Years", "Verification Compared Years",
         "Verification Discrepancies", "Max Verification Diff (pp)", "Verification Tolerance (pp)",
@@ -1630,7 +1630,7 @@ def _remember_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[st
         if not symbol or (requested is not None and symbol not in requested):
             continue
         values = {}
-        for key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
+        for key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("median", "Price Target Median"), ("high", "Price Target High")):
             value = pd.to_numeric(pd.Series([row.get(col)]), errors="coerce").iloc[0]
             if pd.notna(value) and np.isfinite(value) and float(value) > 0:
                 values[key] = float(value)
@@ -1657,7 +1657,7 @@ def _apply_remembered_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] |
         mask = upper.eq(symbol)
         if not mask.any():
             continue
-        for key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
+        for key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("median", "Price Target Median"), ("high", "Price Target High")):
             value = values.get(key)
             if not _valid_price_target(value):
                 continue
@@ -1695,7 +1695,7 @@ def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str
     if not requested:
         return out
 
-    for col in PRICE_TARGET_COLS:
+    for col in [*PRICE_TARGET_COLS, "Price Target Median"]:
         if col not in out.columns:
             out[col] = np.nan
     for col, default in (
@@ -1741,6 +1741,7 @@ def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str
         for source_key, col in (
             ("low", "Price Target Low"),
             ("mean", "Price Target Average"),
+            ("median", "Price Target Median"),
             ("high", "Price Target High"),
         ):
             value = pd.to_numeric(
@@ -1755,6 +1756,7 @@ def _hydrate_price_targets(df: pd.DataFrame, symbols: tuple[str, ...] | list[str
                     | (pd.to_numeric(out[col], errors="coerce") <= 0)
                 )
                 out.loc[replace_mask, col] = float(value)
+                if col=="Price Target Median" and replace_mask.any():out.loc[replace_mask, "Price Target Median Updated ET"] = stamp
                 wrote = True
         if wrote:
             out.loc[mask, "Price Target Updated ET"] = stamp
@@ -2011,6 +2013,7 @@ def cached_single_metrics(symbol: str) -> dict:
         "Rating Updated ET": rating_updated,
         "Price Target Low": provider_meta.get("target_low_price") if instrument_type == "Stock" else np.nan,
         "Price Target Average": provider_meta.get("target_mean_price") if instrument_type == "Stock" else np.nan,
+        "Price Target Median": provider_meta.get("target_median_price") if instrument_type == "Stock" else np.nan,
         "Price Target High": provider_meta.get("target_high_price") if instrument_type == "Stock" else np.nan,
         "Price Target Updated ET": stamp if instrument_type == "Stock" else "—",
         "Since Inception": as_percent(perf.since_inception),
@@ -2053,6 +2056,7 @@ def blank_row(symbol: str) -> dict:
         "Rating Updated ET": meta.get("Rating Updated ET") or "—",
         "Price Target Low": np.nan,
         "Price Target Average": np.nan,
+        "Price Target Median": np.nan,
         "Price Target High": np.nan,
         "Price Target Updated ET": "—",
         **{c: np.nan for c in ALL_RETURN_COLS},
@@ -2536,7 +2540,7 @@ def refresh_price_targets(df: pd.DataFrame, symbols: List[str]) -> pd.DataFrame:
         if not mask.any():
             continue
         wrote = False
-        for source_key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("high", "Price Target High")):
+        for source_key, col in (("low", "Price Target Low"), ("mean", "Price Target Average"), ("median", "Price Target Median"), ("high", "Price Target High")):
             value = pd.to_numeric(pd.Series([values.get(source_key)]), errors="coerce").iloc[0]
             if pd.notna(value) and np.isfinite(value) and float(value) > 0:
                 out.loc[mask, col] = float(value)
