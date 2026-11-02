@@ -1,5 +1,5 @@
 """Cross-process source cache, single-flight refresh and bounded backoff."""
-import time, logging
+import time, logging, sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from performance_store import get,put,key_for,lease,unlock
 _pool=ThreadPoolExecutor(max_workers=4,thread_name_prefix='source-refresh')
@@ -9,12 +9,31 @@ _pending=set()
 _failures=set()
 
 
+def _busy(exc):
+    return isinstance(exc, sqlite3.OperationalError) and (
+        (getattr(exc, 'sqlite_errorcode', 0) & 255) in (sqlite3.SQLITE_BUSY, sqlite3.SQLITE_LOCKED)
+        or 'locked' in str(exc).lower() or 'busy' in str(exc).lower())
+
+
+def _retry_marker(key):
+    try:put(key+':retry',True,60)
+    except sqlite3.OperationalError as exc:
+        if not _busy(exc):raise
+
+
 def cached(namespace,inputs,loader,ttl=1800,default=None,background=False,valid=None):
-    key=key_for(namespace,inputs);row=get(key);now=time.time()
-    if row and row[2]>now:return row[0]
-    negative=get(key+':retry')
-    if negative and negative[2]>now:return row[0] if row else default
-    token=lease(key,600)
+    key=key_for(namespace,inputs);row=None;now=time.time()
+    try:
+        row=get(key)
+        if row and row[2]>now:return row[0]
+        negative=get(key+':retry')
+        if negative and negative[2]>now:return row[0] if row else default
+        token=lease(key,600)
+    except sqlite3.OperationalError as exc:
+        if not _busy(exc):raise
+        _failures.add(namespace)
+        log.warning('source_cache_busy namespace=%s; retaining saved data',namespace)
+        return row[0] if row else default
     if not token:return row[0] if row else default
     def refresh():
         start=time.monotonic()
@@ -24,17 +43,20 @@ def cached(namespace,inputs,loader,ttl=1800,default=None,background=False,valid=
             if acceptable:
                 put(key,value,ttl);_failures.discard(namespace)
             else:
-                put(key+':retry',True,60);_failures.add(namespace)
+                _retry_marker(key);_failures.add(namespace)
             return value if acceptable else (row[0] if row else default)
         except Exception as exc:
-            put(key+':retry',True,60);_failures.add(namespace)
+            _retry_marker(key);_failures.add(namespace)
             log.warning('source_refresh_failed namespace=%s error=%s',namespace,type(exc).__name__)
             return row[0] if row else default
         finally:
             global _revision
             _revision+=1
             _pending.discard(key)
-            unlock(key,token)
+            try:unlock(key,token)
+            except sqlite3.OperationalError as exc:
+                if not _busy(exc):raise
+                log.warning('source_cache_unlock_busy namespace=%s; lease expires automatically',namespace)
             log.info('source_refresh namespace=%s elapsed=%.3f',namespace,time.monotonic()-start)
     if background:
         _pending.add(key)
