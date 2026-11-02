@@ -5,7 +5,7 @@ import market_news
 import news_archive
 
 
-def test_first_and_last_tabs_match_both_navigation_branches():
+def test_first_and_last_tabs_match_single_navigation_container():
     tree=ast.parse(Path('app.py').read_text())
     labels=next(ast.literal_eval(n.value) for n in ast.walk(tree) if isinstance(n,ast.Assign)
         and any(isinstance(t,ast.Name) and t.id=='_top_tab_labels' for t in n.targets))
@@ -14,9 +14,9 @@ def test_first_and_last_tabs_match_both_navigation_branches():
     expected=['news_tab','market_tab','favorite_tab','portfolio_tab','future_tab','compare_tab','sector_tab','recession_tab','quality_tab','alerts_tab']
     matches=[]
     for node in ast.walk(tree):
-        if isinstance(node,ast.Assign) and isinstance(node.value,ast.Call) and node.value.args and isinstance(node.value.args[0],ast.Name) and node.value.args[0].id=='_top_tab_labels':
+        if isinstance(node,ast.Assign) and isinstance(node.value,ast.Name) and node.value.id=='_workspace_tabs':
             matches.append([t.id for t in node.targets[0].elts])
-    assert matches==[expected,expected]
+    assert matches==[expected]
     assert len(labels)==len(expected)
 
 

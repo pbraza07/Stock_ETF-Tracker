@@ -19,6 +19,7 @@ from future_projection import PreparedProjectionModel, prepare_projection_model
 from future_projection_config import capital_market_assumptions, model_defaults
 from future_projection_live import (
     _history_matrix,
+    _close_series,
     block_bootstrap_indices,
     build_current_market_state,
     condition_model_assumptions,
@@ -81,7 +82,7 @@ def screen_favorite_candidates(
         return pd.DataFrame()
     frame = market.copy()
     if "Type" not in frame.columns:
-        frame["Type"] = "Stock"
+        frame["Type"] = "Unknown"
     if "Sector" not in frame.columns:
         frame["Sector"] = "Unknown"
     frame["Symbol"] = frame["Symbol"].astype(str).str.strip().str.upper()
@@ -384,25 +385,30 @@ def build_favorite_picks(
         return (adjustments.get(str(symbol)) or {}).get(key, default)
 
     details["Fundamental Score"] = details["Symbol"].map(
-        lambda symbol: float(adjustment_value(symbol, "fundamental_score", 50.0))
+        lambda symbol: _number(adjustment_value(symbol, "fundamental_score", 50.0), 50.0)
     )
     details["Valuation Score"] = details["Symbol"].map(
-        lambda symbol: float(adjustment_value(symbol, "valuation_score", 50.0))
+        lambda symbol: _number(adjustment_value(symbol, "valuation_score", 50.0), 50.0)
     )
     details["Live Data Quality"] = details["Symbol"].map(
         lambda symbol: str(adjustment_value(symbol, "data_quality", "Low"))
     )
     details["Distance From 52W High %"] = details["Symbol"].map(
-        lambda symbol: float(adjustment_value(symbol, "distance_from_52_week_high", float("nan"))) * 100.0
+        lambda symbol: _number(adjustment_value(symbol, "distance_from_52_week_high", float("nan"))) * 100.0
     )
+    histories = (live_context or {}).get("histories") or {}
+    details["Live Daily Observations"] = details["Symbol"].map(
+        lambda symbol: len(_close_series(histories.get(symbol))))
+    # A partial history's maximum is not a verified 52-week high.
+    details.loc[details["Live Daily Observations"].lt(252), "Distance From 52W High %"] = np.nan
     details["20D Return %"] = details["Symbol"].map(
-        lambda symbol: float(adjustment_value(symbol, "return_20_day", float("nan"))) * 100.0
+        lambda symbol: _number(adjustment_value(symbol, "return_20_day", float("nan"))) * 100.0
     )
     details["50D Return %"] = details["Symbol"].map(
-        lambda symbol: float(adjustment_value(symbol, "return_50_day", float("nan"))) * 100.0
+        lambda symbol: _number(adjustment_value(symbol, "return_50_day", float("nan"))) * 100.0
     )
     details["200D Return %"] = details["Symbol"].map(
-        lambda symbol: float(adjustment_value(symbol, "return_200_day", float("nan"))) * 100.0
+        lambda symbol: _number(adjustment_value(symbol, "return_200_day", float("nan"))) * 100.0
     )
     details["Trend Score"] = [
         float(np.clip(
@@ -415,6 +421,14 @@ def build_favorite_picks(
         ))
         for symbol in details["Symbol"].astype(str)
     ]
+    # A missing lookback is not a zero return or a bearish observation.
+    # Neutral trend input is an explicit modeling assumption, never measured data.
+    trend_complete = details[["50D Return %", "200D Return %"]].notna().all(axis=1)
+    details.loc[~trend_complete, "Trend Score"] = 50.0
+    details.loc[~trend_complete, "Live Data Quality"] = "Low"
+    details["Live Evidence Gaps"] = details.apply(
+        lambda row: ", ".join(label for label in ["20D Return %", "50D Return %", "200D Return %", "Distance From 52W High %"]
+                            if not np.isfinite(_number(row[label]))) or "None", axis=1)
     details["Data Quality Score"] = details["Live Data Quality"].map(_data_quality_score)
     details["History Depth Score"] = np.minimum(100.0, details["Observed Years"].astype(float) / 10.0 * 100.0)
     details["Risk-Adjusted Expected Return"] = details["Expected Annual Return %"] / details["Conditioned Volatility %"].replace(0, np.nan)
@@ -478,13 +492,15 @@ def build_favorite_picks(
         "Historical CAGR %", "Positive Years %", "Historical Worst Year",
         "Conditioned Volatility %", "6M", "Distance From 52W High %",
         "Fundamental Score", "Valuation Score", "Trend Score", "Observed Years",
-        "Live Data Quality", "Why Selected", "Key Risk", "Data As Of",
+        "Live Data Quality", "Live Daily Observations", "Live Evidence Gaps", "20D Return %", "50D Return %", "200D Return %", "Why Selected", "Key Risk", "Data As Of",
     ]
     picks = picks.rename(columns={"Price": "Current Price"})
     for column in output_columns:
         if column not in picks.columns:
             picks[column] = np.nan
     warnings = list(model.warnings) + list(market_state.get("failures") or [])
+    for _, row in details.loc[details["Live Evidence Gaps"].ne("None")].iterrows():
+        warnings.append(f"{row['Symbol']}: unavailable live evidence: {row['Live Evidence Gaps']}. Missing observations remain blank; incomplete trend uses an explicitly neutral model input and Low live-data quality.")
     sector_counts = all_eligible.groupby("Sector")["Symbol"].nunique().to_dict() if not all_eligible.empty else {}
     for sector, count in sector_counts.items():
         if int(count) < 2:

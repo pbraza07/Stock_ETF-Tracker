@@ -117,12 +117,11 @@ def _apply_payload(payload: dict) -> None:
     equal = 100.0 / len(holdings) if holdings else 0.0
     for symbol in holdings:
         st.session_state[_allocation_key(symbol)] = float(allocations.get(symbol, equal))
-    st.session_state.fp_result = None
+    # Changing draft inputs must not erase the completed projection.
 
 
 def _clear_portfolio() -> None:
     st.session_state.fp_holdings = []
-    st.session_state.fp_result = None
 
 
 def _reset_projection() -> None:
@@ -708,7 +707,8 @@ def render_future_projection(
 
     if st.session_state.get('fp_job_id'):
         render_status()
-        return
+        if st.session_state.get('fp_result'):
+            st.info('A new projection is running. The last completed result remains below with its original assumptions.')
 
     result = st.session_state.get("fp_result")
     if result and result.get('planning_engine'):

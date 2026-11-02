@@ -28,7 +28,7 @@ import streamlit as st
 from unittest.mock import patch
 import top12_ui as ui
 st.session_state.setdefault('workspace_navigation', 'Favorite Picks')
-with patch.object(ui, 'cached_ledger', side_effect=lambda kind: st.session_state.qa_ledgers[kind]), patch.object(ui, 'calculate_rankings', return_value=st.session_state.qa_payload), patch.object(ui, 'SAVE_EXECUTOR', st.session_state.qa_save_executor), patch.object(ui, 'ranking_exports', return_value=(b'excel', b'pdf')):
+with patch.object(ui, 'load_targets', return_value={}), patch.object(ui, 'cached_ledger', side_effect=lambda kind: st.session_state.qa_ledgers[kind]), patch.object(ui, 'calculate_rankings', return_value=st.session_state.qa_payload), patch.object(ui, 'SAVE_EXECUTOR', st.session_state.qa_save_executor), patch.object(ui, 'ranking_exports', return_value=(b'excel', b'pdf')):
     ui.render_top12_rankings(st.session_state.qa_market, st.session_state.qa_years, '2026-09-06', lambda *a: {}, lambda *a: {})
 """
 
@@ -43,7 +43,7 @@ def app_for(payload):
         kind: {
             "runs": [{
                 "Timestamp": "2026-09-06",
-                "Metadata": {"Selection Policy": "Top 5 per sector", "Model Version": "5.11.56", "Market Data Through": "2026-09-06"},
+                "Metadata": {"Selection Policy": "Top 5 per sector", "Model Version": "5.11.60", "Market Data Through": "2026-09-06"},
                 "Holdings": payload["result"][kind].to_dict("records"),
             }],
             "events": [],

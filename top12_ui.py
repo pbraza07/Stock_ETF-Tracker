@@ -1,5 +1,6 @@
 """Dynamic ranking workspaces with cached computation and report generation."""
 
+from ranking_price_targets import TARGET_COLUMNS, TARGET_HELP, enrich_targets, load_targets
 import hashlib
 import json
 import logging
@@ -34,7 +35,7 @@ def consume_completed_job():
             st.session_state.t12_result = payload["result"]
             st.session_state.t12_histories = payload["histories"]
             st.session_state.t12_fingerprint = job["fingerprint"]
-            st.session_state.t12_portfolios = {}
+            st.session_state.setdefault("t12_portfolios", {})
             st.session_state.t12_save_messages = []
             st.session_state.t12_save_job = SAVE_EXECUTOR.submit(
                 save_histories, payload["histories"]
@@ -65,7 +66,7 @@ def cached_ledger(kind):
 
 
 RECESSION_SAVED_COLUMNS = [
-    "Rank", "Symbol", "Name", "Sector", "Price",
+    "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
     "Recession Score",
     "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
     "Consistency Score", "Current Strength Score", "Profitability Score",
@@ -81,7 +82,7 @@ RECESSION_SAVED_COLUMNS = [
 ]
 
 MAX_PROFIT_SAVED_COLUMNS = [
-    "Rank", "Symbol", "Name", "Sector", "Price",
+    "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
     "Max Profit Score",
     "Historical Performance Score", "Recent Performance Score",
     "Future P50 Score", "Future P75 Score", "Fundamentals Score",
@@ -135,7 +136,7 @@ def _saved_columns(kind):
 def _primary_factor_columns(kind):
     if kind == "Recession":
         return [
-            "Rank", "Symbol", "Name", "Sector", "Price",
+            "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
             "Recession Score",
             "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
             "Consistency Score", "Current Strength Score", "Profitability Score",
@@ -147,7 +148,7 @@ def _primary_factor_columns(kind):
             "Data Confidence", "Why Selected",
         ]
     return [
-        "Rank", "Symbol", "Name", "Sector", "Price",
+        "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
         "Max Profit Score",
         "Historical Performance Score", "Recent Performance Score",
         "Future P50 Score", "Future P75 Score", "Fundamentals Score",
@@ -189,7 +190,7 @@ def _latest_persisted_run(kind):
     return ledger, None, pd.DataFrame()
 
 
-def _persisted_display_table(table, kind, market):
+def _persisted_display_table(table, kind, market, targets=None):
     """Preserve saved ranking evidence and enrich only missing name/price fields."""
     display = table.copy()
 
@@ -204,6 +205,7 @@ def _persisted_display_table(table, kind, market):
             else:
                 display[column] = display[column].where(display[column].notna(), mapped)
 
+    display = enrich_targets(display, market, targets)
     ordered = [column for column in _primary_factor_columns(kind) if column in display.columns]
     display = display[ordered].rename(columns=PERSISTED_TABLE_RENAMES)
     if "Consistency Score" in display.columns:
@@ -249,12 +251,21 @@ def _ranking_factor_config(display):
         }:
             config[column] = st.column_config.NumberColumn(format="%.2f")
 
+    for column in ["Target Price Low", "Target Price Median", "Target Price High", "Current Price Minus Low Target"]:
+        if column in display:
+            config[column] = st.column_config.NumberColumn(format="$%.2f")
     return config
 
 
 def render_persisted_ranked_table(kind, market):
     """Render saved ranking plus the factor/evidence columns that produced its score."""
     ledger, run, table = _latest_persisted_run(kind)
+    snapshots = st.session_state.setdefault("t12_saved_views", {})
+    if run is not None and not table.empty:
+        snapshots[kind] = (ledger, run, table.copy(deep=True))
+    elif kind in snapshots:
+        ledger, run, table = snapshots[kind]
+        st.caption("Saved source is temporarily unavailable. Showing the last successfully loaded ranking for this session.")
     if run is None or table.empty:
         st.info(
             f"No complete saved {kind} Top 5 per Sector result is available yet. Use Advanced recalculation below to create one."
@@ -284,7 +295,9 @@ def render_persisted_ranked_table(kind, market):
             "future table displays. The existing ranking is not altered merely by opening this table."
         )
 
-    display = _persisted_display_table(table, kind, market)
+    targets = load_targets(tuple(table.Symbol.astype(str)))
+    display = _persisted_display_table(table, kind, market, targets)
+    st.caption(TARGET_HELP)
     st.dataframe(
         display,
         hide_index=True,
@@ -381,7 +394,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
     if requested:
         st.session_state.t12_active_kind = requested
         st.session_state.t12_input_view = requested
-        st.session_state.t12_show_full_analysis = False
+        st.session_state.t12_show_full_analysis = bool(st.session_state.get("t12_result"))
         st.session_state.pop("t12_error", None)
 
     kind = st.session_state.get("t12_active_kind") or st.session_state.get(
@@ -435,7 +448,7 @@ def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader
                 st.session_state.t12_result = payload["result"]
                 st.session_state.t12_histories = payload["histories"]
                 st.session_state.t12_fingerprint = fingerprint
-                st.session_state.t12_portfolios = {}
+                st.session_state.setdefault("t12_portfolios", {})
                 st.session_state.t12_save_messages = []
                 st.session_state.t12_show_full_analysis = True
                 st.session_state.t12_save_job = SAVE_EXECUTOR.submit(
@@ -495,6 +508,8 @@ def render_ranked_table(
     monthly_loader, live_loader, fingerprint,
 ):
     """A dedicated table and portfolio workspace for exactly one ranking kind."""
+    table = enrich_targets(table, market, load_targets(tuple(table.Symbol.astype(str))))
+    st.caption(TARGET_HELP)
     st.subheader(
         "Top 5 per Sector Recession-Resilient Stocks"
         if kind == "Recession"
@@ -551,7 +566,7 @@ def render_ranked_table(
     # Put the actual ranking factors first, then the supporting evidence.
     factor_columns = (
         [
-            "Rank", "Symbol", "Name", "Sector", "Price", "Recession Score",
+            "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS, "Recession Score",
             "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
             "Consistency Score", "Current Strength Score", "Profitability Score",
             "Risk Penalty", "Recession Additional Penalty",
@@ -563,7 +578,7 @@ def render_ranked_table(
         ]
         if kind == "Recession"
         else [
-            "Rank", "Symbol", "Name", "Sector", "Price", "Max Profit Score",
+            "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS, "Max Profit Score",
             "Historical Performance Score", "Recent Performance Score",
             "Future P50 Score", "Future P75 Score", "Fundamentals Score",
             "Consistency Score", "Relative Strength Score", "Downside Quality Score",
@@ -665,11 +680,19 @@ def render_ranked_table(
                 st.session_state.setdefault("t12_portfolios", {})[
                     portfolio_key
                 ] = projected
+                st.session_state.setdefault("t12_last_portfolio", {})[kind] = (portfolio_key, projected, inputs, table.copy(deep=True))
             except Exception:
                 st.error(
                     "Portfolio projection unavailable with this evidence. Check historical data and retry."
                 )
     portfolio = st.session_state.get("t12_portfolios", {}).get(portfolio_key)
+    completed_inputs, completed_table = inputs, table
+    if portfolio is None:
+        previous = st.session_state.get("t12_last_portfolio", {}).get(kind)
+        if previous:
+            portfolio = previous[1]
+            completed_inputs, completed_table = previous[2], previous[3]
+            st.caption("Last completed sector portfolio — inputs or market data have changed. Build again to replace this result.")
     if portfolio:
         cols = st.columns(2)
         for col, (strategy, payload) in zip(cols, portfolio["strategies"].items()):
@@ -702,7 +725,7 @@ def render_ranked_table(
             )
         )
         sector_weights = (
-            table.assign(Weight=table.Symbol.map(inputs["allocations"]))
+            completed_table.assign(Weight=completed_table.Symbol.map(completed_inputs["allocations"]))
             .groupby("Sector")
             .Weight.sum()
         )
