@@ -18,13 +18,15 @@ def state_dir():
     return path
 
 class Connection:
-    def __init__(self,conn,postgres=False):self.conn=conn;self.postgres=postgres
+    def __init__(self,conn,postgres=False,identity=None):
+        self.conn=conn;self.postgres=postgres;self.identity=identity
     def execute(self,sql,args=()):
         if self.postgres:sql=sql.replace('?', '%s').replace('BEGIN IMMEDIATE','BEGIN')
         return self.conn.execute(sql,args)
 
 def initialize(db,name,create):
-    identity=(os.getenv('MARKETSCOPE_DATABASE_URL') or str(state_dir()/'performance.sqlite'),name)
+    identity=(db.identity or os.getenv('MARKETSCOPE_DATABASE_URL') or str(state_dir()/'performance.sqlite'),name)
+    if identity in _schemas:return
     with _schema_lock:
         if identity in _schemas:return
         lock_id=int(hashlib.sha256(name.encode()).hexdigest()[:15],16)
@@ -43,7 +45,8 @@ def _create_objects(db):
         db.execute('ALTER TABLE leases ADD COLUMN owner TEXT')
 
 @contextmanager
-def database():
+def database(namespace="shared"):
+    if namespace not in {"shared", "news"}:raise ValueError("Unknown storage namespace")
     url=os.getenv('MARKETSCOPE_DATABASE_URL')
     if url:
         from psycopg_pool import ConnectionPool
@@ -52,9 +55,16 @@ def database():
             pool=_pools[url]
         raw=pool.getconn()
     else:
-        raw=sqlite3.connect(state_dir()/'performance.sqlite',timeout=30,isolation_level=None)
-        raw.execute('PRAGMA journal_mode=WAL');raw.execute('PRAGMA busy_timeout=30000')
-    db=Connection(raw,bool(url))
+        path=state_dir()/('news.sqlite' if namespace=='news' else 'performance.sqlite')
+        raw=sqlite3.connect(path,timeout=2,isolation_level=None)
+        try:
+            raw.execute('PRAGMA busy_timeout=2000')
+            if raw.execute('PRAGMA journal_mode').fetchone()[0].lower()!='wal':
+                raw.execute('PRAGMA journal_mode=WAL')
+        except Exception:
+            raw.close()
+            raise
+    db=Connection(raw,bool(url),url or str(path))
     try:
         initialize(db,'objects-v56',_create_objects)
         yield db

@@ -1,6 +1,11 @@
 """Indexed article repository shared by collectors and web processes."""
 import json
-from performance_store import initialize,database
+from performance_store import initialize, database as _database, state_dir
+
+def database():
+    # SQLite news analysis/indexing cannot starve source-cache leases or jobs.
+    # PostgreSQL keeps the shared service with its normal row-level locking.
+    return _database(namespace="news")
 
 def _create_schema(db):
     db.execute('CREATE TABLE IF NOT EXISTS news_articles (id TEXT PRIMARY KEY,published TEXT,publisher TEXT,payload TEXT)')
@@ -9,6 +14,22 @@ def _create_schema(db):
     db.execute('CREATE INDEX IF NOT EXISTS news_symbol ON news_entities(symbol,article_id)')
     db.execute('CREATE TABLE IF NOT EXISTS news_search (id TEXT PRIMARY KEY,title TEXT,excerpt TEXT,direction TEXT,headline_group TEXT,topics TEXT)')
     db.execute('CREATE TABLE IF NOT EXISTS news_meta (id TEXT PRIMARY KEY,payload TEXT)')
+    if not db.postgres and not db.execute("SELECT 1 FROM news_meta WHERE id='archive'").fetchone():
+        # One-time, atomic copy of committed legacy news data. Never delete the source.
+        legacy=state_dir()/'performance.sqlite'
+        if legacy.exists():
+            db.execute('ATTACH DATABASE ? AS legacy_news',(str(legacy),))
+            try:
+                present=db.execute("SELECT 1 FROM legacy_news.sqlite_master WHERE type='table' AND name='news_meta'").fetchone()
+                if present and db.execute("SELECT 1 FROM legacy_news.news_meta WHERE id='archive'").fetchone():
+                    db.execute('BEGIN IMMEDIATE')
+                    try:
+                        for table in ('news_articles','news_entities','news_search','news_meta'):
+                            exists=db.execute("SELECT 1 FROM legacy_news.sqlite_master WHERE type='table' AND name=?",(table,)).fetchone()
+                            if exists:db.execute(f'INSERT OR IGNORE INTO {table} SELECT * FROM legacy_news.{table}')
+                        db.execute('COMMIT')
+                    except Exception:db.execute('ROLLBACK');raise
+            finally:db.execute('DETACH DATABASE legacy_news')
 
 def init():
     with database() as db:initialize(db,"news-v56",_create_schema)
@@ -18,26 +39,43 @@ def save(payload,force=False):
     init()
     from news_context import story_context
     from news_archive import merge,empty
+    for key,incoming in payload['articles'].items():
+        # Optimistic per-article merge: CPU-heavy context analysis never runs
+        # while holding a write lock. Re-read after acquiring the lock so a
+        # concurrent enrichment is merged rather than overwritten.
+        for attempt in range(10):
+            with database() as db:
+                old=db.execute('SELECT payload FROM news_articles WHERE id=?',(key,)).fetchone()
+                indexed=db.execute('SELECT id FROM news_search WHERE id=?',(key,)).fetchone()
+            before=old[0] if old else None
+            row=(merge(dict(empty(),articles={key:json.loads(before)}),
+                       dict(empty(),articles={key:incoming}))['articles'][key] if before else incoming)
+            serialized=json.dumps(row,ensure_ascii=False)
+            if not force and before==serialized and indexed:break
+            context=story_context(row)
+            with database() as db:
+                db.execute('BEGIN IMMEDIATE')
+                try:
+                    if db.postgres:db.execute('LOCK TABLE news_articles IN SHARE ROW EXCLUSIVE MODE')
+                    latest=db.execute('SELECT payload FROM news_articles WHERE id=?',(key,)).fetchone()
+                    if (latest[0] if latest else None)!=before:
+                        db.execute('ROLLBACK')
+                        continue
+                    db.execute('INSERT INTO news_articles VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET published=excluded.published,publisher=excluded.publisher,payload=excluded.payload',
+                        (key,row.get('published_at'),row['publisher'],serialized))
+                    db.execute('DELETE FROM news_entities WHERE article_id=?',(key,))
+                    db.execute('INSERT INTO news_search VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,excerpt=excluded.excerpt,direction=excluded.direction,headline_group=excluded.headline_group,topics=excluded.topics',(key,row['title'],row.get('excerpt',''),context['market']['direction'],row.get('headline_group',key),json.dumps(row.get('analysis',{}).get('topics',[]))))
+                    for stock in context['stocks']:
+                        symbol=stock.get('symbol') or stock.get('ticker') or stock.get('name')
+                        if symbol:db.execute('INSERT INTO news_entities VALUES (?,?) ON CONFLICT DO NOTHING',(key,symbol))
+                    db.execute('COMMIT')
+                except Exception:db.execute('ROLLBACK');raise
+            break
+        else:raise RuntimeError('News changed repeatedly during indexing; retry the save.')
     with database() as db:
         db.execute('BEGIN IMMEDIATE')
-        if db.postgres:db.execute('LOCK TABLE news_articles IN SHARE ROW EXCLUSIVE MODE')
         try:
-            for key,row in payload['articles'].items():
-                serialized=json.dumps(row,ensure_ascii=False)
-                old=db.execute('SELECT payload FROM news_articles WHERE id=?',(key,)).fetchone()
-                if old:
-                    row=merge(dict(empty(),articles={key:json.loads(old[0])}),dict(empty(),articles={key:row}))['articles'][key]
-                    serialized=json.dumps(row,ensure_ascii=False)
-                if not force and old and old[0]==serialized and db.execute('SELECT id FROM news_search WHERE id=?',(key,)).fetchone():continue
-                db.execute('INSERT INTO news_articles VALUES (?,?,?,?) ON CONFLICT(id) DO UPDATE SET published=excluded.published,publisher=excluded.publisher,payload=excluded.payload',
-                    (key,row.get('published_at'),row['publisher'],serialized))
-                db.execute('DELETE FROM news_entities WHERE article_id=?',(key,))
-                context=story_context(row)
-                db.execute('INSERT INTO news_search VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,excerpt=excluded.excerpt,direction=excluded.direction,headline_group=excluded.headline_group,topics=excluded.topics',(key,row['title'],row.get('excerpt',''),context['market']['direction'],row.get('headline_group',key),json.dumps(row.get('analysis',{}).get('topics',[]))))
-                for stock in context['stocks']:
-                    symbol=stock.get('symbol') or stock.get('ticker') or stock.get('name')
-                    if symbol:db.execute('INSERT INTO news_entities VALUES (?,?) ON CONFLICT DO NOTHING',(key,symbol))
-            # Source metadata is merged so independent collection updates do not erase prior health.
+            if db.postgres:db.execute('LOCK TABLE news_meta IN SHARE ROW EXCLUSIVE MODE')
             old=db.execute("SELECT payload FROM news_meta WHERE id='archive'").fetchone()
             meta=json.loads(old[0]) if old else {'schema':1,'sources':{},'updated_at':None}
             meta=merge(dict(meta,articles={}),dict(empty(),sources=payload['sources'],updated_at=payload.get('updated_at')))
