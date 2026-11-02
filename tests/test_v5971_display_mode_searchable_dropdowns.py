@@ -5,8 +5,8 @@ APP = (ROOT / 'app.py').read_text(encoding='utf-8')
 
 
 def test_release_version_5971():
-    assert (ROOT / 'VERSION.txt').read_text(encoding='utf-8').strip() == '5.11.61'
-    assert 'v5.11.61' in APP
+    assert (ROOT / 'VERSION.txt').read_text(encoding='utf-8').strip() == '5.11.62'
+    assert 'v5.11.62' in APP
 
 
 def test_card_view_search_is_searchable_multiselect_dropdown():

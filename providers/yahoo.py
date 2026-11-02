@@ -306,18 +306,18 @@ class YahooFinanceProvider(MarketDataProvider):
         target_high = info.get("targetHighPrice")
         target_median = info.get("targetMedianPrice")
         analyst_opinions = info.get("numberOfAnalystOpinions")
-        if not is_fund and ticker is not None and not any(
-            value is not None for value in (target_low, target_mean, target_high)
+        if not is_fund and ticker is not None and any(
+            value is None for value in (target_low, target_mean, target_high, target_median)
         ):
             try:
                 targets = ticker.analyst_price_targets or {}
             except Exception:
                 targets = {}
             if isinstance(targets, dict):
-                target_low = targets.get("low", target_low)
-                target_mean = targets.get("mean", target_mean)
-                target_high = targets.get("high", target_high)
-                target_median = targets.get("median", target_median)
+                if targets.get("low") is not None:target_low = targets["low"]
+                if targets.get("mean") is not None:target_mean = targets["mean"]
+                if targets.get("high") is not None:target_high = targets["high"]
+                if targets.get("median") is not None:target_median = targets["median"]
 
         website = str(info.get("website") or "").strip()
         logo_url = str(info.get("logoUrl") or info.get("logo_url") or "").strip()
@@ -485,7 +485,7 @@ class YahooFinanceProvider(MarketDataProvider):
 
         # Property fallback for yfinance releases where the method/property paths
         # differ internally.
-        if not all(resolved[key] is not None for key in ("low", "mean", "high")):
+        if not all(resolved[key] is not None for key in ("low", "mean", "high", "median")):
             try:
                 merge(ticker.analyst_price_targets)
             except Exception:
@@ -493,7 +493,7 @@ class YahooFinanceProvider(MarketDataProvider):
 
         # Full Yahoo financialData fallback. Critically, this still runs even when
         # either analyst-target endpoint above threw an exception.
-        if not all(resolved[key] is not None for key in ("low", "mean", "high")):
+        if not all(resolved[key] is not None for key in ("low", "mean", "high", "median")):
             try:
                 info = ticker.get_info() or {}
             except Exception:
@@ -507,7 +507,7 @@ class YahooFinanceProvider(MarketDataProvider):
             "median": resolved["median"],
             "source": "Yahoo Finance analyst consensus",
         }
-        return result if any(result[k] is not None for k in ("low", "mean", "high")) else {}
+        return result if any(result[k] is not None for k in ("low", "mean", "high", "median")) else {}
 
 
     def get_price_targets_many(self, symbols: Iterable[str], max_workers: int = 4) -> Dict[str, dict]:

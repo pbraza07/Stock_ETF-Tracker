@@ -217,6 +217,7 @@ def main() -> None:
             target_values = stock_targets.get(symbol, {}) if str(instrument_type).strip().lower() == "stock" else {}
             target_high = target_values.get("high")
             target_mean = target_values.get("mean")
+            target_median = target_values.get("median")
             target_low = target_values.get("low")
             base_row = {
                 "Symbol": symbol,
@@ -230,6 +231,8 @@ def main() -> None:
                 "Rating Updated ET": m.get("Rating Updated ET") or prior.get("Rating Updated ET") or "—",
                 "Price Target High": target_high if target_high is not None else prior.get("Price Target High", pd.NA),
                 "Price Target Average": target_mean if target_mean is not None else prior.get("Price Target Average", pd.NA),
+                "Price Target Median": target_median if target_median is not None else prior.get("Price Target Median", pd.NA),
+                "Price Target Median Updated ET": refresh_display if target_median is not None else prior.get("Price Target Median Updated ET", "—"),
                 "Price Target Low": target_low if target_low is not None else prior.get("Price Target Low", pd.NA),
                 "Price Target Updated ET": refresh_display if any(v is not None for v in (target_high, target_mean, target_low)) else prior.get("Price Target Updated ET", "—"),
                 "Price Target Source": (
@@ -240,6 +243,7 @@ def main() -> None:
                 "Universe Source": m.get("Source") or prior.get("Universe Source") or "Manual persistent symbol",
                 "Return Basis": _basis(instrument_type),
                 "Snapshot Updated ET": refresh_display,
+                "Data As Of": prior.get("Data As Of", "—"),
                 "History Verification": prior.get("History Verification", ""),
                 "Verification Coverage": prior.get("Verification Coverage", ""),
                 "Verified Years": prior.get("Verified Years", pd.NA),
@@ -286,6 +290,9 @@ def main() -> None:
                 continue
 
             perf = calculate_performance(hist)
+            from analytics import _normalize_close
+            quote_close = _normalize_close(hist)
+            price_date = str(pd.Timestamp(quote_close.index[-1]).date()) if len(quote_close) else prior.get("Data As Of", "—")
             annual_returns = calculate_calendar_year_returns(hist, years=ANNUAL_HISTORY_YEARS)
             monthly_returns = calculate_monthly_returns(hist, MONTHLY_START_YEAR, MONTHLY_END_YEAR)
             monthly_returns_full = calculate_monthly_returns(
@@ -323,6 +330,7 @@ def main() -> None:
             row = dict(base_row)
             row.update({
                 "Price": perf.current_price,
+                "Data As Of": price_date,
                 "NAV": prior.get("NAV", pd.NA),
                 "Since Inception": prior.get("Since Inception", pd.NA),
                 "1D": as_percent(perf.perf_1d),
@@ -351,7 +359,7 @@ def main() -> None:
     # behavior. Recheck only stock rows that still lack one or more consensus
     # targets, sequentially, after the heavy history loop has finished.
     if not df.empty and "Symbol" in df.columns:
-        for col in ("Price Target Low", "Price Target Average", "Price Target High"):
+        for col in ("Price Target Low", "Price Target Average", "Price Target High", "Price Target Median"):
             if col not in df.columns:
                 df[col] = pd.NA
         if "Price Target Source" not in df.columns:
@@ -362,7 +370,7 @@ def main() -> None:
         stock_mask = df["Type"].astype(str).str.upper().str.strip().eq("STOCK")
         target_numeric = {
             col: pd.to_numeric(df[col], errors="coerce")
-            for col in ("Price Target Low", "Price Target Average", "Price Target High")
+            for col in ("Price Target Low", "Price Target Average", "Price Target High", "Price Target Median")
         }
         missing_mask = stock_mask.copy()
         complete_mask = stock_mask.copy()
@@ -382,6 +390,7 @@ def main() -> None:
                 for source_key, col in (
                     ("low", "Price Target Low"),
                     ("mean", "Price Target Average"),
+                    ("median", "Price Target Median"),
                     ("high", "Price Target High"),
                 ):
                     value = values.get(source_key)
@@ -393,6 +402,7 @@ def main() -> None:
                         existing = pd.to_numeric(df.loc[symbol_mask, col], errors="coerce")
                         if existing.empty or existing.isna().all() or (existing <= 0).all():
                             df.loc[symbol_mask, col] = value
+                            if col=="Price Target Median":df.loc[symbol_mask, "Price Target Median Updated ET"] = refresh_display
                             wrote = True
                 if wrote:
                     df.loc[symbol_mask, "Price Target Updated ET"] = refresh_display
@@ -405,11 +415,11 @@ def main() -> None:
     columns = [
         "Symbol", "Name", "Sector", "Industry", "Type", "MarketCap", "Price", "NAV",
         "Analyst Rating", "Rating Source", "Rating Updated ET",
-        "Price Target High", "Price Target Average", "Price Target Low", "Price Target Updated ET", "Price Target Source",
+        "Price Target High", "Price Target Average", "Price Target Low", "Price Target Median", "Price Target Median Updated ET", "Price Target Updated ET", "Price Target Source",
         "1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS,
         "Since Inception", "Short Buy", "Long Buy", "Fundamental Buy",
         "Short Signal New", "Long Signal New", "Signal Reasons", "Signal Updated ET",
-        "Short Signal Score", "Long Signal Score", "Return Basis", "Snapshot Updated ET", "Universe Source",
+        "Short Signal Score", "Long Signal Score", "Return Basis", "Data As Of", "Snapshot Updated ET", "Universe Source",
         "History Verification", "Verification Coverage", "Verified Years",
         "Verification Available Years", "Verification Compared Years", "Verification Discrepancies",
         "Max Verification Diff (pp)", "Verification Tolerance (pp)",

@@ -34,10 +34,12 @@ def test_mean_is_never_substituted_for_median_or_zero():
 def test_fresh_partial_provider_snapshot_not_spliced_with_older_targets():
     table,market=fixtures()
     out=enrich_targets(table,market,{'A':{'low':110.,'median':None,'high':None,'retrieved_at':'2026-11-02','source':'Provider'}})
-    assert pd.isna(out.iloc[0]['Target Price Median'])
-    assert pd.isna(out.iloc[0]['Target Price High'])
-    assert out.iloc[0]['Current Price Minus Low Target']==-10.
-    assert out.iloc[0]['Target Source']=='Provider'
+    assert out.iloc[0]['Target Price Low']==80.
+    assert out.iloc[0]['Target Price Median']==120.
+    assert out.iloc[0]['Target Price High']==160.
+    assert out.iloc[0]['Current Price Minus Low Target']==20.
+    assert 'Earlier dated analyst set' in out.iloc[0]['Target Data Status']
+    assert out.iloc[0]['Target Retrieved At']=='2026-11-01'
 
 
 def test_missing_zero_or_nonfinite_quotes_never_divide_by_zero():
