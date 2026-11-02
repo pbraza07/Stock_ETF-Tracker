@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.56: lazy workspaces, shared caches, durable calculation jobs and on-demand reports.
+# v5.11.60: lazy workspaces, shared caches, durable calculation jobs and on-demand reports.
 
 import json
 import os
@@ -2073,11 +2073,17 @@ def blank_row(symbol: str) -> dict:
 
 
 def assemble_market(symbols: List[str], snapshot: pd.DataFrame) -> pd.DataFrame:
-    snap = snapshot.set_index("Symbol", drop=False).to_dict(orient="index") if not snapshot.empty else {}
+    snap = (snapshot.drop_duplicates("Symbol", keep="last").set_index("Symbol", drop=False).to_dict(orient="index")
+            if not snapshot.empty and "Symbol" in snapshot.columns else {})
     rows = []
     for symbol in symbols:
-        rows.append(dict(st.session_state.session_rows.get(symbol) or snap.get(symbol) or blank_row(symbol)))
-    df = pd.DataFrame(rows)
+        row = blank_row(symbol)
+        row.update(snap.get(symbol) or {})
+        row.update(st.session_state.session_rows.get(symbol) or {})
+        row["Symbol"] = symbol
+        rows.append(row)
+    # Even a genuinely empty universe must retain the consumer schema.
+    df = pd.DataFrame(rows) if rows else pd.DataFrame(columns=list(blank_row("")))
     for col in ["MarketCap", "Price", "NAV", *PRICE_TARGET_COLS] + ALL_RETURN_COLS:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -2602,7 +2608,27 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-_active_workspace = "Future Projection" if st.session_state.get("future_projection_focus") else st.session_state.get("workspace_navigation", "📰 Market News")
+_top_tab_labels = [
+    "📰 Market News",
+    "◈ Market Navigator",
+    "Favorite Picks",
+    "◫ Portfolio Simulator",
+    "Future Projection",
+    "⚖ Stock & ETF Comparison",
+    "◈ Sector Performance",
+    "Recession Indicators",
+    "Quality Growth & Return Opportunities",
+    "🔔 Alerts & Help",
+]
+from runtime_performance import preserve_navigation_state
+preserve_navigation_state()
+if bool(st.session_state.pop("future_projection_focus", False)):
+    st.session_state["workspace_navigation"] = "Future Projection"
+# Register navigation before consulting it: frontend tab state resolves here.
+_workspace_tabs = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+news_tab, market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, recession_tab, quality_tab, alerts_tab = _workspace_tabs
+_active_workspace = next((label for label, tab in zip(_top_tab_labels, _workspace_tabs) if tab.open), "📰 Market News")
+
 if _active_workspace not in ("📰 Market News", "Recession Indicators"):
     snapshot = load_snapshot()
     metadata = load_snapshot_metadata()
@@ -2615,7 +2641,7 @@ if _active_workspace not in ("📰 Market News", "Recession Indicators"):
     favorite_picks_change_frame = favorite_change_history_frame(favorite_picks_history)
     favorite_picks_run_frame = favorite_run_history_frame(favorite_picks_history)
     base_symbols = default_universe["Symbol"].astype(str).str.upper().tolist()
-    snapshot_symbols = snapshot["Symbol"].tolist() if not snapshot.empty else []
+    snapshot_symbols = snapshot["Symbol"].dropna().astype(str).tolist() if "Symbol" in snapshot.columns else []
     extra_symbols = [s for s in st.session_state.extra_symbols if s not in set(base_symbols)]
     symbols = list(dict.fromkeys(base_symbols + snapshot_symbols + extra_symbols))
     market_base = assemble_market(symbols, snapshot)
@@ -2624,7 +2650,7 @@ if _active_workspace not in ("📰 Market News", "Recession Indicators"):
 else:
     snapshot=pd.DataFrame();metadata={};universe_metadata={};universe_change_history=[]
     favorite_picks_history={};favorite_picks_change_frame=pd.DataFrame();favorite_picks_run_frame=pd.DataFrame()
-    market=pd.DataFrame();market_base=market;symbols=[]
+    market=assemble_market([], pd.DataFrame());market_base=market;symbols=[]
 
 # v5.9.58: dynamic annual history is maintained by the same automatic snapshot
 # refresh as every other market field. There is intentionally no separate repair
@@ -2686,29 +2712,6 @@ active_signal_count = int(active_signal_mask.sum())
 # v5.11.0 keeps Future Projection safe while its unlimited holding selector is empty.
 # v5.10.0 adds Future Projection without renaming or removing existing top-level workspaces.
 # v5.9.24 compatibility contract previously used: market_tab, portfolio_tab, compare_tab, alerts_tab = st.tabs
-_top_tab_labels = [
-    "📰 Market News",
-    "◈ Market Navigator",
-    "Favorite Picks",
-    "◫ Portfolio Simulator",
-    "Future Projection",
-    "⚖ Stock & ETF Comparison",
-    "◈ Sector Performance",
-    "Recession Indicators",
-    "Quality Growth & Return Opportunities",
-    "🔔 Alerts & Help",
-]
-from runtime_performance import preserve_navigation_state
-preserve_navigation_state()
-if bool(st.session_state.pop("future_projection_focus", False)):
-    st.session_state["workspace_navigation"] = "Future Projection"
-    news_tab, market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, recession_tab, quality_tab, alerts_tab = st.tabs(
-        _top_tab_labels,
-        default="Future Projection",
-        key="workspace_navigation", on_change="rerun",
-    )
-else:
-    news_tab, market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, recession_tab, quality_tab, alerts_tab = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
 
 if news_tab.open:
     with news_tab:
@@ -2983,6 +2986,8 @@ if market_tab.open:
         signal_filter = st.pills(
             "Buy signals", _signal_options, selection_mode="multi", default=_signal_default, key="signal_filter"
         ) or []
+        if market.empty:
+            st.info("Market data is not available yet. Refresh the dataset to load stocks and ETFs; completed research is retained in its workspace.")
         stock_sector_rows = market.loc[market["Type"].astype(str).str.upper().eq("STOCK")]
         sectors = sorted(
             x for x in stock_sector_rows["Sector"].dropna().astype(str).unique().tolist()
@@ -4949,8 +4954,9 @@ if portfolio_tab.open:
 
                 all_portfolio_symbols = market["Symbol"].astype(str).str.upper().drop_duplicates().tolist()
                 valid_saved_portfolio = [s for s in st.session_state.portfolio_symbols if s in set(all_portfolio_symbols)]
-                if valid_saved_portfolio != st.session_state.portfolio_symbols:
-                    st.session_state.portfolio_symbols = valid_saved_portfolio
+                # A refresh must not delete the user's holdings when a source is partial.
+                missing_selected = [s for s in st.session_state.portfolio_symbols if s not in all_portfolio_symbols]
+                all_portfolio_symbols.extend(missing_selected)
 
                 # v5.9.53: ranking families stay hidden until their respective button is opened.
                 st.caption("Portfolio preset rankings are grouped below. Open only the ranking family you want to use.")
@@ -6397,7 +6403,18 @@ if portfolio_tab.open:
                 else:
                     st.info("Select two or more instruments to simulate a split portfolio.")
 
-            st.session_state["portfolio_build_values"] = {k: globals()[k] for k in ['allocation_valid', 'calculated', 'effective_portfolio_years', 'item', 'meta_row', 'portfolio_allocation_mode', 'portfolio_analytics', 'portfolio_annual_withdrawal', 'portfolio_include_ytd', 'portfolio_monthly_withdrawal', 'portfolio_monthly_withdrawal_not_rebalanced_result', 'portfolio_monthly_withdrawal_rebalanced_result', 'portfolio_monthly_withdrawal_result', 'portfolio_monthly_withdrawals_enabled', 'portfolio_no_withdrawal_available_months', 'portfolio_no_withdrawal_positive_months', 'portfolio_period', 'portfolio_results', 'portfolio_total', 'portfolio_withdrawal_not_rebalanced_result', 'portfolio_withdrawal_rebalanced_result', 'portfolio_withdrawal_result', 'portfolio_withdrawals_enabled', 'selected_portfolio_symbols', 'sym', 'total_ending', 'total_profit', 'total_return', 'unresolved_amount'] if k in globals()}
+            # Commit only complete calculations. Invalid drafts/provider failures retain the last result.
+            _withdrawal_outputs = [portfolio_withdrawal_rebalanced_result,
+                portfolio_withdrawal_not_rebalanced_result, portfolio_monthly_withdrawal_rebalanced_result,
+                portfolio_monthly_withdrawal_not_rebalanced_result]
+            if (allocation_valid and calculated and len(calculated) == len(portfolio_results)
+                    and not unresolved_amount and not any(r.get("unavailable") for r in _withdrawal_outputs)):
+                st.session_state["portfolio_build_values"] = {k: globals()[k] for k in ['allocation_valid', 'calculated', 'effective_portfolio_years', 'item', 'meta_row', 'portfolio_allocation_mode', 'portfolio_analytics', 'portfolio_annual_withdrawal', 'portfolio_include_ytd', 'portfolio_monthly_withdrawal', 'portfolio_monthly_withdrawal_not_rebalanced_result', 'portfolio_monthly_withdrawal_rebalanced_result', 'portfolio_monthly_withdrawal_result', 'portfolio_monthly_withdrawals_enabled', 'portfolio_no_withdrawal_available_months', 'portfolio_no_withdrawal_positive_months', 'portfolio_period', 'portfolio_results', 'portfolio_total', 'portfolio_withdrawal_not_rebalanced_result', 'portfolio_withdrawal_rebalanced_result', 'portfolio_withdrawal_result', 'portfolio_withdrawals_enabled', 'selected_portfolio_symbols', 'sym', 'total_ending', 'total_profit', 'total_return', 'unresolved_amount'] if k in globals()}
+                st.session_state["portfolio_build_values"]["data_as_of"] = metadata.get("updated_at_display_et", "Unavailable")
+            elif st.session_state.get("portfolio_build_values"):
+                from session_results import render_retained_portfolio
+                render_retained_portfolio(st.session_state["portfolio_build_values"])
+
 
         # Save / Manage portfolio simulations lives inside the dedicated Portfolio workspace.
         if portfolio_manage_tab.open:
@@ -6887,10 +6904,12 @@ if favorite_tab.open:
                 )
             else:
                 with st.status("Building Favorite Picks…", expanded=True) as favorite_status:
+                    favorite_stage = "live data loading"
                     try:
                         st.write(f"Screened the MarketScope stock universe; enriching {len(favorite_symbols):,} sector finalists.")
                         favorite_live_context = cached_future_projection_live_context(tuple(favorite_symbols), market)
                         st.write("Conditioning expected returns, volatility, and the starting market regime.")
+                        favorite_stage = "ranking calculation"
                         favorite_result = build_favorite_picks(
                             market=market,
                             annual_year_columns=YEAR_RETURN_COLS,
@@ -6901,6 +6920,7 @@ if favorite_tab.open:
                             data_as_of=_favorite_data_as_of or "Not available",
                         )
                         st.session_state.favorite_picks_result = favorite_result
+                        favorite_stage = "history persistence"
                         st.write("Comparing this run with the last permanently saved sector picks and risk ratings.")
                         latest_history = merge_favorite_picks_ledgers(
                             favorite_picks_history,
@@ -6941,11 +6961,18 @@ if favorite_tab.open:
                             expanded=False,
                         )
                     except Exception:
-                        favorite_status.update(label="Favorite Picks could not be completed", state="error", expanded=True)
-                        st.error(
-                            "The ranking could not be completed with the currently loaded data. Refresh MarketScope and try again; "
-                            "no portfolio or historical simulator values were changed."
-                        )
+                        import logging
+                        from uuid import uuid4
+                        error_reference = uuid4().hex[:12]
+                        logging.getLogger("marketscope.favorite_picks").exception(
+                            "Favorite Picks failed stage=%s reference=%s", favorite_stage, error_reference)
+                        if favorite_stage == "history persistence":
+                            favorite_status.update(label="Favorite Picks complete — history save needs retry", state="complete", expanded=True)
+                            st.warning("The ranking completed and is retained in this session. Its history could not be saved. Reference: " + error_reference)
+                        else:
+                            favorite_status.update(label="Favorite Picks could not be completed", state="error", expanded=True)
+                            st.error("Favorite Picks could not finish during " + favorite_stage +
+                                ". The last completed result is retained. No missing data was invented. Diagnostic reference: " + error_reference)
 
         favorite_result = st.session_state.get("favorite_picks_result")
         if not isinstance(favorite_result, dict) or favorite_result.get("table") is None:
@@ -6955,6 +6982,10 @@ if favorite_tab.open:
             )
         else:
             favorite_table = favorite_result["table"].copy()
+            if "Live Evidence Gaps" in favorite_table:
+                incomplete_count = int(favorite_table["Live Evidence Gaps"].ne("None").sum())
+                if incomplete_count:
+                    st.warning(f"{incomplete_count} selected stocks have incomplete live evidence. Missing observations are blank; check Live Evidence Gaps and data dates. Incomplete trend scores use a neutral model assumption, not an observed signal.")
             favorite_state = favorite_result.get("market_state") or {}
             favorite_probabilities = favorite_state.get("regime_probabilities") or {}
             favorite_metrics = st.columns(5)
@@ -7013,8 +7044,9 @@ if favorite_tab.open:
                 "Sector", "Sector Rank", "Symbol", "Name", "Favorite Score", "Model Confidence", "Risk Rating", "Risk Score",
                 "Expected Annual Return %", *favorite_percentile_columns, "Historical CAGR %", "Positive Years %",
                 "Historical Worst Year", "Conditioned Volatility %", "6M", "Fundamental Score", "Valuation Score",
-                "Trend Score", "Observed Years", "Live Data Quality", "Why Selected", "Key Risk", "Data As Of",
+                "Trend Score", "Observed Years", "Live Data Quality", "Live Daily Observations", "Live Evidence Gaps", "20D Return %", "50D Return %", "200D Return %", "Why Selected", "Key Risk", "Data As Of",
             ]
+            download_columns = [c for c in download_columns if c in favorite_table.columns]
             st.download_button(
                 "Download Favorite Picks CSV",
                 data=favorite_table[download_columns].to_csv(index=False).encode("utf-8"),

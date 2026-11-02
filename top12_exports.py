@@ -1,5 +1,6 @@
 """Readable ranking reports with complete evidence workbook."""
 
+from ranking_price_targets import TARGET_COLUMNS, TARGET_HELP
 from io import BytesIO
 from xml.sax.saxutils import escape
 import json
@@ -98,7 +99,7 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
         if kind == "Recession"
         else "Top 5 per Sector Max-Profit High-Performance Stocks"
     )
-    story += [p(DISCLOSURES[kind], "MSWarning"), Spacer(1, 12)]
+    story += [p(DISCLOSURES[kind], "MSWarning"), p(TARGET_HELP), Spacer(1, 12)]
     for k, v in result["metadata"].items():
         story.append(p(f"{k}: {v}"))
     story += [Spacer(1, 12), p("Sector allocation", "Heading2")]
@@ -114,6 +115,8 @@ def build_top12_pdf(kind, table, result, portfolio=None, history=None, backtest=
         story.append(p(row.get("Why Selected", "")))
         cols = [
             "Sector",
+            "Price",
+            *TARGET_COLUMNS,
             kind + " Score",
             "Data Confidence",
             "Maximum Drawdown %",

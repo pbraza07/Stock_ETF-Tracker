@@ -55,14 +55,16 @@ def render(market,years,monthly_loader,live_loader):
                     completed=job['future'].result()
                     if st.session_state.get('qo_job_kind')=='portfolio':st.session_state.qo_portfolio=completed
                     else:
-                        st.session_state.qo_bundle=completed;st.session_state.pop('qo_portfolio',None)
+                        st.session_state.qo_bundle=completed
                         st.session_state.pop('qo_holdings',None)
                 except Exception as exc:st.session_state.qo_error=str(exc)
                 finally:release(token);st.session_state.pop('qo_job',None)
                 st.rerun()
             done,total,label=job['progress'];st.progress(min(.99,done/max(1,total)),text=f'{label}: {done}/{total}')
             st.caption('Calculations are queued and run outside the web interface. Changing the form does not alter a submitted screen.')
-        status();return
+        status()
+        if st.session_state.get("qo_bundle"):
+            st.info("Research is running. Showing the last completed research below until the new run succeeds.")
     if st.session_state.get('qo_error'):st.error(st.session_state.pop('qo_error'))
     bundle=st.session_state.get('qo_bundle')
     if not bundle:
@@ -95,14 +97,15 @@ def render(market,years,monthly_loader,live_loader):
     maxweight=c[0].slider('Maximum position weight (%)',5,100,25,key="qo_input_95")/100
     maxsector=c[1].slider('Maximum sector weight (%)',10,100,35,key="qo_input_96")/100
     st.caption('Equal weight. Correlations are estimated jointly with stress-regime adjustments. Four stocks in different sectors can still share significant risks.')
-    if st.button('Evaluate selected portfolio',disabled=not selected):
+    if st.button('Evaluate selected portfolio',disabled=not selected or bool(st.session_state.get('qo_job'))):
         try:
             from functools import partial
             from projection_tasks import quality_portfolio
             st.session_state.qo_job=submit(partial(quality_portfolio,bundle,selected,maxweight,maxsector));st.session_state.qo_job_kind='portfolio';st.rerun()
-        except Exception as exc:st.session_state.pop('qo_portfolio',None);st.error(str(exc))
+        except Exception as exc:st.error(str(exc))
     p=st.session_state.get('qo_portfolio')
     if p:
+        st.caption('Last completed portfolio evaluation; retained until another portfolio evaluation succeeds.')
         st.caption('Last completed portfolio: '+', '.join(p['holdings'])+'. Re-evaluate after changing selections or limits.')
         import pandas as pd
         st.dataframe(pd.DataFrame(p['metrics']).T,width='stretch')

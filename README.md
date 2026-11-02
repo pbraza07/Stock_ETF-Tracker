@@ -1,4 +1,8 @@
-# MarketScope v5.11.56
+# Session result retention — v5.11.60
+
+Completed rankings and simulations stay visible across ordinary session reruns and tab switches. Pending or failed requests retain the previous completed result and its original assumptions. See RELEASE_5_11_57.md for scope, validation, and deployment notes.
+
+# MarketScope v5.11.60
 
 Performance upgrade preserving the existing portfolio, YTD, Future Projection,
 news, economic calendar, recession indicators, and reporting features.

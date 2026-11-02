@@ -179,19 +179,19 @@ def render_ytd(market, on_saved=None):
     st.subheader("Year-to-date portfolio simulation")
     st.caption("Actual adjusted daily closes; equal starting weights. Daily withdrawals occur on trading days. Weekly/monthly withdrawals occur at completed period ends. Incomplete periods have no withdrawal. Rebalanced strategy resets equal weights at the chosen cash-flow cadence, even with withdrawals disabled.")
     symbols = st.multiselect("YTD holdings", market.Symbol.drop_duplicates().tolist(), key="ytd_holdings")
-    principal = st.number_input("YTD starting investment", min_value=1000.0, value=300000.0)
-    period_mode = st.selectbox('Simulation start', ['YTD (default)', 'Custom date'])
+    principal = st.number_input("YTD starting investment", min_value=1000.0, value=300000.0, key="ytd_principal")
+    period_mode = st.selectbox('Simulation start', ['YTD (default)', 'Custom date'], key='ytd_period_mode')
     selected_start = st.date_input('Start date', value=pd.Timestamp(pd.Timestamp.now().year,1,1).date(),
-        min_value=pd.Timestamp('1900-01-01').date(), max_value=pd.Timestamp.now().date(), disabled=period_mode=='YTD (default)')
-    frequency = st.selectbox("YTD table periods", ["Daily", "Weekly", "Monthly"], index=2)
-    cadence = st.selectbox("Withdrawal / rebalance cadence", ["Daily", "Weekly", "Monthly", "None"], index=2)
-    enabled = st.checkbox("Enable YTD withdrawals", disabled=cadence=='None') and cadence!='None'
+        min_value=pd.Timestamp('1900-01-01').date(), max_value=pd.Timestamp.now().date(), disabled=period_mode=='YTD (default)', key='ytd_start_date')
+    frequency = st.selectbox("YTD table periods", ["Daily", "Weekly", "Monthly"], index=2, key="ytd_frequency")
+    cadence = st.selectbox("Withdrawal / rebalance cadence", ["Daily", "Weekly", "Monthly", "None"], index=2, key="ytd_cadence")
+    enabled = st.checkbox("Enable YTD withdrawals", disabled=cadence=='None', key="ytd_enabled") and cadence!='None'
     if cadence=='None':st.caption('None displays a single performance result without withdrawals or rebalancing.')
-    amount = st.number_input("Withdrawal per selected cadence", min_value=0.0, value=0.0, disabled=not enabled)
-    if st.button("Run YTD simulation"):
-        if not symbols:
-            st.error("Select at least one holding.")
-            return
+    amount = st.number_input("Withdrawal per selected cadence", min_value=0.0, value=0.0, disabled=not enabled, key="ytd_amount")
+    run = st.button("Run YTD simulation")
+    if run and not symbols:
+        st.error("Select at least one holding. The last completed result is retained below.")
+    if run and symbols:
         try:
             progress = st.progress(0, text='0% - Validating request')
             status = st.empty()
@@ -217,15 +217,15 @@ def render_ytd(market, on_saved=None):
                     update(percent,'Calculating '+name+' balances, withdrawals and positive periods')
                     outputs[name] = simulate_ytd(prices,principal,frequency,amount if enabled else 0,cadence,rb,as_of,
                         selected_start if period_mode=='Custom date' else None)
-                st.session_state.ytd_output = (outputs, str(as_of))
-                st.session_state.ytd_completed_inputs = dict(holdings=symbols, principal=principal,
+                completed_inputs = dict(holdings=symbols, principal=principal,
                     reporting_frequency=frequency, cadence=cadence, withdrawal=amount if enabled else 0,
                     requested_start=str(selected_start), period_mode=period_mode)
-                record = make_saved_record(outputs, st.session_state.ytd_completed_inputs, 'YTD Portfolio')
+                record = make_saved_record(outputs, completed_inputs, 'YTD Portfolio')
                 columns = [c for c in ['Symbol','Name','Sector','Price','Analyst Rating','Price Target Low','Price Target Average','Price Target High'] if c in market.columns]
                 import json
                 record['instruments'] = json.loads(market.loc[market.Symbol.isin(symbols),columns].to_json(orient='records'))
-                st.session_state.ytd_record = record
+                st.session_state.update(ytd_output=(outputs, str(as_of)),
+                    ytd_completed_inputs=completed_inputs, ytd_record=record)
                 update(95,'Preparing PDF and Excel reports')
                 from ytd_reports import get_exports
                 try:
