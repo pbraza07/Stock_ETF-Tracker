@@ -1,29 +1,15 @@
 {
-  "refreshed_at_et": "2026-11-02T13:02:38.496203-05:00",
-  "refreshed_at_display_et": "Nov 02, 2026 01:02:38 PM EST",
+  "refreshed_at_et": "2026-11-02T13:49:10.256045-05:00",
+  "refreshed_at_display_et": "Nov 02, 2026 01:49:10 PM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
   "stock_count": 163,
   "etf_count": 213,
-  "added_count": 1,
-  "removed_count": 4,
-  "added_symbols": [
-    "GSK"
-  ],
-  "removed_symbols": [
-    "BNY",
-    "FTNT",
-    "HCA",
-    "NET"
-  ],
-  "analyst_rating_change_count": 1,
-  "analyst_rating_changes": [
-    {
-      "symbol": "SAN",
-      "name": "Banco Santander S.A. Sponsored ADR (Spain)",
-      "from": "Strong Buy",
-      "to": "Buy"
-    }
-  ]
+  "added_count": 0,
+  "removed_count": 0,
+  "added_symbols": [],
+  "removed_symbols": [],
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }
