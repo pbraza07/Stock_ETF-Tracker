@@ -1,29 +1,31 @@
 {
-  "refreshed_at_et": "2026-11-03T21:58:27.201061-05:00",
-  "refreshed_at_display_et": "Nov 03, 2026 09:58:27 PM EST",
+  "refreshed_at_et": "2026-11-04T22:22:47.279182-05:00",
+  "refreshed_at_display_et": "Nov 04, 2026 10:22:47 PM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 164,
+  "stock_count": 165,
   "etf_count": 213,
-  "added_count": 3,
-  "removed_count": 2,
+  "added_count": 4,
+  "removed_count": 3,
   "added_symbols": [
+    "BNY",
+    "EQIX",
+    "REGN",
+    "WMB"
+  ],
+  "removed_symbols": [
     "ABNB",
     "BN",
     "DUK"
   ],
-  "removed_symbols": [
-    "EQIX",
-    "GSK"
-  ],
   "analyst_rating_change_count": 1,
   "analyst_rating_changes": [
     {
-      "symbol": "PSX",
-      "name": "Phillips 66 Common Stock",
-      "from": "Buy",
-      "to": "Strong Buy"
+      "symbol": "UBS",
+      "name": "UBS Group AG Registered Ordinary Shares",
+      "from": "Strong Buy",
+      "to": "Buy"
     }
   ]
 }
