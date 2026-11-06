@@ -3203,9 +3203,13 @@
     {
       "date": "2026-09-01",
       "value": 0.0
+    },
+    {
+      "date": "2026-10-01",
+      "value": 0.0
     }
   ],
-  "retrieved_at": "2026-11-06T06:54:44.193282+00:00",
+  "retrieved_at": "2026-11-06T19:28:09.412063+00:00",
   "source": "https://api.stlouisfed.org/fred/series/observations",
   "key": "SAHMREALTIME"
 }
