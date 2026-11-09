@@ -72,4 +72,4 @@ st.write('Active: '+_active_workspace)
     assert app.session_state.loads==7
     # No second tabs declaration with a different default/identity.
     assert navigation.count('render_navigation(_top_tab_labels)')==1
-    assert SOURCE.index('_workspace_tabs = st.tabs') < SOURCE.index('    snapshot = load_snapshot()',start)
+    assert SOURCE.index('_workspace_tabs = render_navigation') < SOURCE.index('    snapshot = load_snapshot()',start)

@@ -143,7 +143,7 @@ def test_recent_and_duplicate_overview():
 def test_release_integration_and_archive_exclusion():
     app=Path('app.py').read_text()
     assert '"📰 Market News"' in app
-    assert app.count('_workspace_tabs = st.tabs(_top_tab_labels')==1
+    assert app.count('_workspace_tabs = render_navigation(_top_tab_labels)')==1
     assert 'if news_tab.open:' in app
     from scripts.package_release import LIVE_FILES
     assert 'data/market_news_archive.json' in LIVE_FILES
