@@ -23,3 +23,19 @@ def request():
         _pool.submit(collect_now,token)
         return 'Refreshing feeds in the background. Saved news remains available.'
     return 'A news refresh is already in progress.'
+
+# Cold-start archive indexing must not hold the Streamlit session open.
+from threading import Lock
+_bootstrap_lock = Lock()
+_bootstrap_future = None
+
+def prepare_archive():
+    global _bootstrap_future
+    with _bootstrap_lock:
+        if _bootstrap_future is None or (_bootstrap_future.done() and _bootstrap_future.exception() is not None):
+            def bootstrap():
+                import news_archive
+                from news_repository import save
+                save(news_archive.load())
+            _bootstrap_future = _pool.submit(bootstrap)
+        return _bootstrap_future

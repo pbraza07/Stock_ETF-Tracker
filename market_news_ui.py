@@ -128,11 +128,14 @@ def render_market_news():
         from news_repository import catalog,query_rows,recent_overview
         payload=catalog()
         if payload is None:
-            # Import a pre-upgrade local archive once, then query only indexed pages.
-            legacy=news_archive.load()
-            from news_repository import save as save_index
-            save_index(legacy)
-            payload=catalog()
+            from news_background import prepare_archive
+            task = prepare_archive()
+            if task.done() and task.exception() is not None:
+                st.warning('Saved news could not be prepared yet. Your archive is unchanged. Retry to try again.')
+            else:
+                st.info('Preparing the saved news archive in the background. You can use another workspace while this completes.')
+            st.button('Check saved news / Retry', key='news_bootstrap_retry')
+            return
     except (ValueError,OSError) as exc:
         st.error('The news archive could not be read. Existing data has been left untouched. '+str(exc));return
     c1,c2=st.columns([1,2])

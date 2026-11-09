@@ -2629,7 +2629,8 @@ preserve_navigation_state()
 if bool(st.session_state.pop("future_projection_focus", False)):
     st.session_state["workspace_navigation"] = "Future Projection"
 # Register navigation before consulting it: frontend tab state resolves here.
-_workspace_tabs = st.tabs(_top_tab_labels, key="workspace_navigation", on_change="rerun")
+from workspace_navigation import render_navigation
+_workspace_tabs = render_navigation(_top_tab_labels)
 news_tab, market_tab, favorite_tab, portfolio_tab, future_tab, compare_tab, sector_tab, recession_tab, quality_tab, alerts_tab = _workspace_tabs
 _active_workspace = next((label for label, tab in zip(_top_tab_labels, _workspace_tabs) if tab.open), "📰 Market News")
 
