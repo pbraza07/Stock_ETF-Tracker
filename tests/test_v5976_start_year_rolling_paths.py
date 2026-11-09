@@ -32,8 +32,8 @@ def _load_helpers():
 
 
 def test_release_version_5977():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.62"
-    assert "v5.11.62" in APP
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.63"
+    assert "v5.11.63" in APP
 
 
 def test_start_year_strategies_are_separate_tabs():

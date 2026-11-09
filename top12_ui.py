@@ -297,9 +297,17 @@ def render_persisted_ranked_table(kind, market):
 
     targets = load_targets(tuple(table.Symbol.astype(str)))
     display = _persisted_display_table(table, kind, market, targets)
-    st.caption(TARGET_HELP)
+    with st.expander("How to read analyst targets and dates"):
+        st.caption(TARGET_HELP)
+    show_details = st.toggle("Show all ranking evidence and source dates", value=False,
+                             key="ranking_full_evidence_" + kind)
+    compact = [c for c in display.columns if c in {
+        "Rank", "Ticker", "Company", "Sector", "Current Price", "Target Price Median",
+        "Median Target Upside %"} or c.startswith("Final ")]
+    shown = display if show_details else display[compact]
+    st.caption("Summary view. Enable all evidence to inspect every factor, target, and source date.")
     st.dataframe(
-        display,
+        shown,
         hide_index=True,
         column_config=_ranking_factor_config(display),
         width="stretch",
