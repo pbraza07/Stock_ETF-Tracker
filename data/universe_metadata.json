@@ -1,15 +1,23 @@
 {
-  "refreshed_at_et": "2026-11-10T06:12:42.892950-05:00",
-  "refreshed_at_display_et": "Nov 10, 2026 06:12:42 AM EST",
+  "refreshed_at_et": "2026-11-10T10:12:51.651534-05:00",
+  "refreshed_at_display_et": "Nov 10, 2026 10:12:51 AM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 162,
+  "stock_count": 166,
   "etf_count": 213,
-  "added_count": 0,
-  "removed_count": 0,
-  "added_symbols": [],
-  "removed_symbols": [],
+  "added_count": 5,
+  "removed_count": 1,
+  "added_symbols": [
+    "AEM",
+    "BNY",
+    "NET",
+    "SNOW",
+    "WDC"
+  ],
+  "removed_symbols": [
+    "MNST"
+  ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
 }
