@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "last_run_at_et": "2026-11-10T00:18:23.072786-05:00",
+  "last_run_at_et": "2026-11-10T00:39:35.550797-05:00",
   "current_picks": {
     "Basic Materials": [
       {
@@ -113,7 +113,7 @@
         "symbol": "ENB",
         "name": "Enbridge Inc Common Stock",
         "risk_rating": "Low",
-        "risk_score": 16.1939,
+        "risk_score": 16.194,
         "favorite_score": 69.5155,
         "model_confidence": "High",
         "first_selected_at_et": "2026-11-09T18:50:06.574676-05:00",
@@ -129,7 +129,7 @@
         "symbol": "PGR",
         "name": "Progressive Corporation (The) Common Stock",
         "risk_rating": "Low",
-        "risk_score": 16.3506,
+        "risk_score": 16.3505,
         "favorite_score": 81.3834,
         "model_confidence": "High",
         "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
@@ -189,7 +189,7 @@
         "symbol": "UNP",
         "name": "Union Pacific Corporation Common Stock",
         "risk_rating": "Low",
-        "risk_score": 10.1368,
+        "risk_score": 10.1367,
         "favorite_score": 73.1741,
         "model_confidence": "High",
         "first_selected_at_et": "2026-10-15T20:16:07.176690-04:00",
@@ -69411,6 +69411,347 @@
             "name": "Union Pacific Corporation Common Stock",
             "risk_rating": "Low",
             "risk_score": 10.1368,
+            "favorite_score": 73.1741,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-10-15T20:16:07.176690-04:00",
+            "first_selected_display_et": "Oct 15, 2026 08:16:07 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-10-15T20:16:07.176690-04:00",
+            "risk_rating_first_detected_display_et": "Oct 15, 2026 08:16:07 PM EDT"
+          },
+          {
+            "sector": "Industrials",
+            "rank": 2,
+            "symbol": "DHR",
+            "name": "Danaher Corporation Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 19.6746,
+            "favorite_score": 66.9637,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-06T21:42:40.292480-05:00",
+            "first_selected_display_et": "Nov 06, 2026 09:42:40 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-06T21:42:40.292480-05:00",
+            "risk_rating_first_detected_display_et": "Nov 06, 2026 09:42:40 PM EST"
+          }
+        ],
+        "Real Estate": [
+          {
+            "sector": "Real Estate",
+            "rank": 1,
+            "symbol": "BN",
+            "name": "Brookfield Corporation Class A Limited Voting Shares",
+            "risk_rating": "Moderate",
+            "risk_score": 33.4325,
+            "favorite_score": 80.4181,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-05T22:23:35.410109-05:00",
+            "first_selected_display_et": "Nov 05, 2026 10:23:35 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-05T22:23:35.410109-05:00",
+            "risk_rating_first_detected_display_et": "Nov 05, 2026 10:23:35 PM EST"
+          },
+          {
+            "sector": "Real Estate",
+            "rank": 2,
+            "symbol": "WELL",
+            "name": "Welltower Inc. Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 13.8436,
+            "favorite_score": 79.4594,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "risk_rating_first_detected_display_et": "Sep 15, 2026 07:15:00 AM EDT"
+          }
+        ],
+        "Technology": [
+          {
+            "sector": "Technology",
+            "rank": 1,
+            "symbol": "AVGO",
+            "name": "Broadcom Inc. Common Stock",
+            "risk_rating": "Moderate",
+            "risk_score": 40.2569,
+            "favorite_score": 80.719,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "risk_rating_first_detected_display_et": "Sep 15, 2026 07:15:00 AM EDT"
+          },
+          {
+            "sector": "Technology",
+            "rank": 2,
+            "symbol": "AAPL",
+            "name": "Apple Inc. Common Stock",
+            "risk_rating": "High",
+            "risk_score": 60.6193,
+            "favorite_score": 66.937,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-09T20:22:09.004016-05:00",
+            "first_selected_display_et": "Nov 09, 2026 08:22:09 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-09T20:22:09.004016-05:00",
+            "risk_rating_first_detected_display_et": "Nov 09, 2026 08:22:09 PM EST"
+          }
+        ],
+        "Telecommunications": [
+          {
+            "sector": "Telecommunications",
+            "rank": 1,
+            "symbol": "VZ",
+            "name": "Verizon Communications Inc. Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 7.0415,
+            "favorite_score": 72.7728,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-02T14:50:59.404678-05:00",
+            "first_selected_display_et": "Nov 02, 2026 02:50:59 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-02T14:50:59.404678-05:00",
+            "risk_rating_first_detected_display_et": "Nov 02, 2026 02:50:59 PM EST"
+          },
+          {
+            "sector": "Telecommunications",
+            "rank": 2,
+            "symbol": "ANET",
+            "name": "Arista Networks Inc. Common Stock",
+            "risk_rating": "High",
+            "risk_score": 57.7479,
+            "favorite_score": 70.5795,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-17T20:04:14.817362-04:00",
+            "first_selected_display_et": "Sep 17, 2026 08:04:14 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-17T20:04:14.817362-04:00",
+            "risk_rating_first_detected_display_et": "Sep 17, 2026 08:04:14 PM EDT"
+          }
+        ],
+        "Utilities": [
+          {
+            "sector": "Utilities",
+            "rank": 1,
+            "symbol": "SO",
+            "name": "Southern Company (The) Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 0.0,
+            "favorite_score": 79.1559,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-10-13T21:06:40.761985-04:00",
+            "first_selected_display_et": "Oct 13, 2026 09:06:40 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-10-13T21:06:40.761985-04:00",
+            "risk_rating_first_detected_display_et": "Oct 13, 2026 09:06:40 PM EDT"
+          },
+          {
+            "sector": "Utilities",
+            "rank": 2,
+            "symbol": "NEE",
+            "name": "NextEra Energy Inc. Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 7.1498,
+            "favorite_score": 76.7752,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-10-15T20:16:07.176690-04:00",
+            "first_selected_display_et": "Oct 15, 2026 08:16:07 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-10-15T20:16:07.176690-04:00",
+            "risk_rating_first_detected_display_et": "Oct 15, 2026 08:16:07 PM EDT"
+          }
+        ]
+      }
+    },
+    {
+      "run_id": "78620a5f0c2535f1d4b6e40c",
+      "run_at_et": "2026-11-10T00:39:35.550797-05:00",
+      "run_display_et": "Nov 10, 2026 12:39:35 AM EST",
+      "data_as_of": "Nov 10, 2026 12:36:49 AM EST",
+      "random_seed": 20260904,
+      "sector_count": 11,
+      "pick_count": 22,
+      "picks": {
+        "Basic Materials": [
+          {
+            "sector": "Basic Materials",
+            "rank": 1,
+            "symbol": "LIN",
+            "name": "Linde plc Ordinary Shares",
+            "risk_rating": "Low",
+            "risk_score": 5.299,
+            "favorite_score": 80.0862,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "risk_rating_first_detected_display_et": "Sep 15, 2026 07:15:00 AM EDT"
+          },
+          {
+            "sector": "Basic Materials",
+            "rank": 2,
+            "symbol": "SCCO",
+            "name": "Southern Copper Corporation Common Stock",
+            "risk_rating": "High",
+            "risk_score": 61.908,
+            "favorite_score": 66.6987,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-23T20:23:45.731684-04:00",
+            "first_selected_display_et": "Sep 23, 2026 08:23:45 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-11-02T22:57:11.257225-05:00",
+            "risk_rating_first_detected_display_et": "Nov 02, 2026 10:57:11 PM EST"
+          }
+        ],
+        "Consumer Discretionary": [
+          {
+            "sector": "Consumer Discretionary",
+            "rank": 1,
+            "symbol": "V",
+            "name": "Visa Inc.",
+            "risk_rating": "Low",
+            "risk_score": 14.6788,
+            "favorite_score": 70.5197,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-10-28T21:44:04.406397-04:00",
+            "first_selected_display_et": "Oct 28, 2026 09:44:04 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-10-28T21:44:04.406397-04:00",
+            "risk_rating_first_detected_display_et": "Oct 28, 2026 09:44:04 PM EDT"
+          },
+          {
+            "sector": "Consumer Discretionary",
+            "rank": 2,
+            "symbol": "TJX",
+            "name": "TJX Companies Inc. (The) Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 16.2422,
+            "favorite_score": 65.5491,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-06T21:42:40.292480-05:00",
+            "first_selected_display_et": "Nov 06, 2026 09:42:40 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-06T21:42:40.292480-05:00",
+            "risk_rating_first_detected_display_et": "Nov 06, 2026 09:42:40 PM EST"
+          }
+        ],
+        "Consumer Staples": [
+          {
+            "sector": "Consumer Staples",
+            "rank": 1,
+            "symbol": "PEP",
+            "name": "PepsiCo Inc. Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 0.8822,
+            "favorite_score": 77.6234,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "risk_rating_first_detected_display_et": "Sep 15, 2026 07:15:00 AM EDT"
+          },
+          {
+            "sector": "Consumer Staples",
+            "rank": 2,
+            "symbol": "KO",
+            "name": "Coca-Cola Company (The) Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 2.9834,
+            "favorite_score": 68.7469,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "risk_rating_first_detected_display_et": "Sep 15, 2026 07:15:00 AM EDT"
+          }
+        ],
+        "Energy": [
+          {
+            "sector": "Energy",
+            "rank": 1,
+            "symbol": "MPC",
+            "name": "Marathon Petroleum Corporation Common Stock",
+            "risk_rating": "Moderate",
+            "risk_score": 44.6158,
+            "favorite_score": 73.1268,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-10-20T17:22:51.895870-04:00",
+            "risk_rating_first_detected_display_et": "Oct 20, 2026 05:22:51 PM EDT"
+          },
+          {
+            "sector": "Energy",
+            "rank": 2,
+            "symbol": "ENB",
+            "name": "Enbridge Inc Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 16.194,
+            "favorite_score": 69.5155,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-09T18:50:06.574676-05:00",
+            "first_selected_display_et": "Nov 09, 2026 06:50:06 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-09T18:50:06.574676-05:00",
+            "risk_rating_first_detected_display_et": "Nov 09, 2026 06:50:06 PM EST"
+          }
+        ],
+        "Finance": [
+          {
+            "sector": "Finance",
+            "rank": 1,
+            "symbol": "PGR",
+            "name": "Progressive Corporation (The) Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 16.3505,
+            "favorite_score": 81.3834,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-20T01:22:26.639328-04:00",
+            "risk_rating_first_detected_display_et": "Sep 20, 2026 01:22:26 AM EDT"
+          },
+          {
+            "sector": "Finance",
+            "rank": 2,
+            "symbol": "BLK",
+            "name": "BlackRock Inc. Common Stock",
+            "risk_rating": "Moderate",
+            "risk_score": 27.0534,
+            "favorite_score": 68.8049,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-10-20T17:22:51.895870-04:00",
+            "first_selected_display_et": "Oct 20, 2026 05:22:51 PM EDT",
+            "risk_rating_first_detected_at_et": "2026-11-05T22:23:35.410109-05:00",
+            "risk_rating_first_detected_display_et": "Nov 05, 2026 10:23:35 PM EST"
+          }
+        ],
+        "Health Care": [
+          {
+            "sector": "Health Care",
+            "rank": 1,
+            "symbol": "HCA",
+            "name": "HCA Healthcare Inc. Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 22.0686,
+            "favorite_score": 77.8416,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-11-05T22:23:35.410109-05:00",
+            "first_selected_display_et": "Nov 05, 2026 10:23:35 PM EST",
+            "risk_rating_first_detected_at_et": "2026-11-05T22:23:35.410109-05:00",
+            "risk_rating_first_detected_display_et": "Nov 05, 2026 10:23:35 PM EST"
+          },
+          {
+            "sector": "Health Care",
+            "rank": 2,
+            "symbol": "ABBV",
+            "name": "AbbVie Inc. Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 6.4355,
+            "favorite_score": 75.8479,
+            "model_confidence": "High",
+            "first_selected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "first_selected_display_et": "Sep 15, 2026 07:15:00 AM EDT",
+            "risk_rating_first_detected_at_et": "2026-09-15T07:15:00.179578-04:00",
+            "risk_rating_first_detected_display_et": "Sep 15, 2026 07:15:00 AM EDT"
+          }
+        ],
+        "Industrials": [
+          {
+            "sector": "Industrials",
+            "rank": 1,
+            "symbol": "UNP",
+            "name": "Union Pacific Corporation Common Stock",
+            "risk_rating": "Low",
+            "risk_score": 10.1367,
             "favorite_score": 73.1741,
             "model_confidence": "High",
             "first_selected_at_et": "2026-10-15T20:16:07.176690-04:00",
