@@ -8434,5 +8434,41 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-11T22:43:02.984167-05:00",
+    "occurred_at_display_et": "Nov 11, 2026 10:43:02 PM EST",
+    "first_detected_at_et": "2026-11-11T22:43:02.984167-05:00",
+    "first_detected_display_et": "Nov 11, 2026 10:43:02 PM EST",
+    "change_type": "Stock Added",
+    "symbol": "DUK",
+    "name": "Duke Energy Corporation (Holding Company) Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-11T22:43:02.984167-05:00",
+    "occurred_at_display_et": "Nov 11, 2026 10:43:02 PM EST",
+    "first_detected_at_et": "2026-11-11T22:43:02.984167-05:00",
+    "first_detected_display_et": "Nov 11, 2026 10:43:02 PM EST",
+    "change_type": "Stock Removed",
+    "symbol": "AEM",
+    "name": "Agnico Eagle Mines Limited Common Stock",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-11T22:43:02.984167-05:00",
+    "occurred_at_display_et": "Nov 11, 2026 10:43:02 PM EST",
+    "first_detected_at_et": "2026-11-11T22:43:02.984167-05:00",
+    "first_detected_display_et": "Nov 11, 2026 10:43:02 PM EST",
+    "change_type": "Analyst Rating",
+    "symbol": "SCCO",
+    "name": "Southern Copper Corporation Common Stock",
+    "from": "Sell",
+    "to": "Hold",
+    "source": "Nasdaq Stock Screener"
   }
 ]
