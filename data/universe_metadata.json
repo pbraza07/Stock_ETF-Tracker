@@ -1,26 +1,20 @@
 {
-  "refreshed_at_et": "2026-11-11T22:43:02.984167-05:00",
-  "refreshed_at_display_et": "Nov 11, 2026 10:43:02 PM EST",
+  "refreshed_at_et": "2026-11-12T22:20:39.812213-05:00",
+  "refreshed_at_display_et": "Nov 12, 2026 10:20:39 PM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 166,
+  "stock_count": 170,
   "etf_count": 213,
-  "added_count": 1,
-  "removed_count": 1,
+  "added_count": 4,
+  "removed_count": 0,
   "added_symbols": [
-    "DUK"
+    "GLW",
+    "ICE",
+    "PSX",
+    "VLO"
   ],
-  "removed_symbols": [
-    "AEM"
-  ],
-  "analyst_rating_change_count": 1,
-  "analyst_rating_changes": [
-    {
-      "symbol": "SCCO",
-      "name": "Southern Copper Corporation Common Stock",
-      "from": "Sell",
-      "to": "Hold"
-    }
-  ]
+  "removed_symbols": [],
+  "analyst_rating_change_count": 0,
+  "analyst_rating_changes": []
 }

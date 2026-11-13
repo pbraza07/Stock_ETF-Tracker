@@ -8470,5 +8470,53 @@
     "from": "Sell",
     "to": "Hold",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "occurred_at_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "first_detected_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "first_detected_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "change_type": "Stock Added",
+    "symbol": "GLW",
+    "name": "Corning Incorporated Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "occurred_at_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "first_detected_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "first_detected_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "change_type": "Stock Added",
+    "symbol": "ICE",
+    "name": "Intercontinental Exchange Inc. Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "occurred_at_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "first_detected_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "first_detected_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "change_type": "Stock Added",
+    "symbol": "PSX",
+    "name": "Phillips 66 Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "occurred_at_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "first_detected_at_et": "2026-11-12T22:20:39.812213-05:00",
+    "first_detected_display_et": "Nov 12, 2026 10:20:39 PM EST",
+    "change_type": "Stock Added",
+    "symbol": "VLO",
+    "name": "Valero Energy Corporation Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
