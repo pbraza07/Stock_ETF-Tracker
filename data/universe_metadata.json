@@ -1,15 +1,17 @@
 {
-  "refreshed_at_et": "2026-11-15T21:40:02.834232-05:00",
-  "refreshed_at_display_et": "Nov 15, 2026 09:40:02 PM EST",
+  "refreshed_at_et": "2026-11-16T13:42:32.975745-05:00",
+  "refreshed_at_display_et": "Nov 16, 2026 01:42:32 PM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 169,
+  "stock_count": 168,
   "etf_count": 213,
   "added_count": 0,
-  "removed_count": 0,
+  "removed_count": 1,
   "added_symbols": [],
-  "removed_symbols": [],
+  "removed_symbols": [
+    "GLW"
+  ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
 }
