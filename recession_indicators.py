@@ -116,6 +116,8 @@ def render_recession_indicators():
     st.caption('Monthly and quarterly economic evidence from FRED. Charts are built from downloaded observations in MarketScope.')
     st.markdown('🟥 **Historical recession periods** — '+RECESSION_NOTE)
     st.markdown(f'Recession dates: [FRED / NBER chronology]({RECESSION_SOURCE}).')
+    from free_data_evidence import render_free_evidence
+    render_free_evidence('recession')
     refresh=st.button('Refresh recession data',key='refresh_recession_data')
     window=st.selectbox('Chart history',['10 years','5 years','20 years','All history'],index=3,key='recession_history_window')
     interactive=st.checkbox('Use interactive charts (requires browser chart scripts)',value=False,key='recession_interactive_charts')

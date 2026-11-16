@@ -109,6 +109,8 @@ def render(result):
     with st.expander('Model Trust & Data Quality',expanded=True):
         st.json(result['trust']);st.dataframe(result['agreement'],width='stretch',hide_index=True)
         st.json(result['current_market_state'].get('data_freshness',{}))
+    from free_data_evidence import render_free_evidence
+    render_free_evidence('planning')
     with st.expander('How MarketScope Calculated This',expanded=advanced):
         st.write(result['methodology']);st.dataframe(pd.DataFrame(cma['components']),width='stretch',hide_index=True)
         st.dataframe(result['decomposition'],width='stretch',hide_index=True)
