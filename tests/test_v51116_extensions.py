@@ -8,6 +8,8 @@ from economic_calendar import calendar_url
 
 def test_custom_start_and_none_disable_all_cashflows_and_rebalancing():
     prices=pd.DataFrame({'A':[100,120,90,150],'B':[100,90,150,100]},index=pd.to_datetime(['2024-12-31','2025-01-02','2025-02-03','2026-01-05']))
+    from exchange_calendars import get_calendar
+    prices=prices.reindex(get_calendar('XNYS').sessions_in_range(prices.index[0],prices.index[-1]).tz_localize(None)).ffill() # synthetic constant prices between fixture moves
     runs=[simulate_ytd(prices,1000,'Monthly',500,'None',rb,'2026-01-05','2025-01-01') for rb in [True,False]]
     pd.testing.assert_frame_equal(runs[0][1],runs[1][1])
     assert runs[0][1]['Actual Withdrawal'].sum()==0

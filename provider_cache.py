@@ -21,7 +21,7 @@ def symbol_cache(ttl):
             def fetch():
                 acquire_provider_slot()
                 return fn(self,symbol,*args,**kwargs)
-            return cached('yahoo:'+fn.__name__,(symbol,args,kwargs),
+            return cached('yahoo-v51164:'+fn.__name__,(symbol,args,kwargs),
                 fetch,ttl=ttl,default={},
                 valid=lambda value:bool(value))
         return wrapped

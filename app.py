@@ -1,5 +1,5 @@
 from __future__ import annotations
-# v5.11.62: lazy workspaces, shared caches, durable calculation jobs and on-demand reports.
+# v5.11.64: forward evidence integrity, monthly ranking risk, audited planning and preserved workspaces.
 
 import json
 import os

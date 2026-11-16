@@ -32,7 +32,7 @@ DISCLOSURES = {
     "Recession": "Recession resilience is based on historical stress performance and probabilistic modeling. No stock is guaranteed to preserve value during a recession.",
     "Max Profit": "High historical performance and projected return do not guarantee future results.",
 }
-LIMITATION = "Historical studies using current universe membership or current sectors are exploratory and subject to survivorship/classification bias. They are not certified leakage-free predictive validation. Missing point-in-time inputs are never represented as observed."
+LIMITATION = "Forward probabilities are conditional uncalibrated estimates; analyst targets are separate reported opinions. More simulations reduce sampling noise, not bias. Historical studies using current universe membership or current sectors are exploratory and subject to survivorship/classification bias. They are not certified leakage-free predictive validation. Missing point-in-time inputs are never represented as observed."
 
 
 def build_top12_excel(kind, table, result, portfolio=None, history=None, backtest=None):

@@ -144,3 +144,52 @@ def project_candidates(
         )
         rows.append(row)
     return pd.DataFrame(rows)
+
+
+def project_forward_candidates(model, context, horizon, simulations, seed, stress=False):
+    """Same forward assumptions and monthly paths as planning; no historical mean drift."""
+    from planning_assumptions import settings, forward_cma
+    from planning_paths import generate_paths
+    cfg = settings()
+    ctx = dict(context or {})
+    if stress:
+        cfg['ensemble_weights'] = [1., 0., 0.]
+        cfg['initial_scenario_probabilities'] = [0.,0.,0.,.7,.3,0.,0.,0.,0.]
+    try:
+        cma = forward_cma(ctx, cfg)
+    except ValueError as exc:
+        rows=[]
+        for symbol in model.symbols:
+            row={'Symbol':symbol, 'Forecast status':'UNAVAILABLE: '+str(exc)}
+            row.update({f'P{p} Future Return %':np.nan for p in PERCENTILES})
+            row.update({f'P{p} Projected Profit':np.nan for p in PERCENTILES})
+            row.update({k:np.nan for k in ('Probability Positive %','Probability Loss >20%', 'Probability Loss >30%', 'Expected Maximum Drawdown %')})
+            rows.append(row)
+        return pd.DataFrame(rows)
+    from investment_evidence import snapshot
+    evidence=snapshot(model,ctx)
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory(prefix='marketscope-ranking-') as workdir:
+        paths=generate_paths(model,ctx,cma,cfg,int(horizon),int(simulations),int(seed),workdir=workdir)
+        growth=np.ones((simulations,len(model.symbols)));peak=growth.copy();drawdown=np.zeros_like(growth)
+        for returns in paths['returns']:
+            growth*=1+returns
+            peak=np.maximum(peak,growth)
+            drawdown=np.minimum(drawdown,growth/peak-1)
+        cagr=np.maximum(growth,0)**(1/horizon)-1
+        rows=[]
+        for j,symbol in enumerate(model.symbols):
+            row={'Symbol':symbol,'Forecast status':'UNCALIBRATED forward model; before costs/tax',
+                 'Forward market assumption %':100*cma['geometric_return'],
+                 'Forecast horizon years':horizon,'Drawdown resolution':'Monthly','Input evidence SHA256':evidence['sha256'],
+                 'Expected Investment Return %':100*paths['decomposition'][j]['Expected geometric return']}
+            for p in PERCENTILES:
+                row[f'P{p} Future Return %']=float(np.percentile(cagr[:,j],p)*100)
+                row[f'P{p} Projected Profit']=float(np.percentile((growth[:,j]-1)*100000,p))
+            row.update({'Probability Positive %':float(np.mean(growth[:,j]>1)*100),
+                'Probability Loss >20%':float(np.mean(growth[:,j]<.8)*100),
+                'Probability Loss >30%':float(np.mean(growth[:,j]<.7)*100),
+                'Expected Maximum Drawdown %':float(drawdown[:,j].mean()*100)})
+            rows.append(row)
+        del paths
+    return pd.DataFrame(rows)

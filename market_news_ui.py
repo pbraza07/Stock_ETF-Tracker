@@ -112,6 +112,7 @@ def _refresh(progress):
 
 @st.fragment(run_every='15s')
 def render_market_news():
+    st.caption('News impact arrows are low-confidence interpretation, not validated investment probabilities or buy/sell signals.')
     st.subheader('Market News · Drivers & Outlook')
     st.caption('Dated reporting from financial publishers and economic agencies. Auto-checks every 15 minutes while this tab is open; all collected feed summaries are archived.')
     with st.expander('News keyword library & indicator rules'):

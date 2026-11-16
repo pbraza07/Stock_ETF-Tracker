@@ -34,6 +34,31 @@ def stress_tests(paths,inputs,cfg,strategy):
             'Withdrawals funded (years)':s['Years of Withdrawals Funded'],'Recovery months to initial equity':recovery})
     return output
 
+def historical_stress_tests(model,inputs,cfg,strategy):
+    """Replay observed selected-holding returns only when every window month exists."""
+    h=model.historical_returns
+    h=h[h['Data Status'].eq('Observed') & h['Frequency'].eq('Monthly')]
+    if h.empty:return [],['Historical stress replay unavailable: no observed monthly history.']
+    pivot=h.pivot_table(index='Period',columns='Ticker',values='Return',aggfunc='last').reindex(columns=model.symbols)
+    pivot.index=pd.PeriodIndex(pivot.index,freq='M')
+    rows=[];missing=[]
+    windows=[('Technology collapse','2000-01','2002-12'),('Financial crisis','2007-10','2009-03'),
+             ('Pandemic crash/recovery','2020-02','2020-12'),('Inflation/rate shock','2022-01','2022-12')]
+    for name,start,end in windows:
+        dates=pd.period_range(start,end,freq='M');data=pivot.reindex(dates)
+        if data.isna().any().any():
+            missing.append(name+': selected holdings lack a complete observed monthly window');continue
+        actual_inputs=dict(inputs,forecast_start_year=dates[0].year)
+        case=simulate(data.to_numpy()[:,None,:],actual_inputs,cfg,strategy)
+        q=case['summary']
+        rows.append({'Strategy':strategy,'Stress':'Observed replay: '+name,'Window':start+' to '+end,
+            'Ending value':q['Median Ending Balance'],'Maximum drawdown':q['Maximum Drawdown (median)'],
+            'Depletion year offset':q['Median Depletion Year (conditional)'],
+            'Withdrawals funded (years)':q['Years of Withdrawals Funded'],
+            'Recovery months to initial equity':None,
+            'Basis':'Observed selected-holding returns; current configured spending/cost/inflation/PAL assumptions; window horizon only, no invented continuation'})
+    return rows,missing
+
 def run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,progress=None):
     # Disk-backed scenario cubes avoid retaining hundreds of MB of anonymous RAM.
     # They contain intermediate simulated paths only and are removed on exit.
@@ -49,11 +74,11 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
     model=prepare_projection_model(market,inputs['holdings'],year_columns,monthly_returns=monthly,use_monthly=True)
     if not model.credible:raise ProjectionValidationError('At least three observed completed annual periods are required for risk estimation.')
     if cfg['pal_balance']>=inputs['starting_investment']*cfg['pal_maintenance']:raise ProjectionValidationError('Initial PAL exceeds the configured maintenance threshold.')
+    from investment_evidence import snapshot
+    evidence=snapshot(model,context)
     cma=forward_cma(context,cfg)
-    current=build_current_market_state(model.symbols,context)
-    context['regime_probabilities']=current.get('regime_probabilities',{})
-    for s,f in (context.get('fundamentals') or {}).items():
-        f['momentum']=((current.get('holding_adjustments') or {}).get(s) or {}).get('return_200_day',0)
+    from planning_assumptions import forward_context
+    context,current=forward_context(model.symbols,context)
     records=cfg.get('validation_records') or []
     cutoff=pd.Timestamp(datetime.now(timezone.utc).date())
     records=[r for r in records if pd.Timestamp(r['End'])<=cutoff]
@@ -67,12 +92,12 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
     weights=np.array([inputs['allocations'][s]/100 for s in inputs['holdings']]);weights/=weights.sum()
     cfg['custom_order_indices']=[inputs['holdings'].index(s) for s in cfg['custom_order'] if s in inputs['holdings']]
     cfg['custom_order_indices']+= [i for i in range(len(weights)) if i not in cfg['custom_order_indices']]
-    strategies={};references={};agreement_rows=[];stresses=[];cases=[];sequences=[]
+    strategies={};references={};agreement_rows=[];stresses=[];cases=[];sequences=[];replay_gaps=[]
     for strategy in names:
         if progress:progress(1,4,f'{strategy}: calculating reference returns')
         reference_cfg=dict(cfg,pal_balance=0.)
         reference_inputs=dict(inputs,withdrawal_frequency='No Withdrawal',additional_contribution=0.)
-        ref=simulate(paths['returns'],reference_inputs,reference_cfg,strategy,paths['inflation'],paths['rates'])
+        ref=simulate(paths['returns'],reference_inputs,reference_cfg,strategy,paths['inflation'],paths['rates'],impairment_month=paths['impairment_month'])
         cagr=(ref['ending']/inputs['starting_investment'])**(1/inputs['future_years'])-1
         medians=[]
         for k,label in enumerate(['Adaptive Monte Carlo','Centered Historical Bootstrap','Factor/CMA']):
@@ -95,7 +120,7 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
         plan_returns.flush()
         if progress:progress(2,4,f'{strategy}: calculating spending, taxes and borrowing')
         plan_paths=dict(paths,returns=plan_returns)
-        case=simulate(plan_returns,inputs,cfg,strategy,paths['inflation'],paths['rates'])
+        case=simulate(plan_returns,inputs,cfg,strategy,paths['inflation'],paths['rates'],impairment_month=paths['impairment_month'])
         case['summary']['Expected Investment Return']=float(np.dot(weights,[r['Expected geometric return'] for r in paths['decomposition'][:len(weights)]]))
         case['summary']['Planning Return']=float(np.percentile(cagr,max(1,cfg['planning_percentile']-(10 if agreement=='LOW' else 5 if agreement=='MODERATE' else 0))))
         case['summary']['Median Simulated CAGR (reference)']=float(np.median(cagr))
@@ -109,19 +134,21 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
         if progress:progress(3,4,f'{strategy}: calculating sequence and stress tests')
         for name,start in ([('Early bear',0),('Middle bear',max(0,len(base)//2-6)),('Late bear',max(0,len(base)-12))] if cfg.get('run_diagnostics',True) else []):
             stressed=base.copy();stressed[start:start+12]=np.expm1(np.log1p(stressed[start:start+12])+np.log(.65)/12)
-            seq=simulate(stressed,inputs,cfg,strategy,paths['inflation'][:,:k],paths['rates'][:,:k],detail=False)
+            seq=simulate(stressed,inputs,cfg,strategy,paths['inflation'][:,:k],paths['rates'][:,:k],detail=False,impairment_month=paths['impairment_month'][:k])
             sequences.append({'Strategy':strategy,'Sequence':name,'Survival probability':seq['summary']['Portfolio Survival Probability'],
                 'Fully funded probability':seq['summary']['Probability Spending Is Fully Funded'],'Median ending':seq['summary']['Median Ending Balance'], 'Paths':k})
         for name,shift,extra_inf,extra_fee,volscale in ([('Conservative',-.02,.01,.002,1.2),('Base',0.,0.,0.,1.),('Optimistic',.02,-.005,0.,.9)] if cfg.get('run_diagnostics',True) else []):
             casecfg=dict(cfg,advisory_fee=cfg['advisory_fee']+extra_fee)
             logs=np.log1p(base);mean=logs.mean(axis=1,keepdims=True)
             adjusted=np.expm1(mean+(logs-mean)*volscale+shift/12)
-            cc=simulate(adjusted,inputs,casecfg,strategy,np.maximum(0,paths['inflation'][:,:k]+extra_inf),paths['rates'][:,:k],detail=False)
+            cc=simulate(adjusted,inputs,casecfg,strategy,np.maximum(0,paths['inflation'][:,:k]+extra_inf),paths['rates'][:,:k],detail=False,impairment_month=paths['impairment_month'][:k])
             cases.append({'Strategy':strategy,'Planning case':name,'Return assumption shift':shift,'Inflation shift':extra_inf,
                 'Extra annual fees':extra_fee,'Volatility scale':volscale,'Survival':cc['summary']['Portfolio Survival Probability'],
                 'Spending funded':cc['summary']['Probability Spending Is Fully Funded'],'Median ending':cc['summary']['Median Ending Balance']})
         if cfg.get('run_diagnostics',True):
             stress_rows=stress_tests(paths,inputs,cfg,strategy);stresses.extend(stress_rows)
+            replay,unavailable=historical_stress_tests(model,inputs,cfg,strategy)
+            stresses.extend(replay);replay_gaps.extend(unavailable)
             case['summary']['Worst illustrative stress ending value']=min(row['Ending value'] for row in stress_rows)
         # Keep exports compact; no huge per-path cubes in session-saved results.
         for key in ('balances','ending','fully_funded','surviving','drawdown','final_holdings','final_basis'):case.pop(key,None)
@@ -133,14 +160,20 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
     trust=calibration(records)
     trust.update({'Live Data Status':current.get('status','See freshness'),'Forward CMA confidence':cma['confidence'],
         'Forward CMA freshness':cma['refreshed_at'],'Historical depth':model.diagnostics,
+        'Input snapshot SHA256':evidence['sha256'],
+        'Independent source check':evidence['cross_source_verification'],
         'Model Agreement':{s:case['summary']['Model Agreement'] for s,case in strategies.items()},
         'Forward CMA unavailable components':cma['missing_components'],'Bootstrap evidence':'Observed monthly blocks' if paths['bootstrap_available'] else 'Unavailable; weight transferred to Monte Carlo',
-        'Structural probabilities':'Configured scenario assumptions, not validated forecasts'})
-    warnings=list(model.warnings)+['Research planning engine: forward coefficients, regime probabilities, impairment hazards and percentile coverage are not empirically certified.',
+        'Historical stress replay gaps':sorted(set(replay_gaps)),
+        'Structural probabilities':'Configured scenario assumptions, not validated forecasts',
+        'Model dependence':'Models share CMA, risk, regime and impairment inputs. Agreement is not independent validation.',
+        'Probability interpretation':'Conditional simulation frequencies; more paths reduce sampling error, not model bias',
+        'CMA component dependence':cma['component_dependence']})
+    warnings=list(model.warnings)+['Monthly paths can miss intraday crash and collateral-call extremes.','Research planning engine: forward coefficients, regime probabilities, impairment hazards and percentile coverage are not empirically certified.',
         'Historical calibration contains survivorship limitations unless a verified point-in-time dataset is supplied.',
         'Taxes use estimated average cost, no loss offsets, brackets, tax lots, deductions or early-distribution penalties. Tax-aware selling minimizes estimated current tax only.',
         'PAL maintenance is evaluated monthly; real lenders can demand immediate repayment. Borrowed proceeds are external and are not counted as portfolio income.',
-        'Stress tests are illustrative designs, not exact historical portfolio replays. Recovery measures account equity after spending.']
+        'Style stress tests are illustrative designs. Observed replays are separately labeled and use actual selected-holding monthly returns only when complete, with current cashflow assumptions; horizons differ. Recovery measures account equity after spending.']
     return {'planning_engine':True,'inputs':inputs,'settings':cfg,'strategies':strategies,'references':references,'cma':cma,
         'decomposition':pd.DataFrame(paths['decomposition']),'agreement':pd.DataFrame(agreement_rows),
         'stress_tests':pd.DataFrame(stresses),'planning_cases':pd.DataFrame(cases),'sequence_tests':pd.DataFrame(sequences),
@@ -149,12 +182,12 @@ def _run_planning(market,inputs,year_columns,monthly,live_context,data_as_of,pro
             'Effective independent holdings (correlation approximation)':float(1/max(weights@corr@weights,1e-9)),
             'Top risk contributor':model.symbols[int(np.argmax(contribution))],'Risk contributions':dict(zip(model.symbols,contribution.tolist())),
             'Factor concentration':'See current market portfolio diagnostics; no complete factor exposures available'},
-        'audit':{'model_version':'5.11.38','risk_covariance':cov.tolist(),'risk_source':paths['risk_source'],'regime_correlations':paths['regime_correlations'],
+        'audit':{'model_version':'5.11.64','risk_covariance':cov.tolist(),'risk_source':paths['risk_source'],'regime_correlations':paths['regime_correlations'],
             'regime_parameters':paths['scenario_parameters'],'transition_matrix':paths['transition_matrix'],
-            'parameters':cfg,'simulation_count':inputs['simulation_count'],'seed':inputs['random_seed'],
+            'input_evidence':evidence,'parameters':cfg,'simulation_count':inputs['simulation_count'],'seed':inputs['random_seed'],
             'data_as_of':data_as_of,'impairment_events':paths['impairment_events'],
             'return_definition':'Drift is expected log growth converted to geometric return before impairment/gaps and costs; arithmetic expectation is separately estimated from paths.',
             'arithmetic_first_year_per_security':(np.prod(1+paths['returns'][:12].astype(float),axis=0)-1).mean(axis=0).tolist(),
             'planning_return_definition':'Lower-percentile terminal no-spending CAGR, percentile lowered when models disagree. Solver uses full widened paths, not a flat Planning Return.',
-            'impairment_recovery':'Impaired slot becomes cash with zero subsequent return; no automatic replacement security.',
+            'impairment_recovery':'Recovery remains zero-return cash, excluded from future rebalancing and contributions; new contributions enter surviving securities, or cash if none survive.',
             'bootstrap_definition':'Centered observed monthly sequences rescaled around forward drift; historical mean removed.'}}

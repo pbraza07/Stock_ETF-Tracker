@@ -6,17 +6,17 @@ import pandas as pd
 REQUIRED={'universe','prices','fundamentals','macro','sectors'}
 
 def freeze_snapshot(records,cutoff):
-    cutoff=pd.Timestamp(cutoff)
+    cutoff=pd.to_datetime(cutoff,utc=True)
     eligible=[]
     for record in records:
         if not all(k in record for k in ('available_at','observation_date','kind','key','value')):
             raise ValueError('Point-in-time rows require available_at, observation_date, kind, key and value.')
-        available=pd.Timestamp(record['available_at']);observed=pd.Timestamp(record['observation_date'])
+        available=pd.to_datetime(record['available_at'],utc=True);observed=pd.to_datetime(record['observation_date'],utc=True)
         if available<=cutoff and observed<=cutoff:eligible.append(deepcopy(record))
     # Retain latest vintage as known at cutoff, not the latest revised value today.
     latest={}
-    for row in sorted(eligible,key=lambda r:pd.Timestamp(r['available_at'])):latest[(row['kind'],row['key'],row['observation_date'])]=row
-    return sorted(latest.values(),key=lambda r:(pd.Timestamp(r['observation_date']),pd.Timestamp(r['available_at'])))
+    for row in sorted(eligible,key=lambda r:pd.to_datetime(r['available_at'],utc=True)):latest[(row['kind'],row['key'],row['observation_date'])]=row
+    return sorted(latest.values(),key=lambda r:(pd.to_datetime(r['observation_date'],utc=True),pd.to_datetime(r['available_at'],utc=True)))
 
 def walk_forward(records,cutoffs,select,forecast,realize,horizons=(1,3,5,10),delisted_coverage=False):
     """Selection and prediction receive only cutoff-frozen rows; realization is separate.
@@ -43,6 +43,8 @@ def calibration(records):
     if not records:return {'Point-in-Time Integrity':'LIMITED','Survivorship Status':'Historical calibration contains survivorship limitations.',
         'Independent Test Periods':0,'Calibration Confidence':'UNVALIDATED','Projection Bias':None,
         'Bias interpretation':'No verified out-of-sample forecast records; no bias correction applied.'}
+    # Legacy records can remain visible but cannot certify the deployed engine.
+    records=[dict(r,Integrity='LIMITED') if r.get('Model version')!='5.11.64' or not r.get('Exact production pipeline') else r for r in records]
     # Nonoverlapping tests per horizon; multiple portfolios on one date are not independent evidence.
     reports=[]
     for horizon in sorted({r['Horizon'] for r in records}):
@@ -56,6 +58,8 @@ def calibration(records):
         reports.append({'Horizon':horizon,'Independent Test Periods':len(independent),'P10-P90 Coverage':covered('P10','P90'),
             'P25-P75 Coverage':covered('P25','P75'),'Projection Bias':float(np.mean(actual-median)),
             'Median forecast error':float(np.median(actual-median)), 'Directional accuracy':float(np.mean(np.sign(actual)==np.sign(median))),
+            'Positive-return Brier score':float(np.mean([(r['Probability positive']-float(r['Realized CAGR']>0))**2 for r in independent if r.get('Probability positive') is not None])) if any(r.get('Probability positive') is not None for r in independent) else None,
+            'Probability reliability bins':reliability_bins(independent),
             'Volatility error':float(np.mean([r['Realized volatility']-r['Projected volatility'] for r in independent if r.get('Realized volatility') is not None and r.get('Projected volatility') is not None])) if any(r.get('Realized volatility') is not None and r.get('Projected volatility') is not None for r in independent) else None,
             'Point-in-Time Integrity':'FULL' if full else 'PARTIAL' if all(r['Integrity']!='LIMITED' for r in independent) else 'LIMITED',
             'Calibration Confidence':'MODERATE' if full and len(independent)>=20 else 'LOW',
@@ -67,7 +71,19 @@ def calibration(records):
 
 def past_bias_adjustment(records,forecast_date,horizon):
     available=[r for r in records if r['Horizon']==horizon and pd.Timestamp(r['End'])<pd.Timestamp(forecast_date)
-               and r.get('Integrity')=='FULL' and r.get('Survivorship complete')]
+               and r.get('Integrity')=='FULL' and r.get('Survivorship complete') and r.get('Exact production pipeline') and r.get('Model version')=='5.11.64']
     report=calibration(available)
     if report['Independent Test Periods']<10:return 0.
     return float(np.clip(report['Projection Bias'],-.03,.03))
+
+
+def reliability_bins(records):
+    """Empirical success by predicted-probability bin, only supplied realized evidence."""
+    result=[]
+    for lo,hi in zip(np.arange(0,1,.2),np.arange(.2,1.01,.2)):
+        rows=[r for r in records if r.get('Probability positive') is not None and lo<=r['Probability positive'] and (r['Probability positive']<hi or hi>=1)]
+        if rows:
+            result.append({'Probability bin':[round(float(lo),2),round(float(hi),2)],'Independent periods':len(rows),
+                'Mean prediction':float(np.mean([r['Probability positive'] for r in rows])),
+                'Realized positive frequency':float(np.mean([r['Realized CAGR']>0 for r in rows]))})
+    return result

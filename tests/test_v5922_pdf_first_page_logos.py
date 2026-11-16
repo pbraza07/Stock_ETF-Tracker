@@ -8,7 +8,7 @@ CSS = (ROOT / "styles.css").read_text(encoding="utf-8")
 
 
 def test_release_version():
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.63"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.64"
 
 
 def test_pdf_page_one_required_instrument_fields():

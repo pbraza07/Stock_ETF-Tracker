@@ -81,7 +81,7 @@ def render(market,years,monthly_loader,live_loader):
     all_results=result_table(r,bundle['market'],bundle['context'])
     st.caption(f"Evaluated: {len(all_results)} stocks. A zero evidence-adjusted quality score with zero coverage means no usable fundamental evidence, not proven poor business quality.")
     st.subheader('All stock results — criteria highlighted')
-    st.caption('Every stock is evaluated and ranked by criteria met (out of five), highest first. Ties use target probability, then quality score. Missing criteria never count as passing. Red cells mark unmet thresholds; amber notes identify missing data and failures. LIMITED DATA estimates use available fundamentals and explicit model assumptions; they cannot qualify for the shortlist. ETFs remain outside this stock screen.')
+    st.caption('Every stock is evaluated and ranked by criteria met (out of five), highest first. Ties prioritize fundamental evidence coverage, then quality score and conditional target probability. Missing criteria never count as passing. Red cells mark unmet thresholds; amber notes identify missing data and failures. LIMITED DATA estimates use available fundamentals and explicit model assumptions; they cannot qualify for the shortlist. ETFs remain outside this stock screen.')
     if r['leaders'].empty:st.info('No stocks meet every configured criterion. All results remain visible below.')
     _table(all_results,r['settings'])
     with st.expander('Qualified sector shortlist — up to five per sector'):_table(r['leaders'])

@@ -11,7 +11,7 @@ from planning_assumptions import settings, forward_cma, number
 from planning_paths import generate_paths, observed_blocks
 from future_projection import prepare_projection_model
 
-MODEL_VERSION='5.11.54-quality-2'
+MODEL_VERSION='5.11.64-quality-3'
 MODES=('Next 12 months','Annualized over horizon','At least target every year')
 DEFAULTS=dict(target=.25,mode=MODES[0],years=1,count=2000,seed=1234,
     min_quality=60.,min_probability=.60,max_loss_probability=.35,
@@ -83,7 +83,7 @@ def quality_table(market,context):
     frame['Missing quality fields']=[', '.join(k for k,v in part.items() if v is None) for part in components]
     return frame
 
-def path_metrics(returns,assignment,cfg,weights=None,rebalanced=False):
+def path_metrics(returns,assignment,cfg,weights=None,rebalanced=False,impairment_month=None):
     """Monthly joint simulation, zero external cashflows, after explicit costs.
     Full liquidation cost is charged at the final month only; taxes excluded.
     """
@@ -95,9 +95,14 @@ def path_metrics(returns,assignment,cfg,weights=None,rebalanced=False):
     for m in range(months):
         holdings*=np.maximum(0,1+returns[m]);holdings*=(1-cfg['annual_fee'])**(1/12)
         if rebalanced and m%12==11 and m<months-1:
-            target=holdings.sum(1)[:,None]*weights
+            active=np.ones_like(holdings,dtype=bool) if impairment_month is None else impairment_month>m
+            w=active*weights;total_weight=w.sum(1,keepdims=True)
+            w=np.divide(w,total_weight,out=np.zeros_like(w),where=total_weight>0)
+            cash=np.where(active,0.,holdings)
+            invested=np.where(active,holdings,0.).sum(1)
+            target=invested[:,None]*w+cash
             traded=np.abs(target-holdings).sum(1);turnover+=traded
-            holdings=np.maximum(0,holdings.sum(1)-traded*cfg['trade_cost'])[:,None]*weights
+            holdings=np.maximum(0,invested-traded*cfg['trade_cost'])[:,None]*w+cash
         value=holdings.sum(1)*(1-cfg['trade_cost'] if m==months-1 else 1)
         peak=np.maximum(peak,value);dd=np.minimum(dd,value/peak-1)
         if m%12==11:
@@ -131,6 +136,8 @@ def qualifies(row,cfg):
 
 def screen(market,year_columns,monthly,context,values=None,planning=None,progress=None):
     cfg=controls(values);pcfg=settings(planning)
+    from planning_assumptions import forward_context
+    context,_=forward_context(universe(market).Symbol.tolist(),context)
     try:cma=forward_cma(context,pcfg)
     except ValueError as exc:cma={'unavailable_reason':str(exc)}
     quality=quality_table(market,context);rows=[];excluded=[];audit={}
@@ -168,6 +175,8 @@ def screen(market,year_columns,monthly,context,values=None,planning=None,progres
             fails=qualifies(row,cfg);row['Qualifies']=not(fails or gaps or gates);row['Failed constraints']='; '.join(fails+gaps+gates)
             row['Why selected']=f"Quality {row['Quality score']:.0f}/100; model target chance {metrics['Target probability']:.0%}; loss >20% chance {metrics['Loss >20% probability']:.0%}; {len(history)} observed months."
             audit[symbol]=paths['decomposition']
+            from investment_evidence import snapshot
+            row['Input evidence SHA256']=snapshot(model,context)['sha256']
         except (ValueError,KeyError,TypeError,np.linalg.LinAlgError) as exc:
             gaps.append('Return/risk estimates unavailable: '+str(exc))
             row['Evaluation notes']='; '.join(gaps+gates)
@@ -181,7 +190,8 @@ def screen(market,year_columns,monthly,context,values=None,planning=None,progres
     if not table.empty:
         for field in ('Target probability','Loss probability','Loss >20% probability','Worst-decile mean return'):
             if field not in table:table[field]=np.nan
-        table=table.sort_values(['Target probability','Quality score','Ticker'],ascending=[False,False,True]).reset_index(drop=True)
+        table['Criteria met']=[sum(label not in str(row.get('Failed constraints','')).split('; ') for label in ('Quality','Target probability','Loss probability','Severe loss','Worst-decile loss')) if row.get('Forecast available') else 0 for _,row in table.iterrows()]
+        table=table.sort_values(['Criteria met','Evidence coverage','Quality score','Target probability','Ticker'],ascending=[False,False,False,False,True]).reset_index(drop=True)
         leaders=table[table.Qualifies].groupby('Sector',sort=False).head(cfg['max_per_sector']).copy()
     if progress:progress(len(quality),len(quality),'All stocks evaluated')
     return {'table':table,'leaders':leaders,'excluded':pd.DataFrame(excluded,columns=['Ticker','Reason']),'decomposition':audit,'settings':cfg,'planning':pcfg,'cma':cma,
@@ -201,8 +211,10 @@ def portfolio(market,year_columns,monthly,context,symbols,result,max_weight=.25,
     model=prepare_projection_model(market,symbols,year_columns,monthly_returns=monthly,use_monthly=True)
     history,_=observed_blocks(model)
     if len(history)<24:raise ValueError('At least 24 common observed months are required for joint correlation evidence.')
+    from planning_assumptions import forward_context
+    context,_=forward_context(symbols,context)
     cfg=result['settings'];paths=generate_paths(model,context,result['cma'],result['planning'],cfg['years'],cfg['count'],cfg['seed'])
-    metrics={name:path_metrics(paths['returns'],paths['model_assignment'],cfg,rebalanced=rb) for name,rb in [('Rebalanced (yearly)',True),('Non-Rebalanced',False)]}
+    metrics={name:path_metrics(paths['returns'],paths['model_assignment'],cfg,rebalanced=rb,impairment_month=paths['impairment_month']) for name,rb in [('Rebalanced (yearly)',True),('Non-Rebalanced',False)]}
     w=np.ones(len(symbols))/len(symbols)
     for v in metrics.values():
         v['Quality score']=float(table.loc[symbols,'Quality score'].mean())

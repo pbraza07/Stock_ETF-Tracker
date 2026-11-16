@@ -88,8 +88,8 @@ def test_pal_breach_and_solver():
     i=inputs();n=len(i['holdings']);r=np.zeros((24,4,n));r[0]=-.5
     result=simulate(r,i,config(pal_balance=40000,pal_rate=.1),'Non-Rebalanced')
     assert result['summary']['PAL Maintenance Breach Probability']==1
-    zero=np.zeros_like(r)
-    sol=sustainable_withdrawal({'returns':zero,'inflation':np.zeros((24,4)),'rates':np.zeros((24,4))},i,config(inflation=0,expense_ratio=0,trading_friction=0,bid_ask=0),'Non-Rebalanced')
+    zero=np.zeros((24,400,n))
+    sol=sustainable_withdrawal({'returns':zero,'inflation':np.zeros((24,400)),'rates':np.zeros((24,400))},i,config(inflation=0,expense_ratio=0,trading_friction=0,bid_ask=0),'Non-Rebalanced')
     assert 49000<sol['initial_annual_withdrawal']<50001
 
 def test_engine_exports_and_cache_sensitive_to_planning(tmp_path):

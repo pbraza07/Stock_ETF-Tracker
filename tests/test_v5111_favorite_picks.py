@@ -145,7 +145,7 @@ def build_result(seed: int = 4242) -> dict:
 def test_release_and_main_navigation_include_favorite_picks():
     app = (ROOT / "app.py").read_text(encoding="utf-8")
     css = (ROOT / "styles.css").read_text(encoding="utf-8")
-    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.63"
+    assert (ROOT / "VERSION.txt").read_text(encoding="utf-8").strip() == "5.11.64"
     assert '"Favorite Picks"' in app
     assert '"Pick Fav"' in app
     assert "build_favorite_picks" in app
@@ -202,7 +202,7 @@ def test_live_context_conditions_the_ranking_and_reports_auditable_state():
         "Historical Block Bootstrap",
         "Factor/CMA Model",
     }
-    assert result["walk_forward_validation"]["no_future_leakage"] is True
+    assert result["walk_forward_validation"]["no_future_leakage"] is False
     assert result["table"]["Live Data Quality"].isin(["High", "Medium"]).all()
 
 

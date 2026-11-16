@@ -15,7 +15,7 @@ from future_projection_live import (
     condition_model_assumptions,
     walk_forward_validate,
 )
-from top12_simulation import project_candidates
+from top12_simulation import project_candidates, project_forward_candidates
 
 PERCENTILES = (10, 25, 50, 75, 90)
 STRESS = (
@@ -207,31 +207,13 @@ def score_universe(
             "At least one stock with a valid sector and three completed annual observations is required."
         )
     symbols = sorted(frame.Symbol.tolist())
-    model = prepare_projection_model(market, symbols, years)
-    state = build_current_market_state(symbols, live or {})
-    validation = walk_forward_validate(
-        model, np.ones(len(symbols)) / len(symbols), seed=seed
-    )
-    conditioned = condition_model_assumptions(
-        model,
-        state,
-        "AUTO",
-        {
-            "starting_investment": 100000.0,
-            "withdrawal_frequency": "No Withdrawal",
-            "future_years": horizon,
-        },
-    )
-    weights = validation.get("ensemble_weights") or {"Adaptive Regime Monte Carlo": 1.0}
-    projected = project_candidates(
-        model, conditioned, weights, horizon, simulations, seed
-    )
-    bear = deepcopy(conditioned)
-    bear["initial_regime_probabilities"] = np.array([1.0, 0.0, 0.0])
-    # Bear stress must actually use the regime model, not an unconditioned bootstrap.
-    stressed = project_candidates(
-        model, bear, {"Adaptive Regime Monte Carlo": 1.0}, horizon, simulations, seed
-    )
+    model = prepare_projection_model(market, symbols, years, monthly_returns=monthly, use_monthly=True)
+    from planning_assumptions import forward_context
+    context,state = forward_context(symbols,live)
+    validation = {'confidence':'UNVALIDATED','no_future_leakage':False,
+                  'explanation':'Forward monthly engine; historical universe and input vintages required for exact-model validation.'}
+    projected = project_forward_candidates(model, context, horizon, simulations, seed)
+    stressed = project_forward_candidates(model, context, horizon, simulations, seed, stress=True)
     frame = frame.merge(projected, on="Symbol").merge(
         stressed.rename(columns={c: "Bear " + c for c in stressed if c != "Symbol"}),
         on="Symbol",
@@ -274,7 +256,7 @@ def score_universe(
             )
         rows.append(info)
     frame = pd.concat([frame, pd.DataFrame(rows)], axis=1)
-    rank = lambda c, high=True: _percentile_rank(frame[c], high)
+    rank = lambda c, high=True: _percentile_rank(frame[c], high).where(frame[c].notna(), 0.)
     frame["Defense Score"] = pd.concat(
         [
             rank("Mean Stress Return %"),
@@ -348,7 +330,7 @@ def score_universe(
     frame["Risk Penalty"] = (
         np.maximum(0, frame["Historical Volatility %"] - 60) * 0.1
         + np.maximum(0, -frame["Maximum Drawdown %"] - 60) * 0.1
-        + np.maximum(0, -frame["P25 Future Return %"]) * 0.1
+        + np.maximum(0, -frame["P25 Future Return %"].fillna(0)) * 0.1
     ).clip(0, 20)
     for kind, components in WEIGHTS.items():
         for name, weight in components.items():
@@ -358,7 +340,7 @@ def score_universe(
             - frame["Risk Penalty"]
         ).clip(0, 100)
     frame["Recession Additional Penalty"] = (
-        np.maximum(0, -frame["Bear P25 Future Return %"]) * 0.15
+        np.maximum(0, -frame["Bear P25 Future Return %"].fillna(0)) * 0.15
         + frame["Recovery Periods"].isna() * 3
         + frame["Stress Events"].eq(0) * 5
     ).clip(0, 15)
@@ -412,7 +394,7 @@ def build_top12_rankings(
             "Eligible Stocks": len(frame),
             "Excluded Stocks": len(market[market.Type.eq("Stock")]) - len(frame),
             "Historical Through": max(completed),
-            "Model Version": "5.11.11",
+            "Model Version": "5.11.64",
             "Seed": seed,
             "Simulations": simulations,
             "Replacement Threshold": threshold,
@@ -420,6 +402,7 @@ def build_top12_rankings(
         },
     )
     output["warnings"] = [
+        "Forecasts use the Forward Planning monthly engine. Missing forecast evidence earns no forecast-score credit; raw missing estimates remain unavailable. Rankings are comparative scores, not calibrated investment odds.",
         "Monthly stress metrics are unavailable for securities without complete monthly windows; annual approximations are explicitly labeled.",
         "The absence of historical universe membership and sector snapshots prevents certified point-in-time validation.",
     ]

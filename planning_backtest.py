@@ -11,24 +11,29 @@ def run_bundle(bundle):
     from future_projection import run_future_projection
     count=int(bundle.get('simulation_count',500));limit=int(bundle.get('holding_count',4))
     def select(rows,cutoff):
+        from top12_rankings import score_universe, select_sector_leaders
         members={r['key']:r['value'] for r in rows if r['kind']=='universe'}
-        histories={}
-        for r in rows:
-            if r['kind']=='prices':histories.setdefault(r['key'],[]).append(float(r['value']))
-        eligible=[]
+        market=[];years=set()
         for symbol,member in members.items():
-            h=np.array(histories.get(symbol,[]))
-            if not member.get('eligible') or len(h)<3 or not member.get('sector'):continue
-            # Explicit fixed point-in-time selection policy, independent from forecast means.
-            score=float(np.mean(h>0)-np.std(h))
-            eligible.append((score,symbol))
+            if not member.get('eligible') or not member.get('sector'):continue
+            row={'Symbol':symbol,'Name':member.get('name',symbol),'Type':'Stock','Sector':member['sector']}
+            for record in rows:
+                if record['kind']=='prices' and record['key']==symbol:
+                    year=str(pd.Timestamp(record['observation_date']).year)
+                    row[year]=float(record['value'])*100;years.add(year)
+            market.append(row)
+        context={'fundamentals':{r['key']:r['value'] for r in rows if r['kind']=='fundamentals'},
+                 'macro':{r['key']:{'value':r['value'],'observation_date':r['observation_date']} for r in rows if r['kind']=='macro'}}
+        scored,_,_=score_universe(pd.DataFrame(market),sorted(years),live=context,simulations=count,seed=123)
+        score=bundle.get('selection_score','Max Profit Score')
+        if score not in ('Max Profit Score','Recession Score'):raise ValueError('Unknown production ranking score')
+        picks=select_sector_leaders(scored,score,threshold=0)
         selected=[];sectors=set()
-        for _,symbol in sorted(eligible,reverse=True):
-            sector=members[symbol]['sector']
-            if sector in sectors:continue
-            selected.append(symbol);sectors.add(sector)
+        for _,row in picks.iterrows():
+            if row.Sector in sectors:continue
+            selected.append(row.Symbol);sectors.add(row.Sector)
             if len(selected)==limit:break
-        if not selected:raise ValueError('No eligible point-in-time universe at '+cutoff)
+        if not selected:raise ValueError('No eligible point-in-time universe at '+str(cutoff))
         return selected
     def forecast(rows,selected,cutoff,horizon):
         members={r['key']:r['value'] for r in rows if r['kind']=='universe'}
@@ -46,10 +51,15 @@ def run_bundle(bundle):
         cfg={'solve_withdrawal':False,'run_diagnostics':False,'expense_ratio':0.,'trading_friction':0.,'bid_ask':0.}
         result=run_future_projection(pd.DataFrame(market),{'holdings':selected,'starting_investment':100000,
             'allocation_mode':'Equal Split','withdrawal_frequency':'No Withdrawal','strategy':'Rebalanced',
-            'future_years':horizon,'forecast_start_year':pd.Timestamp(cutoff).year+1,'simulation_count':count,
+            'rebalancing_frequency':'Yearly','future_years':horizon,'forecast_start_year':pd.Timestamp(cutoff).year+1,'simulation_count':count,
             'planning_engine':True,'planning':cfg,'random_seed':123},sorted(years),live_context={'fundamentals':fund,'macro':macro})
         table=result['references']['Rebalanced'];last=table.iloc[-1]
-        return {f'P{p}':(last[f'P{p} Ending Balance']/100000)**(1/horizon)-1 for p in (10,25,50,75,90)}
+        return {**{f'P{p}':(last[f'P{p} Ending Balance']/100000)**(1/horizon)-1 for p in (10,25,50,75,90)},
+                'Model version':'5.11.64','Exact production pipeline':True,
+                'Probability positive':result['strategies']['Rebalanced']['summary']['Probability Nominal Gain'],
+                'Selection policy':bundle.get('selection_score','Max Profit Score')+'; distinct sectors',
+                'Input evidence SHA256':result['audit']['input_evidence']['sha256'],
+                'Price basis':'Annual total returns; monthly cashflow path approximation'}
     outcomes=bundle.get('realized_annual_returns',{})
     def realize(selected,cutoff,horizon):
         start=pd.Timestamp(cutoff).year+1;values=[]
@@ -61,7 +71,7 @@ def run_bundle(bundle):
         return {'cagr':float(np.prod(1+np.array(values))**(1/horizon)-1),'volatility':float(np.std(values))}
     records=walk_forward(bundle['records'],bundle['cutoffs'],select,forecast,realize,
         horizons=bundle.get('horizons',[1,3,5,10]),delisted_coverage=bool(bundle.get('verified_delisted_coverage')))
-    return {'records':records,'calibration':calibration(records),'selection_policy':'Positive-year share minus annual volatility; distinct sectors, then score order',
+    return {'records':records,'calibration':calibration(records),'selection_policy':'Production ranking score on frozen input rows; distinct sectors, then rank order',
             'limitations':'Annual realized comparison uses annual equal-weight rebalancing and excludes tax/fee drag; align costs before interpreting bias. Vintage provenance depends on supplied source records.'}
 
 if __name__=='__main__':

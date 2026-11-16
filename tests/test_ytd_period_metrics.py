@@ -45,6 +45,10 @@ def test_flat_and_missing_do_not_create_extremes_or_bridge_streaks():
 
 def sample_record(frequency='Monthly',cadence='Monthly'):
     p=pd.DataFrame({'A':[100,110,121,100,90]},index=pd.to_datetime(['2025-12-31','2026-01-02','2026-01-05','2026-02-02','2026-02-03']))
+    # Explicit synthetic constant-price observations on every intervening session.
+    from exchange_calendars import get_calendar
+    sessions=get_calendar('XNYS').sessions_in_range(p.index[0],p.index[-1]).tz_localize(None)
+    p=p.reindex(sessions).ffill()
     names=[('Performance',False)] if cadence=='None' else [('Rebalanced',True),('Non-Rebalanced',False)]
     return make_saved_record({n:simulate_ytd(p,1000,frequency,500,'Daily',rb,'2026-02-03') for n,rb in names},
                              {'holdings':['A'],'cadence':cadence,'reporting_frequency':frequency},'Test')

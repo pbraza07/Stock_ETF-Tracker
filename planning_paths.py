@@ -79,6 +79,11 @@ def generate_paths(model,context,cma,cfg,years,count,seed,progress=None,workdir=
     bear=float((context.get('regime_probabilities') or {}).get('Bear',.18))
     if bear>1:bear/=100
     initial[3:6]*=1+max(0,bear)*2;initial/=initial.sum()
+    if cfg.get('initial_scenario_probabilities') is not None:
+        initial=np.asarray(cfg['initial_scenario_probabilities'],float)
+        if initial.shape!=(len(names),) or not np.isfinite(initial).all() or (initial<0).any() or initial.sum()<=0:
+            raise ValueError('Invalid initial scenario probabilities')
+        initial=initial/initial.sum()
     regime=rng.choice(len(names),count,p=initial)
     mixture=np.array(cfg['ensemble_weights'],float);mixture/=mixture.sum()
     assignment=rng.choice(3,count,p=mixture)
@@ -90,6 +95,7 @@ def generate_paths(model,context,cma,cfg,years,count,seed,progress=None,workdir=
     if not blocks:assignment[assignment==1]=0
     cursor=np.zeros(count,dtype=int);remaining=np.zeros(count,dtype=int)
     dead=np.zeros((count,n),bool);cluster=np.ones(count)
+    impairment_month=np.full((count,n),months,dtype=np.int32)
     roots=[np.linalg.cholesky(stress_correlation(corr,p[2])) for p in params]
     annual=[];fund=context.get('fundamentals') or {}
     for year in range(1,years+1):
@@ -134,6 +140,7 @@ def generate_paths(model,context,cma,cfg,years,count,seed,progress=None,workdir=
         current=np.expm1(np.clip(logret,-12,2))
         current[dead]=0.
         severity=np.broadcast_to([v['Impairment loss severity'] for v in d],current.shape)
+        impairment_month[event]=m
         current[event]=-severity[event];dead|=event
         impairment_count+=int(event.sum());returns[m]=current
         inflation[m]=np.clip(cfg['inflation']+(params[regime,3]-.025),0,.15)
@@ -144,6 +151,6 @@ def generate_paths(model,context,cma,cfg,years,count,seed,progress=None,workdir=
     return {'returns':returns,'inflation':inflation,'rates':rates,'model_assignment':assignment,
             'decomposition':[r for year in annual for r in year], 'correlation':corr,
             'regime_correlations':{k:stress_correlation(corr,p[2]).tolist() for k,p in zip(names,params)},
-            'bootstrap_available':bool(blocks),'impairment_events':impairment_count,
+            'impairment_month':impairment_month,'bootstrap_available':bool(blocks),'impairment_events':impairment_count,
             'scenario_parameters':scenario_config,'transition_matrix':transition.tolist(),
             'risk_covariance':cov,'risk_source':risk_source}

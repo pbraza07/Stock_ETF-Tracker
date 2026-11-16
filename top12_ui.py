@@ -66,7 +66,7 @@ def cached_ledger(kind):
 
 
 RECESSION_SAVED_COLUMNS = [
-    "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
+    "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
     "Recession Score",
     "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
     "Consistency Score", "Current Strength Score", "Profitability Score",
@@ -82,7 +82,7 @@ RECESSION_SAVED_COLUMNS = [
 ]
 
 MAX_PROFIT_SAVED_COLUMNS = [
-    "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
+    "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
     "Max Profit Score",
     "Historical Performance Score", "Recent Performance Score",
     "Future P50 Score", "Future P75 Score", "Fundamentals Score",
@@ -136,7 +136,7 @@ def _saved_columns(kind):
 def _primary_factor_columns(kind):
     if kind == "Recession":
         return [
-            "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
+            "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
             "Recession Score",
             "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
             "Consistency Score", "Current Strength Score", "Profitability Score",
@@ -148,7 +148,7 @@ def _primary_factor_columns(kind):
             "Data Confidence", "Why Selected",
         ]
     return [
-        "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS,
+        "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
         "Max Profit Score",
         "Historical Performance Score", "Recent Performance Score",
         "Future P50 Score", "Future P75 Score", "Fundamentals Score",
@@ -378,6 +378,7 @@ def portfolio_inputs(table, kind, allocation, investment, years):
 
 
 def render_top12_rankings(market, years, data_as_of, monthly_loader, live_loader):
+    st.caption('Ranking scores compare evidence; they are not probabilities. New forecasts use forward monthly paths before fees/taxes. Analyst targets are reported opinions, separate from projections. Saved results retain the model version that created them.')
     """Open the selected tracked JSON ranking immediately; recalculation is optional."""
     consume_completed_job()
     st.markdown("### Dynamic sector stock rankings")
@@ -574,7 +575,7 @@ def render_ranked_table(
     # Put the actual ranking factors first, then the supporting evidence.
     factor_columns = (
         [
-            "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS, "Recession Score",
+            "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS, "Recession Score",
             "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
             "Consistency Score", "Current Strength Score", "Profitability Score",
             "Risk Penalty", "Recession Additional Penalty",
@@ -586,7 +587,7 @@ def render_ranked_table(
         ]
         if kind == "Recession"
         else [
-            "Rank", "Symbol", "Name", "Sector", "Price", *TARGET_COLUMNS, "Max Profit Score",
+            "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS, "Max Profit Score",
             "Historical Performance Score", "Recent Performance Score",
             "Future P50 Score", "Future P75 Score", "Fundamentals Score",
             "Consistency Score", "Relative Strength Score", "Downside Quality Score",

@@ -62,7 +62,7 @@ def calculate_rankings(
         LOGGER.exception("Top 5 per Sector live context load failed")
         live = {}
         warnings.append(
-            "Recent supplemental inputs unavailable. Using historical fallback."
+            "Recent inputs unavailable. Historical evidence remains visible; forward estimates require a usable CMA and are never invented."
         )
     progress["stage"] = "Calculating both Top 5 per Sector lists with 5,000 scenarios"
     result = build_top12_rankings(

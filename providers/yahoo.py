@@ -792,31 +792,35 @@ class YahooFinanceProvider(MarketDataProvider):
                 value = float(info.get(key))
             except (TypeError, ValueError):
                 return None
-            return value if pd.notna(value) else None
+            return value if np.isfinite(value) else None
 
         quote_type = str(info.get("quoteType") or "UNKNOWN").upper()
         is_fund = quote_type in {"ETF", "MUTUALFUND"}
         revision_direction = None
+        revision_period = None
         forward_eps_growth = None
         target_revision_direction = None
         if ticker is not None and not is_fund:
             try:
                 revisions = ticker.get_eps_revisions()
                 if isinstance(revisions, pd.DataFrame) and not revisions.empty:
-                    numeric_values = revisions.select_dtypes(include="number")
-                    if not numeric_values.empty:
-                        recent = numeric_values.iloc[0].dropna().to_numpy(dtype=float)
-                        if recent.size:
-                            revision_direction = float(np.clip(np.nanmean(np.sign(recent)), -1.0, 1.0))
+                    # One explicit forecast horizon, one nonoverlapping lookback.
+                    period = next((p for p in ('+1y', '0y', '+1q', '0q') if p in revisions.index), None)
+                    if period is not None:
+                        row = revisions.loc[period]
+                        up = pd.to_numeric(row.get('upLast30days'), errors='coerce')
+                        down = pd.to_numeric(row.get('downLast30days'), errors='coerce')
+                        if np.isfinite(up) and np.isfinite(down) and min(up, down) >= 0 and up + down > 0:
+                            revision_direction = float((up - down) / (up + down))
+                            revision_period = period
             except Exception:
                 pass
             try:
                 growth = ticker.get_growth_estimates()
-                if isinstance(growth, pd.DataFrame) and not growth.empty:
-                    candidates = growth.select_dtypes(include="number").to_numpy(dtype=float).ravel()
-                    candidates = candidates[np.isfinite(candidates)]
-                    if candidates.size:
-                        forward_eps_growth = float(np.median(candidates))
+                if isinstance(growth, pd.DataFrame) and '+1y' in growth.index and 'stock' in growth.columns:
+                    value = pd.to_numeric(growth.loc['+1y', 'stock'], errors='coerce')
+                    if np.isfinite(value):
+                        forward_eps_growth = float(value)
             except Exception:
                 pass
             try:
@@ -828,8 +832,6 @@ class YahooFinanceProvider(MarketDataProvider):
                     target_revision_direction = float(np.clip(mean / current - 1.0, -0.25, 0.25) / 0.25)
             except Exception:
                 pass
-        if revision_direction is None:
-            revision_direction = target_revision_direction
 
         return {
             "symbol": symbol,
@@ -854,7 +856,17 @@ class YahooFinanceProvider(MarketDataProvider):
             "debt_to_equity": numeric("debtToEquity"),
             "return_on_equity": numeric("returnOnEquity"),
             "eps_revision_direction": revision_direction,
-            "analyst_target_direction": target_revision_direction,
+            "analyst_target_direction": target_revision_direction, # compatibility: target-distance signal only
+            "analyst_target_upside_signal": target_revision_direction,
+            "eps_revision_period": revision_period,
+            "eps_revision_window": "30 days; (up-down)/(up+down); zero coverage is missing",
+            "forward_eps_growth_period": "+1y stock column only",
+            "fundamental_observation_date": None,
+            "point_in_time_integrity": "LIMITED: provider snapshot, publication vintage unavailable",
+            "currency": info.get("currency"),
+            "quote_observation_time": numeric("regularMarketTime"),
+            "data_contract_version": "5.11.64",
+
             "sector": info.get("sector"),
             "category": info.get("category"),
             "source": "Yahoo Finance quote-summary and analyst datasets via yfinance",

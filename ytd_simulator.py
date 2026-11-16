@@ -46,6 +46,12 @@ def simulate_ytd(prices, principal, frequency="Monthly", withdrawal=0.0,
     observations = pd.concat([before.tail(1), current]) if full_ytd else current
     if len(observations) < 2:
         raise ValueError("At least two shared daily closing prices are needed for the selected holdings.")
+    from exchange_calendars import get_calendar
+    calendar=get_calendar('XNYS',start=observations.index[0]-pd.Timedelta(days=10),end=observations.index[-1]+pd.Timedelta(days=10))
+    expected=calendar.sessions_in_range(observations.index[0],observations.index[-1]).tz_localize(None)
+    missing=expected.difference(observations.index)
+    if len(missing):
+        raise ValueError('Verified daily prices are missing for U.S. trading sessions: '+', '.join(str(d.date()) for d in missing[:8])+'. Refresh the histories. Multi-session returns will not be labeled daily or used for daily streaks; previous completed results are retained.')
     returns = observations.pct_change(fill_method=None).iloc[1:]
     balances = np.full(p.shape[1], float(principal) / p.shape[1])
     rows = []
@@ -246,7 +252,7 @@ def render_ytd(market, on_saved=None):
             st.session_state.ytd_record = make_saved_record(outputs,st.session_state.get('ytd_completed_inputs',{}),'YTD Portfolio')
         st.markdown(summary_html(st.session_state.ytd_record),unsafe_allow_html=True)
         render_downloads(st.session_state.ytd_record,'result_reports')
-        st.caption(f"Last completed run; cutoff {date}. Run again after changing inputs. Missing dates are excluded, not filled with invented returns.")
+        st.caption(f"Last completed run; cutoff {date}. Run again after changing inputs. New runs reject missing trading sessions; no invented prices or daily returns.")
         for name, (table, daily) in outputs.items():
             if name=='Performance':
                 from ytd_reports import performance_table

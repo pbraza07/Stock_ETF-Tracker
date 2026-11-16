@@ -100,6 +100,8 @@ def forward_cma(context, cfg):
     return {'geometric_return':anchor,'components':rows,'missing_components':[k for k in WEIGHTS if k not in [r['Component'] for r in rows]],
             'assumption_range':[anchor-uncertainty,anchor+uncertainty],'confidence':'LOW' if len(rows)<4 else 'MODERATE',
             'range_definition':'Assumption sensitivity range, not a statistically calibrated confidence interval',
+            'component_dependence':'ERP and macro share the configured equity risk premium; component agreement is not independent validation',
+            'effective_component_count':len(rows),
             'refreshed_at':context.get('retrieved_at') or datetime.now(timezone.utc).isoformat()}
 
 def signal_weights(year,cfg):
@@ -116,7 +118,7 @@ def decomposition(symbol,category,fundamental,anchor,year,cfg):
     rows['Sector economics']=float((cfg.get('sector_adjustments') or {}).get(category,0))*sector
     rows['Earnings growth']=float(np.clip((earnings or 0)*.10,-.04,.03))*short
     rows['Valuation']=float(np.clip(np.log(20/pe)/10,-.08,.04))*durable if pe and pe>0 else 0.
-    rows['Quality / ROIC proxy']=float(np.clip(((quality or .10)-.10)*.10,-.025,.02))*durable
+    rows['Quality / ROIC proxy']=float(np.clip(((quality if quality is not None else .10)-.10)*.10,-.025,.02))*durable
     rows['Balance sheet']=(-min(.04,max(0,(leverage or 0)-100)/10000))*durable
     rows['Margin quality']=float(np.clip((margin-.10)*.10,-.04,.02))*durable if margin is not None else 0.
     rows['Analyst revisions']=float(np.clip(number(f.get('eps_revision_direction'),0)*.005,-.015,.015))*short
@@ -136,3 +138,16 @@ def decomposition(symbol,category,fundamental,anchor,year,cfg):
             'Impairment loss severity':min(.99,cfg['impairment_severity']+max(0,(leverage or 0)-100)/4000+(.10 if margin is not None and margin<0 else 0)),
             'Short signal weight':short,'Durable signal weight':durable,
             'Missing evidence':'Analyst dispersion / business stability unverified; ROE proxy where ROIC unavailable'}
+
+
+def forward_context(symbols,context):
+    """Common current-signal preparation for rankings, screening and planning."""
+    from future_projection_live import build_current_market_state
+    result=deepcopy(context or {})
+    state=build_current_market_state(symbols,result)
+    result['regime_probabilities']=state.get('regime_probabilities',{})
+    for symbol in symbols:
+        fundamental=result.setdefault('fundamentals',{}).setdefault(symbol,{})
+        signal=((state.get('holding_adjustments') or {}).get(symbol) or {}).get('return_200_day')
+        if signal is not None:fundamental['momentum']=signal
+    return result,state

@@ -39,7 +39,7 @@ def fixture():
 
 @pytest.fixture(scope="module")
 def result():
-    return build_top12_rankings(fixture(), YEARS, simulations=100)
+    return build_top12_rankings(fixture(), YEARS, simulations=100, live={"macro":{"treasury_10y":{"value":4.,"observation_date":"2026-11-13"}}})
 
 
 def test_all_eligible_and_caps(result):
@@ -53,7 +53,7 @@ def test_all_eligible_and_caps(result):
 
 
 def test_seed_and_percentiles(result):
-    again = build_top12_rankings(fixture(), YEARS, simulations=100)
+    again = build_top12_rankings(fixture(), YEARS, simulations=100, live={"macro":{"treasury_10y":{"value":4.,"observation_date":"2026-11-13"}}})
     assert_frame_equal(result["Recession"], again["Recession"])
     for prefix in ("", "Bear "):
         values = result["all_scores"][

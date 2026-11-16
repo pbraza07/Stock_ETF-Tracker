@@ -8,7 +8,7 @@ def live_context(symbols,market):
     # Retain relevant fundamentals/sector snapshot as key; exclude volatile quote columns.
     selected=market.loc[market.Symbol.isin(symbols)].copy()
     stable=selected.drop(columns=[c for c in selected.columns if c in {'Price','Current Price','1D','Last Updated','Price Updated ET'}],errors='ignore')
-    return cached('projection-context',(tuple(sorted(symbols)),stable),
+    return cached('projection-context-v51164',(tuple(sorted(symbols)),stable),
         lambda:fetch_live_projection_context(YahooFinanceProvider(),tuple(sorted(symbols)),selected),
         ttl=1800,default={},valid=lambda v:bool(v))
 
@@ -44,6 +44,12 @@ def quality(market,years,cfg,planning,progress):
     progress(0,3,'Loading fundamental and macro sources')
     context=dict(live_context(stocks,market),requested_symbols=list(stocks))
     context=retain_observed_fundamentals(context)
+    from projection_macro import fetch_one
+    try:
+        _, series = fetch_one('inflation_expectation','T10YIE')
+        context.setdefault('macro',{})['inflation_expectation']=series
+    except Exception:
+        context.setdefault('failures',[]).append('Breakeven inflation unavailable; configured assumption used.')
     progress(1,3,'Loading actual monthly history')
     monthly=monthly_history(stocks,years)
     result=screen(market,years,monthly,context,cfg,planning,progress)

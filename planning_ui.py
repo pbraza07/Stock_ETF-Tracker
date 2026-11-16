@@ -21,7 +21,7 @@ def controls():
             cfg['desired_survival']=st.selectbox('Spending success target (%)',[50,70,80,90,95],index=3)/100
             cfg['planning_percentile']=st.number_input('Planning return percentile',1,49,25,help=PERCENTILE_HELP)
             cfg['solve_withdrawal']=st.checkbox('Calculate sustainable initial annual spending',value=True,
-                help='Maximum initial net spending supported by a deterministic subset of paths at the chosen success target and forecast horizon. Not a guarantee.')
+                help='Initial net spending searched on one path subset and checked on a separate holdout using a sampling lower bound at the chosen success target and forecast horizon. Not a guarantee.')
         with b:
             cfg['tax_enabled']=st.checkbox('Estimate taxes')
             cfg['account']=st.selectbox('Account type',['Taxable','Tax-deferred','Roth','Blended'])
@@ -41,6 +41,7 @@ def controls():
             cfg['tax_drag']=st.number_input('Additional annual tax drag (%)',0.,5.,0.,.05,help='Optional drag for distributions not captured by sale taxes; avoid double counting.')/100
             cfg['sale_method']=st.selectbox('Securities funding withdrawals',['Proportional','Overweight first','Strongest first','Weakest first','Tax-aware','Custom order'])
             if cfg['sale_method']=='Custom order':cfg['custom_order']=[s.strip().upper() for s in st.text_input('Ticker sale order (comma separated)').split(',') if s.strip()]
+        cfg['contribution_frequency']=st.selectbox('Additional contribution cadence',['Yearly','Monthly','None'],help='Independent of the spending cadence; amount comes from Additional Contribution above.')
         cfg['goal']=st.selectbox('Planning goal',['Fully fund spending','Maintain principal','Never below floor','Reach target'])
         cfg['goal_amount']=st.number_input('Goal value / minimum floor ($)',0.,1e9,250000.,10000.)
         cfg['goal_real']=st.checkbox('Goal expressed in today’s purchasing power',value=True)
@@ -71,6 +72,7 @@ def render(result):
     st.subheader('Forward financial planning')
     advanced=st.radio('Detail level',['Basic View','Advanced View'],horizontal=True)=='Advanced View'
     st.caption(PERCENTILE_HELP)
+    st.info('Probabilities are conditional model estimates, not historically verified investment odds. More simulations reduce sampling noise—not biased assumptions. Compare loss risk, spending success and data quality alongside returns.')
     visible=st.multiselect('Visible planning percentiles',[10,25,50,75,90],default=[10,25,50,75,90],help=PERCENTILE_HELP)
     show_reference=st.checkbox('Show no-withdrawal reference',value=True)
     st.info('Research planning estimates. Calibration is unvalidated until verified point-in-time tests are available. A funded P50 outcome does not establish retirement safety.')
@@ -85,7 +87,7 @@ def render(result):
             columns=st.columns(3)
             for col,label in zip(columns,metrics[i:i+3]):
                 value=summary[label];col.metric(label,f'{value:.0%}' if 'Probability' in label else f'${value:,.0f}')
-        sustainable=case['sustainable'];st.write('**Sustainable initial annual net spending:**',f"${sustainable['initial_annual_withdrawal']:,.0f}" if 'initial_annual_withdrawal' in sustainable else 'Not requested')
+        sustainable=case['sustainable'];st.write('**Sustainable initial annual net spending:**',f"${sustainable['initial_annual_withdrawal']:,.0f}" if sustainable.get('initial_annual_withdrawal') is not None else sustainable.get('status','Not requested'))
         st.caption(str(sustainable))
         fig=go.Figure();frame=case['table']
         for p,color in zip([10,25,50,75,90],['#ef4444','#f59e0b','#2f80ed','#14b8a6','#a855f7']):

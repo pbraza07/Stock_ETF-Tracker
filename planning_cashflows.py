@@ -41,7 +41,7 @@ def liquidate(holdings,basis,net_needed,cfg,target,last_returns,method=None):
     gross=sales.sum(1);tax=(sales*rates).sum(1);net=(sales*keep).sum(1)
     return net,gross,tax,sales,gross*friction
 
-def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spending=None,detail=True,capture_balances=False):
+def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spending=None,detail=True,capture_balances=False,impairment_month=None):
     months,count,n=returns.shape;weights=np.array([inputs['allocations'][s]/100 for s in inputs['holdings']]);weights/=weights.sum()
     initial=inputs['starting_investment'];h=np.tile(initial*weights,(count,1));basis=h*cfg['basis_fraction']
     debt=np.full(count,float(cfg['pal_balance']));initial_equity=initial-cfg['pal_balance']
@@ -63,8 +63,16 @@ def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spendi
     for m in range(months):
         opening=h.sum(1)-debt
         if m%12==0:year_cpi=cpi.copy()
-        contribution=inputs.get('additional_contribution',0) if frequency=='Monthly' or m%12==0 else 0
-        h+=contribution*weights;basis+=contribution*weights
+        # Failed holdings retain recovery cash but receive no new allocation.
+        active=np.ones_like(h,dtype=bool) if impairment_month is None else impairment_month>=m
+        target_weights=active*weights
+        denom=target_weights.sum(1,keepdims=True)
+        target_weights=np.divide(target_weights,denom,out=np.zeros_like(h),where=denom>0)
+        # If all securities fail, the existing zero-return slots hold contributions as cash.
+        target_weights=np.where(denom>0,target_weights,weights)
+        cadence=cfg.get('contribution_frequency','Yearly')
+        contribution=inputs.get('additional_contribution',0) if cadence=='Monthly' or (cadence=='Yearly' and m%12==0) else 0
+        h+=contribution*target_weights;basis+=contribution*target_weights
         if begin:wanted,net,gross,tax,sales,cost=withdraw(m)
         invested=h.copy();h*=np.maximum(0,1+returns[m]);last=returns[m]
         investment_profit=(h-invested).sum(1)
@@ -88,11 +96,18 @@ def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spendi
             debt=np.maximum(0,debt-cash);tax_total+=loan_tax;fees_total+=loan_cost
         due={'Monthly':True,'Quarterly':m%3==2,'Yearly':m%12==11,'None':False}.get(inputs['rebalancing_frequency'],False)
         if strategy=='Rebalanced' and due:
-            total=h.sum(1);target=total[:,None]*weights;sell=np.maximum(h-target,0)
+            active=np.ones_like(h,dtype=bool) if impairment_month is None else impairment_month>m
+            target_weights=active*weights
+            denom=target_weights.sum(1,keepdims=True)
+            target_weights=np.divide(target_weights,denom,out=np.zeros_like(h),where=denom>0)
+            # Keep recovery proceeds in their cash slot, trade only surviving holdings.
+            cash=np.where(active,0.,h)
+            total=np.where(active,h,0.).sum(1)
+            target=total[:,None]*target_weights+cash;sell=np.maximum(h-target,0)
             tr=tax_rates(cfg,h,basis,internal=True)
             reb_tax=(sell*tr).sum(1);trade_cost=2*sell.sum(1)*(cfg['trading_friction']+cfg['bid_ask'])
             fraction=np.divide(sell,h,out=np.zeros_like(sell),where=h>0);basis*=1-fraction
-            h-=sell;remaining=np.maximum(0,total-reb_tax-trade_cost);new=remaining[:,None]*weights
+            h-=sell;remaining=np.maximum(0,total-reb_tax-trade_cost);new=remaining[:,None]*target_weights+cash
             basis+=np.maximum(new-h,0);h=new;tax_total+=reb_tax;fees_total+=trade_cost
         if inflation is not None:cpi*=(1+inflation[m])**(1/12)
         else:cpi*=(1+cfg['inflation'])**(1/12)
@@ -115,7 +130,7 @@ def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spendi
     surviving=~np.isfinite(depleted);valid=depleted[np.isfinite(depleted)]
     summary={'Portfolio Survival Probability':float(surviving.mean()),'Probability Spending Is Fully Funded':float(fully.mean()),
              'Probability of Depletion':float((~surviving).mean()),'Probability Principal Is Preserved':float((equity>=initial_equity*cpi).mean()),
-             'Probability Goal Is Achieved':float(goal_ok.mean()),'Median Ending Balance':float(np.median(equity)),
+             'Probability Goal Is Achieved':float(goal_ok.mean()),'Probability Nominal Gain':float((equity>initial_equity).mean()),'Median Ending Balance':float(np.median(equity)),
              'P10 Ending Balance':float(np.percentile(equity,10)),'Median Real Ending Balance':float(np.median(equity/cpi)),
              'Median Depletion Year (conditional)':float(np.median(valid)) if len(valid) else None,
              'Worst Decile Depletion Year (conditional)':float(np.percentile(valid,10)) if len(valid) else None,
@@ -129,18 +144,31 @@ def simulate(returns,inputs,cfg,strategy,inflation=None,rates=None,annual_spendi
             'balances':np.asarray(balances) if detail else None}
 
 def sustainable_withdrawal(paths,inputs,cfg,strategy):
-    n=min(paths['returns'].shape[1],cfg['solver_paths'])
-    # Disclosed deterministic subset, same paths at each bisection (common random numbers).
-    ix=np.linspace(0,paths['returns'].shape[1]-1,n,dtype=int)
-    r=paths['returns'][:,ix];inf=paths['inflation'][:,ix];rates=paths['rates'][:,ix]
+    total=paths['returns'].shape[1]
+    n=min(total//2,int(cfg['solver_paths']))
+    if n<50:return {'status':'Insufficient independent paths for spending validation','initial_annual_withdrawal':None}
+    # Disjoint deterministic search and holdout paths; holdout never tunes the amount.
+    indices=np.random.default_rng(917).permutation(total)
+    search=indices[:n];holdout=indices[n:2*n]
+    def evaluate(amount,ix):
+        result=simulate(paths['returns'][:,ix],inputs,cfg,strategy,paths['inflation'][:,ix],paths['rates'][:,ix],
+            annual_spending=amount,detail=False,
+            impairment_month=paths['impairment_month'][ix] if paths.get('impairment_month') is not None else None)
+        success=result['fully_funded'] & result['surviving']
+        p=float(success.mean());z=1.645
+        lower=(p+z*z/(2*len(ix))-z*np.sqrt(p*(1-p)/len(ix)+z*z/(4*len(ix)**2)))/(1+z*z/len(ix))
+        return p,max(0.,float(lower))
     lo=0.;hi=inputs['starting_investment']*2
-    def probability(amount):
-        result=simulate(r,inputs,cfg,strategy,inf,rates,annual_spending=amount,detail=False)
-        return float((result['fully_funded'] & result['surviving']).mean())
-    if probability(0)<cfg['desired_survival']:return {'initial_annual_withdrawal':0.,'status':'Target unattainable even with zero spending','paths':n}
+    if evaluate(0,search)[1]<cfg['desired_survival']:
+        return {'initial_annual_withdrawal':0.,'status':'Target not supported by sampling lower bound even at zero spending','paths':n}
     for _ in range(14):
         mid=(lo+hi)/2
-        if probability(mid)>=cfg['desired_survival']:lo=mid
+        if evaluate(mid,search)[1]>=cfg['desired_survival']:lo=mid
         else:hi=mid
-    return {'initial_annual_withdrawal':lo,'achieved_sample_probability':probability(lo),'target':cfg['desired_survival'],
-            'paths':n,'search_resolution':hi-lo,'status':'Simulation estimate; not a guaranteed sustainable rate'}
+    probability,lower=evaluate(lo,holdout)
+    passed=lower>=cfg['desired_survival']
+    return {'initial_annual_withdrawal':lo if passed else None,'candidate_annual_withdrawal':lo,
+        'achieved_sample_probability':probability,'holdout_sampling_lower_95':lower,
+        'target':cfg['desired_survival'],'paths':n,'holdout_paths':n,'search_resolution':hi-lo,
+        'status':'Holdout sampling target met; conditional on model, not guaranteed' if passed else 'Candidate failed independent sampling check; no supported withdrawal reported',
+        'uncertainty':'One-sided Wilson 95% sampling bound excludes model/data uncertainty'}

@@ -807,7 +807,7 @@ def walk_forward_validate(model, weights: np.ndarray | None = None, seed: int = 
             "records": [],
             "model_metrics": {},
             "ensemble_weights": {"Adaptive Regime Monte Carlo": 1.0, "Historical Block Bootstrap": 0.0, "Factor/CMA Model": 0.0},
-            "no_future_leakage": True,
+            "no_future_leakage": False,
             "calibration_score": 35.0,
             "confidence": "Low",
             "explanation": "Insufficient completed history for a meaningful walk-forward calibration; the primary historical model is used.",
@@ -861,7 +861,7 @@ def walk_forward_validate(model, weights: np.ndarray | None = None, seed: int = 
                     "Inside P25-P75": quantiles["P25"] <= actual <= quantiles["P75"],
                     "Absolute Median Error": abs(actual - quantiles["P50"]),
                     "Directional Correct": (actual >= 0) == (quantiles["P50"] >= 0),
-                    "No Future Leakage": origin - 1 < origin + horizon - 1,
+                    "No Future Leakage": False, # current universe/vintages cannot establish historical integrity
                 })
     metrics: dict[str, dict] = {}
     for name in ("Adaptive Regime Monte Carlo", "Historical Block Bootstrap", "Factor/CMA Model"):
@@ -900,7 +900,7 @@ def walk_forward_validate(model, weights: np.ndarray | None = None, seed: int = 
         for name in ("Historical Block Bootstrap", "Factor/CMA Model"):
             weights_out.setdefault(name, 0.0)
         calibration = float(np.average([metrics[name]["score"] for name in metrics], weights=[weights_out.get(name, 0.0) for name in metrics]))
-    confidence = "High" if calibration >= 75 and len(records) >= 18 else ("Medium" if calibration >= 55 and len(records) >= 6 else "Low")
+    confidence = "UNVALIDATED"
     return {
         "records": records,
         "model_metrics": metrics,
@@ -909,8 +909,8 @@ def walk_forward_validate(model, weights: np.ndarray | None = None, seed: int = 
         "calibration_score": round(calibration, 2),
         "confidence": confidence,
         "explanation": (
-            f"{confidence}: {len(records)} model-horizon checks used only information available before each outcome; "
-            f"dynamic weights favor the best-calibrated distributions while retaining the adaptive regime model as primary."
+            "Exploratory historical diagnostics only: simplified models, overlapping outcomes and current surviving universe. "
+            "Not validation of the deployed selection/forecast pipeline; point-in-time integrity LIMITED."
         ),
     }
 
@@ -926,7 +926,7 @@ def projection_calibration_score(market_state: dict, validation: dict, historica
     agreement = 100.0 - min(100.0, float(np.std(model_scores)) * 2.0) if model_scores else 40.0
     score = 0.30 * weighted_coverage + 0.25 * recent + 0.15 * completeness + 0.10 * freshness + 0.10 * depth + 0.10 * agreement
     score = float(np.clip(score, 0.0, 100.0))
-    confidence = "High" if score >= 75 else ("Medium" if score >= 55 else "Low")
+    confidence = "UNVALIDATED"
     return {
         "score": round(score, 2),
         "confidence": confidence,
@@ -939,8 +939,8 @@ def projection_calibration_score(market_state: dict, validation: dict, historica
             "model_agreement": round(float(agreement), 2),
         },
         "explanation": (
-            f"{confidence}: score {score:.1f}/100 combines walk-forward coverage, current-data completeness and freshness, "
-            "historical depth, and agreement among the three validation models."
+            f"Diagnostic score {score:.1f}/100 is not a probability or calibrated confidence. "
+            "Production-model out-of-sample validation is unavailable. Shared inputs and overlapping tests cannot certify accuracy."
         ),
     }
 

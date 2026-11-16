@@ -31,12 +31,13 @@ def retain_observed_fundamentals(context,path=None,now=None):
             value=number(values.get(key));record=saved.get(key,{})
             if not isinstance(record,dict):record={}
             if value is not None:
-                saved[key]={'value':value,'retrieved_at':values.get('retrieved_at') or context.get('retrieved_at') or now.isoformat()}
+                saved[key]={'value':value,'contract':'5.11.64','retrieved_at':values.get('retrieved_at') or context.get('retrieved_at') or now.isoformat()}
                 continue
             try:
                 stamp=datetime.fromisoformat(record['retrieved_at'])
                 valid=stamp.tzinfo is not None and timedelta(0)<=now-stamp<=timedelta(days=7)
             except (KeyError,TypeError,ValueError):valid=False
+            if key=='forward_eps_growth' and record.get('contract')!='5.11.64':valid=False
             if valid and number(record.get('value')) is not None:
                 values[key]=record['value'];recovered[key]=record['retrieved_at']
         cache[symbol]=saved

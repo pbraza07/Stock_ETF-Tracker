@@ -218,7 +218,8 @@ def test_block_bootstrap_keeps_contiguous_multi_period_blocks():
 def test_walk_forward_backtest_prevents_future_leakage_and_weights_primary_model():
     model = prepare_projection_model(market_fixture(), ["AAA", "BBB", "CCC"], YEARS)
     result = walk_forward_validate(model, np.asarray([0.4, 0.3, 0.3]), seed=22)
-    assert result["no_future_leakage"] is True
+    assert result["no_future_leakage"] is False
+    assert result["confidence"] == "UNVALIDATED"
     assert result["ensemble_weights"]["Adaptive Regime Monte Carlo"] >= 0.50
     assert np.isclose(sum(result["ensemble_weights"].values()), 1.0)
 

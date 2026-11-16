@@ -647,6 +647,7 @@ def projection_cache_key(
     """Stable digest for identical input/data combinations."""
 
     normalized = normalize_projection_inputs(inputs)
+    normalized["calculation_contract"] = "5.11.64"
     holdings = normalized["holdings"]
     lookup = _normalized_market(market)
     data_rows = []

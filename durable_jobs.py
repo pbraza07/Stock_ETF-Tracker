@@ -30,7 +30,7 @@ def ensure_worker():
 
 def submit(task,owner=None,priority=10):
     init();payload=cloudpickle.dumps(task);token=uuid.uuid4().hex
-    identity=key_for('job-submit-v51156',(owner,payload))
+    identity=key_for('job-submit-v51164',(owner,payload))
     previous=get(identity) if owner else None
     if previous and previous[2]>time.time():
         prior=poll(previous[0])
