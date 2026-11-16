@@ -37,3 +37,16 @@ def test_ui_no_request_on_open():
     app=AppTest.from_string('from free_data_evidence import render_free_evidence\nrender_free_evidence()').run()
     assert not app.exception
     assert 'No calibration uplift' in app.caption[-1].value
+
+def test_ui_failure_retains_success(monkeypatch):
+    from streamlit.testing.v1 import AppTest
+    import shared_cache
+    saved={'identifier':'DGS10','cutoff':'2020-01-01','retrieved_at':'2026-11-16',
+           'records':[{'value':1.0}],'source_url':'https://fred.stlouisfed.org/series/DGS10','limitations':['Partial']}
+    monkeypatch.setattr(shared_cache,'cached',lambda *a,**k:saved)
+    app=AppTest.from_string('from free_data_evidence import render_free_evidence\nrender_free_evidence()').run()
+    app.button[0].click().run()
+    assert len(app.dataframe)==1
+    monkeypatch.setattr(shared_cache,'cached',lambda *a,**k:None)
+    app.button[0].click().run()
+    assert not app.exception and len(app.dataframe)==1 and len(app.warning)==1
