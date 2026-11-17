@@ -116,6 +116,22 @@ def render(result):
         st.dataframe(result['decomposition'],width='stretch',hide_index=True)
         st.json(result['concentration']);st.json(result['audit'])
         for warning in result['warnings']:st.caption(warning)
+    with st.expander('Archive forecast for future validation'):
+        st.caption('Freeze this completed forecast and its input evidence before outcomes occur. This does not certify historical probabilities. Download a backup if cloud persistence is unavailable.')
+        if st.button('Save dated validation forecast',key='save_validation_forecast'):
+            from free_market_checks import forecast_record
+            from opportunity_paper import save_record
+            payload=forecast_record(result)
+            try:
+                record_id,remote,message=save_record(payload)
+                st.session_state['validation_forecast_download']=payload
+                st.success('Forecast archived: '+record_id)
+                st.caption(message)
+            except Exception:
+                st.session_state['validation_forecast_download']=payload
+                st.warning('Server archive unavailable. Download the frozen record below.')
+        if st.session_state.get('validation_forecast_download'):
+            st.download_button('Download frozen forecast',json.dumps(st.session_state['validation_forecast_download'],indent=2,default=str),'MarketScope_frozen_forecast.json','application/json')
     with st.expander('Export planning report'):
         from report_service import render_projection_downloads
         render_projection_downloads(result)

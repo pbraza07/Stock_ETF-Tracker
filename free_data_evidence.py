@@ -112,6 +112,8 @@ def collect(kind,identifier,cutoff):
 def render_free_evidence(namespace='recession'):
     import streamlit as st
     from shared_cache import cached
+    from free_market_checks import render_checks
+    render_checks(namespace)
     prefix='free_evidence_'+namespace
     with st.expander('Free historical evidence — FRED vintages & SEC filings'):
         st.caption('Inspect what was knowable at a historical cutoff. Downloads are separate from projection calculations. No paid subscriptions.')
