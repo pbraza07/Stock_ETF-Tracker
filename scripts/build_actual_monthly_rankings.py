@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import heapq
 import itertools
 from pathlib import Path
@@ -19,7 +21,8 @@ CHUNK_SIZE = 100_000
 METHOD = "Actual adjusted month-end return from Yahoo/yfinance daily history"
 
 
-def _month_columns(df: pd.DataFrame) -> list[str]:
+def _month_columns(df: pd.DataFrame, as_of=None) -> list[str]:
+    current_year = (as_of or datetime.now(ZoneInfo("America/New_York"))).year
     cols = []
     for col in df.columns:
         text = str(col)
@@ -34,7 +37,7 @@ def _month_columns(df: pd.DataFrame) -> list[str]:
     by_year: dict[str, list[str]] = {}
     for col in cols:
         by_year.setdefault(col[:4], []).append(col)
-    complete_years = sorted([y for y, values in by_year.items() if len(values) == 12])
+    complete_years = sorted([y for y, values in by_year.items() if len(values) == 12 and int(y) < current_year])
     if len(complete_years) < 10:
         raise RuntimeError("The actual monthly return file does not contain ten complete calendar years.")
     years = complete_years[-10:]

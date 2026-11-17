@@ -44,18 +44,20 @@ ANNUAL_HISTORY_YEARS = annual_history_year_count(as_of=now_et())
 YEAR_RETURN_COLS = annual_history_year_labels(as_of=now_et())
 MONTHLY_RANK_YEARS = rolling_completed_year_labels(10, as_of=now_et())
 MONTHLY_START_YEAR = min(int(y) for y in MONTHLY_RANK_YEARS)
-MONTHLY_END_YEAR = max(int(y) for y in MONTHLY_RANK_YEARS)
+MONTHLY_END_YEAR = now_et().year
 MONTHLY_RETURN_COLS = [
     f"{year}-{month:02d}"
     for year in range(MONTHLY_START_YEAR, MONTHLY_END_YEAR + 1)
     for month in range(1, 13)
+    if f"{year}-{month:02d}" <= now_et().strftime("%Y-%m")
 ]
 MONTHLY_FULL_START_YEAR = min(int(y) for y in YEAR_RETURN_COLS)
-MONTHLY_FULL_END_YEAR = max(int(y) for y in YEAR_RETURN_COLS)
+MONTHLY_FULL_END_YEAR = now_et().year
 MONTHLY_FULL_RETURN_COLS = [
     f"{year}-{month:02d}"
     for year in range(MONTHLY_FULL_START_YEAR, MONTHLY_FULL_END_YEAR + 1)
     for month in range(1, 13)
+    if f"{year}-{month:02d}" <= now_et().strftime("%Y-%m")
 ]
 PERF_COLS = ["1D", "1M", "3M", "6M", "YTD", *YEAR_RETURN_COLS]
 
@@ -304,7 +306,8 @@ def main() -> None:
                 "Sector": base_row.get("Sector") or "Unknown",
                 "Type": base_row.get("Type") or "Unknown",
                 **{label: _monthly_value_or_prior(monthly_returns, label, old_monthly.get(symbol, {})) for label in MONTHLY_RETURN_COLS},
-                "Monthly Return Method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
+                "Monthly Return Method": "Actual adjusted month-end return from Yahoo/yfinance daily history; current month is partial MTD",
+                "Monthly Observation Through": price_date,
                 "Annual Reconciliation Source": "Market Table annual returns from the same adjusted daily history",
                 "Snapshot Updated ET": refresh_display,
             }
@@ -319,7 +322,8 @@ def main() -> None:
                     )
                     for label in MONTHLY_FULL_RETURN_COLS
                 },
-                "Monthly Return Method": "Actual adjusted month-end return from Yahoo/yfinance daily history",
+                "Monthly Return Method": "Actual adjusted month-end return from Yahoo/yfinance daily history; current month is partial MTD",
+                "Monthly Observation Through": price_date,
                 "Annual Reconciliation Source": "Market Table annual returns from the same adjusted daily history",
                 "Snapshot Updated ET": refresh_display,
             }
@@ -436,7 +440,7 @@ def main() -> None:
     monthly_df = pd.DataFrame([monthly_rows[s] for s in symbols if s in monthly_rows])
     monthly_columns = [
         "Symbol", "Name", "Sector", "Type", *MONTHLY_RETURN_COLS,
-        "Monthly Return Method", "Annual Reconciliation Source", "Snapshot Updated ET",
+        "Monthly Return Method", "Monthly Observation Through", "Annual Reconciliation Source", "Snapshot Updated ET",
     ]
     for col in monthly_columns:
         if col not in monthly_df.columns:
@@ -451,7 +455,7 @@ def main() -> None:
     ])
     monthly_full_columns = [
         "Symbol", "Name", "Sector", "Type", *MONTHLY_FULL_RETURN_COLS,
-        "Monthly Return Method", "Annual Reconciliation Source", "Snapshot Updated ET",
+        "Monthly Return Method", "Monthly Observation Through", "Annual Reconciliation Source", "Snapshot Updated ET",
     ]
     for col in monthly_full_columns:
         if col not in monthly_full_df.columns:

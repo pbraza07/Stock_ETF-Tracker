@@ -64,6 +64,10 @@ def calculate_rankings(
         warnings.append(
             "Recent inputs unavailable. Historical evidence remains visible; forward estimates require a usable CMA and are never invented."
         )
+    from top12_data import extend_with_recent_history
+    monthly = extend_with_recent_history(monthly, live)
+    if any(monthly.get('requested_through') not in h for h in monthly.get('returns', {}).values()):
+        warnings.append('Current-month observations are missing for some instruments. Latest genuine data is used; see Monthly Current Coverage.')
     progress["stage"] = "Calculating both Top 5 per Sector lists with 5,000 scenarios"
     result = build_top12_rankings(
         market,
@@ -80,10 +84,8 @@ def calculate_rankings(
                 f"{kind} did not produce eligible stocks. Check historical evidence and sector classification."
             )
     result["metadata"]["Market Data Through"] = data_as_of
-    result["metadata"]["Monthly Data Through"] = max(
-        (p for h in (monthly.get("returns") or {}).values() for p in h),
-        default="Unavailable",
-    )
+    from top12_data import monthly_metadata
+    result["metadata"].update(monthly_metadata(monthly))
     result.setdefault("warnings", []).extend(warnings)
     # Timestamp the completed calculation, not a later download or save retry.
     stamp = datetime.now(timezone.utc).isoformat()

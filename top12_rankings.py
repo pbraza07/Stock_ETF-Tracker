@@ -207,7 +207,13 @@ def score_universe(
             "At least one stock with a valid sector and three completed annual observations is required."
         )
     symbols = sorted(frame.Symbol.tolist())
-    model = prepare_projection_model(market, symbols, years, monthly_returns=monthly, use_monthly=True)
+    # A partial month is useful observed performance, not a full monthly risk sample.
+    risk_monthly = monthly
+    if monthly and monthly.get('partial_month'):
+        risk_monthly = {**monthly, 'returns': {
+            symbol: {m: v for m, v in values.items() if m != monthly['partial_month']}
+            for symbol, values in (monthly.get('returns') or {}).items()}}
+    model = prepare_projection_model(market, symbols, years, monthly_returns=risk_monthly, use_monthly=True)
     from planning_assumptions import forward_context
     context,state = forward_context(symbols,live)
     validation = {'confidence':'UNVALIDATED','no_future_leakage':False,
@@ -394,7 +400,8 @@ def build_top12_rankings(
             "Eligible Stocks": len(frame),
             "Excluded Stocks": len(market[market.Type.eq("Stock")]) - len(frame),
             "Historical Through": max(completed),
-            "Model Version": "5.11.64",
+            "Historical Through Basis": "Completed annual returns; monthly evidence extends separately through latest observations",
+            "Model Version": "5.11.68",
             "Seed": seed,
             "Simulations": simulations,
             "Replacement Threshold": threshold,

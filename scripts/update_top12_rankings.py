@@ -28,6 +28,8 @@ def main():
         ["SPY"] if "SPY" in set(market.Symbol) and "SPY" not in symbols else []
     )
     monthly = load_monthly(monthly_symbols, years, remote=False)
+    from top12_data import extend_with_recent_history
+    monthly = extend_with_recent_history(monthly, live)
     result = build_top12_rankings(
         market,
         years,
@@ -42,10 +44,8 @@ def main():
     result["metadata"]["Market Data Through"] = snapshot_metadata.get(
         "updated_at_et", "Unavailable"
     )
-    result["metadata"]["Monthly Data Through"] = max(
-        (p for history in monthly["returns"].values() for p in history),
-        default="Unavailable",
-    )
+    from top12_data import monthly_metadata
+    result["metadata"].update(monthly_metadata(monthly))
     for kind in histories:
         ledger = record_run(histories[kind], kind, result[kind], result["metadata"])
         ok, msg = persist_ledger(kind, ledger)
