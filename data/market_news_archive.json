@@ -5,8 +5,8 @@
       "source_id": "bbc",
       "name": "BBC · Business",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:51.945930+00:00",
-      "last_success_at": "2026-11-17T00:04:51.945930+00:00",
+      "attempted_at": "2026-11-17T00:33:11.315377+00:00",
+      "last_success_at": "2026-11-17T00:33:11.315377+00:00",
       "count": 55,
       "error": ""
     },
@@ -14,8 +14,8 @@
       "source_id": "guardian",
       "name": "The Guardian · Business",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:51.948272+00:00",
-      "last_success_at": "2026-11-17T00:04:51.948272+00:00",
+      "attempted_at": "2026-11-17T00:33:11.316065+00:00",
+      "last_success_at": "2026-11-17T00:33:11.316065+00:00",
       "count": 20,
       "error": ""
     },
@@ -23,8 +23,8 @@
       "source_id": "ft",
       "name": "Financial Times · Markets",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:54.153932+00:00",
-      "last_success_at": "2026-11-17T00:04:54.153932+00:00",
+      "attempted_at": "2026-11-17T00:33:12.809814+00:00",
+      "last_success_at": "2026-11-17T00:33:12.809814+00:00",
       "count": 25,
       "error": ""
     },
@@ -32,8 +32,8 @@
       "source_id": "wsj",
       "name": "The Wall Street Journal · Markets",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:54.251575+00:00",
-      "last_success_at": "2026-11-17T00:04:54.251575+00:00",
+      "attempted_at": "2026-11-17T00:33:13.209824+00:00",
+      "last_success_at": "2026-11-17T00:33:13.209824+00:00",
       "count": 57,
       "error": ""
     },
@@ -41,8 +41,8 @@
       "source_id": "marketwatch",
       "name": "MarketWatch · Top stories",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:54.748390+00:00",
-      "last_success_at": "2026-11-17T00:04:54.748390+00:00",
+      "attempted_at": "2026-11-17T00:33:13.710832+00:00",
+      "last_success_at": "2026-11-17T00:33:13.710832+00:00",
       "count": 10,
       "error": ""
     },
@@ -50,7 +50,7 @@
       "source_id": "yahoo",
       "name": "Yahoo Finance",
       "status": "UNAVAILABLE",
-      "attempted_at": "2026-11-17T00:04:56.048430+00:00",
+      "attempted_at": "2026-11-17T00:33:14.719190+00:00",
       "last_success_at": "2026-10-06T03:08:36.370103+00:00",
       "count": 0,
       "error": "HTTP 404"
@@ -58,18 +58,18 @@
     "fed": {
       "source_id": "fed",
       "name": "Federal Reserve · Releases",
-      "status": "OK",
-      "attempted_at": "2026-11-17T00:04:56.052304+00:00",
+      "status": "UNAVAILABLE",
+      "attempted_at": "2026-11-17T00:33:14.813978+00:00",
       "last_success_at": "2026-11-17T00:04:56.052304+00:00",
-      "count": 20,
-      "error": ""
+      "count": 0,
+      "error": "HTTP 404"
     },
     "cnbc_markets": {
       "source_id": "cnbc_markets",
       "name": "CNBC · Markets",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:51.857430+00:00",
-      "last_success_at": "2026-11-17T00:04:51.857430+00:00",
+      "attempted_at": "2026-11-17T00:33:10.410134+00:00",
+      "last_success_at": "2026-11-17T00:33:10.410134+00:00",
       "count": 30,
       "error": ""
     },
@@ -77,7 +77,7 @@
       "source_id": "bls",
       "name": "BLS · Economic releases",
       "status": "UNAVAILABLE",
-      "attempted_at": "2026-11-17T00:04:56.848541+00:00",
+      "attempted_at": "2026-11-17T00:33:14.909056+00:00",
       "count": 0,
       "error": "HTTP 403"
     },
@@ -85,8 +85,8 @@
       "source_id": "bea",
       "name": "BEA · Economic releases",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:57.246371+00:00",
-      "last_success_at": "2026-11-17T00:04:57.246371+00:00",
+      "attempted_at": "2026-11-17T00:33:15.713181+00:00",
+      "last_success_at": "2026-11-17T00:33:15.713181+00:00",
       "count": 48,
       "error": ""
     },
@@ -94,8 +94,8 @@
       "source_id": "investing",
       "name": "Investing.com · Stock markets",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:57.352147+00:00",
-      "last_success_at": "2026-11-17T00:04:57.352147+00:00",
+      "attempted_at": "2026-11-17T00:33:15.914652+00:00",
+      "last_success_at": "2026-11-17T00:33:15.914652+00:00",
       "count": 10,
       "error": ""
     },
@@ -103,8 +103,8 @@
       "source_id": "ecb",
       "name": "ECB · Press releases",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:57.251141+00:00",
-      "last_success_at": "2026-11-17T00:04:57.251141+00:00",
+      "attempted_at": "2026-11-17T00:33:15.810102+00:00",
+      "last_success_at": "2026-11-17T00:33:15.810102+00:00",
       "count": 15,
       "error": ""
     },
@@ -112,13 +112,13 @@
       "source_id": "cnbc_economy",
       "name": "CNBC · Economy",
       "status": "OK",
-      "attempted_at": "2026-11-17T00:04:51.858912+00:00",
-      "last_success_at": "2026-11-17T00:04:51.858912+00:00",
+      "attempted_at": "2026-11-17T00:33:11.312938+00:00",
+      "last_success_at": "2026-11-17T00:33:11.312938+00:00",
       "count": 30,
       "error": ""
     }
   },
-  "updated_at": "2026-11-17T00:04:58.949780+00:00",
+  "updated_at": "2026-11-17T00:33:17.521394+00:00",
   "articles": {
     "dce3b7690583e839bec27f5d": {
       "id": "dce3b7690583e839bec27f5d",
@@ -1705,7 +1705,7 @@
       "source_id": "bbc",
       "published_at": "2026-09-27T23:05:53+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890258+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -1748,7 +1748,7 @@
       "source_id": "bbc",
       "published_at": "2026-09-25T08:31:56+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890258+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -1791,7 +1791,7 @@
       "source_id": "bbc",
       "published_at": "2026-09-05T23:20:00+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890258+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -1834,7 +1834,7 @@
       "source_id": "bbc",
       "published_at": "2026-07-22T23:51:24+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890258+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -1877,7 +1877,7 @@
       "source_id": "bbc",
       "published_at": "2026-06-30T23:05:19+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890258+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -2740,7 +2740,7 @@
       "source_id": "guardian",
       "published_at": "2026-04-24T15:00:19+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890985+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -2783,7 +2783,7 @@
       "source_id": "guardian",
       "published_at": "2014-08-14T11:00:02+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890985+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -2869,7 +2869,7 @@
       "source_id": "guardian",
       "published_at": "2026-01-22T17:00:50+00:00",
       "first_seen_at": "2026-10-01T18:46:23.890985+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -6583,7 +6583,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T13:55:00+00:00",
       "first_seen_at": "2026-10-01T18:46:26.074287+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -6626,7 +6626,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-04T15:43:00+00:00",
       "first_seen_at": "2026-10-01T18:46:26.074287+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -6669,7 +6669,7 @@
       "source_id": "wsj",
       "published_at": "2026-09-10T19:59:00+00:00",
       "first_seen_at": "2026-10-01T18:46:26.074287+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -11867,7 +11867,7 @@
       "source_id": "bea",
       "published_at": "2026-09-24T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -11953,7 +11953,7 @@
       "source_id": "bea",
       "published_at": "2026-08-26T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -11996,7 +11996,7 @@
       "source_id": "bea",
       "published_at": "2026-07-30T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12039,7 +12039,7 @@
       "source_id": "bea",
       "published_at": "2026-07-21T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12082,7 +12082,7 @@
       "source_id": "bea",
       "published_at": "2026-07-10T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12125,7 +12125,7 @@
       "source_id": "bea",
       "published_at": "2026-06-25T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12168,7 +12168,7 @@
       "source_id": "bea",
       "published_at": "2026-06-10T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12211,7 +12211,7 @@
       "source_id": "bea",
       "published_at": "2026-05-28T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12254,7 +12254,7 @@
       "source_id": "bea",
       "published_at": "2026-03-13T12:31:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12297,7 +12297,7 @@
       "source_id": "bea",
       "published_at": "2026-03-05T15:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12340,7 +12340,7 @@
       "source_id": "bea",
       "published_at": "2026-02-20T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12383,7 +12383,7 @@
       "source_id": "bea",
       "published_at": "2026-02-19T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12426,7 +12426,7 @@
       "source_id": "bea",
       "published_at": "2026-02-05T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12469,7 +12469,7 @@
       "source_id": "bea",
       "published_at": "2026-01-23T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12512,7 +12512,7 @@
       "source_id": "bea",
       "published_at": "2026-01-16T15:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12555,7 +12555,7 @@
       "source_id": "bea",
       "published_at": "2026-01-14T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12598,7 +12598,7 @@
       "source_id": "bea",
       "published_at": "2025-09-16T14:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12641,7 +12641,7 @@
       "source_id": "bea",
       "published_at": "2025-08-22T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12684,7 +12684,7 @@
       "source_id": "bea",
       "published_at": "2025-06-05T14:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12727,7 +12727,7 @@
       "source_id": "bea",
       "published_at": "2025-04-02T14:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12770,7 +12770,7 @@
       "source_id": "bea",
       "published_at": "2024-12-12T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12813,7 +12813,7 @@
       "source_id": "bea",
       "published_at": "2024-12-04T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12856,7 +12856,7 @@
       "source_id": "bea",
       "published_at": "2024-11-21T23:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12899,7 +12899,7 @@
       "source_id": "bea",
       "published_at": "2024-11-20T15:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12942,7 +12942,7 @@
       "source_id": "bea",
       "published_at": "2024-11-14T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -12985,7 +12985,7 @@
       "source_id": "bea",
       "published_at": "2024-10-03T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13028,7 +13028,7 @@
       "source_id": "bea",
       "published_at": "2024-06-17T14:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13071,7 +13071,7 @@
       "source_id": "bea",
       "published_at": "2024-04-15T23:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13114,7 +13114,7 @@
       "source_id": "bea",
       "published_at": "2023-12-05T15:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13157,7 +13157,7 @@
       "source_id": "bea",
       "published_at": "2023-12-05T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13200,7 +13200,7 @@
       "source_id": "bea",
       "published_at": "2023-10-20T19:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13243,7 +13243,7 @@
       "source_id": "bea",
       "published_at": "2023-09-29T14:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13286,7 +13286,7 @@
       "source_id": "bea",
       "published_at": "2022-12-08T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13329,7 +13329,7 @@
       "source_id": "bea",
       "published_at": "2021-12-14T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13372,7 +13372,7 @@
       "source_id": "bea",
       "published_at": "2021-04-06T23:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13415,7 +13415,7 @@
       "source_id": "bea",
       "published_at": "2020-12-15T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13458,7 +13458,7 @@
       "source_id": "bea",
       "published_at": "2019-12-18T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13501,7 +13501,7 @@
       "source_id": "bea",
       "published_at": "2019-12-12T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13544,7 +13544,7 @@
       "source_id": "bea",
       "published_at": "2019-11-07T00:00:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13587,7 +13587,7 @@
       "source_id": "bea",
       "published_at": "2018-12-17T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13630,7 +13630,7 @@
       "source_id": "bea",
       "published_at": "2018-07-30T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13673,7 +13673,7 @@
       "source_id": "bea",
       "published_at": "2017-12-13T13:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13716,7 +13716,7 @@
       "source_id": "bea",
       "published_at": "2017-09-20T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13759,7 +13759,7 @@
       "source_id": "bea",
       "published_at": "2013-12-18T15:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -13802,7 +13802,7 @@
       "source_id": "bea",
       "published_at": "2013-04-18T12:30:00+00:00",
       "first_seen_at": "2026-10-01T18:46:27.574201+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -72952,7 +72952,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-08T23:09:56+00:00",
       "first_seen_at": "2026-10-09T02:18:58.631164+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -99710,7 +99710,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-13T23:05:29+00:00",
       "first_seen_at": "2026-10-14T02:00:05.290582+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -108335,7 +108335,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-14T23:01:28+00:00",
       "first_seen_at": "2026-10-15T01:34:56.213941+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -116859,7 +116859,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-15T23:18:21+00:00",
       "first_seen_at": "2026-10-16T01:31:03.666339+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -146878,7 +146878,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-20T23:13:24+00:00",
       "first_seen_at": "2026-10-21T01:43:32.317072+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -156329,7 +156329,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-21T23:12:06+00:00",
       "first_seen_at": "2026-10-22T01:38:02.383567+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -168503,7 +168503,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-23T08:04:17+00:00",
       "first_seen_at": "2026-10-23T12:41:15.455832+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -194301,7 +194301,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-28T00:01:10+00:00",
       "first_seen_at": "2026-10-28T05:57:01.154871+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -202884,7 +202884,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-10-28T21:31:46+00:00",
       "first_seen_at": "2026-10-28T23:20:29.726380+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -204672,7 +204672,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-29T09:30:03+00:00",
       "first_seen_at": "2026-10-29T02:35:28.595593+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -206150,7 +206150,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-10-29T14:53:06+00:00",
       "first_seen_at": "2026-10-29T10:13:20.425483+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -206429,7 +206429,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-10-29T17:32:34+00:00",
       "first_seen_at": "2026-10-29T10:13:20.425483+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -208784,7 +208784,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-10-29T18:06:31+00:00",
       "first_seen_at": "2026-10-29T16:59:16.279005+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -209453,7 +209453,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-10-29T14:48:01+00:00",
       "first_seen_at": "2026-10-29T16:59:16.279005+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -211521,7 +211521,7 @@
       "source_id": "bea",
       "published_at": "2026-10-29T12:30:00+00:00",
       "first_seen_at": "2026-10-29T16:59:17.339908+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -211564,7 +211564,7 @@
       "source_id": "bea",
       "published_at": "2026-10-29T12:30:00+00:00",
       "first_seen_at": "2026-10-29T16:59:17.339908+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -212108,7 +212108,7 @@
       "source_id": "ecb",
       "published_at": "2026-10-29T15:50:00+00:00",
       "first_seen_at": "2026-10-29T16:59:17.526788+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -216179,7 +216179,7 @@
       "source_id": "bbc",
       "published_at": "2026-10-30T07:45:00+00:00",
       "first_seen_at": "2026-10-30T08:46:44.556794+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -219105,7 +219105,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-10-30T11:16:46+00:00",
       "first_seen_at": "2026-10-30T16:02:00.052421+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -222020,7 +222020,7 @@
       "source_id": "ecb",
       "published_at": "2026-10-30T14:00:00+00:00",
       "first_seen_at": "2026-10-30T16:02:00.953515+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -222063,7 +222063,7 @@
       "source_id": "ecb",
       "published_at": "2026-10-30T09:00:00+00:00",
       "first_seen_at": "2026-10-30T16:02:00.953515+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -223535,7 +223535,7 @@
       "source_id": "ecb",
       "published_at": "2026-10-30T16:10:00+00:00",
       "first_seen_at": "2026-10-30T20:20:23.481075+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -231188,7 +231188,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-02T06:02:03+00:00",
       "first_seen_at": "2026-11-02T07:47:14.724569+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -234615,7 +234615,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-02T09:30:00+00:00",
       "first_seen_at": "2026-11-02T18:01:31.324926+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -238582,7 +238582,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-03T03:46:20+00:00",
       "first_seen_at": "2026-11-03T09:44:01.747140+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -240325,7 +240325,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-03T19:15:21+00:00",
       "first_seen_at": "2026-11-03T17:56:01.685566+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -245937,7 +245937,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-04T00:04:35+00:00",
       "first_seen_at": "2026-11-04T06:43:57.725829+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -247405,7 +247405,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-04T22:46:43+00:00",
       "first_seen_at": "2026-11-04T15:33:58.965937+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -247448,7 +247448,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-04T13:49:48+00:00",
       "first_seen_at": "2026-11-04T15:33:58.965937+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -247512,7 +247512,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-04T10:47:30+00:00",
       "first_seen_at": "2026-11-04T15:33:58.965937+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -250316,7 +250316,7 @@
       "source_id": "bea",
       "published_at": "2026-11-04T13:30:00+00:00",
       "first_seen_at": "2026-11-04T15:34:00.168314+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.246371+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.713181+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -250359,7 +250359,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-04T00:00:00+00:00",
       "first_seen_at": "2026-11-04T15:34:00.183641+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -251336,7 +251336,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-05T16:07:59+00:00",
       "first_seen_at": "2026-11-04T21:59:15.954006+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -256326,7 +256326,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-05T08:00:00+00:00",
       "first_seen_at": "2026-11-05T11:14:28.189520+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -256369,7 +256369,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-05T07:30:00+00:00",
       "first_seen_at": "2026-11-05T11:14:28.189520+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -256412,7 +256412,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-05T14:33:32+00:00",
       "first_seen_at": "2026-11-05T18:50:51.364917+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -256455,7 +256455,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-05T16:01:47+00:00",
       "first_seen_at": "2026-11-05T18:50:51.365458+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -259690,7 +259690,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-05T21:32:52+00:00",
       "first_seen_at": "2026-11-06T00:25:24.665475+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -259819,7 +259819,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-06T00:06:06+00:00",
       "first_seen_at": "2026-11-06T00:25:24.667516+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -263708,7 +263708,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-06T16:06:59+00:00",
       "first_seen_at": "2026-11-06T16:01:35.403893+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -266958,7 +266958,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-06T09:00:00+00:00",
       "first_seen_at": "2026-11-06T16:01:36.271813+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -267777,7 +267777,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-06T20:11:17+00:00",
       "first_seen_at": "2026-11-06T21:38:35.634909+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -271459,7 +271459,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-07T14:00:00+00:00",
       "first_seen_at": "2026-11-07T15:46:56.369188+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -274627,7 +274627,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-08T20:00:00+00:00",
       "first_seen_at": "2026-11-08T22:58:10.056764+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -274970,7 +274970,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-09T02:50:22+00:00",
       "first_seen_at": "2026-11-09T02:45:53.192767+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -276066,7 +276066,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-09T10:30:00+00:00",
       "first_seen_at": "2026-11-09T11:51:49.825232+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -278007,7 +278007,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-09T22:23:56+00:00",
       "first_seen_at": "2026-11-09T22:32:46.759222+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -278050,7 +278050,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-09T21:03:55+00:00",
       "first_seen_at": "2026-11-09T22:32:46.759222+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -280588,7 +280588,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-09T13:05:00+00:00",
       "first_seen_at": "2026-11-09T22:32:47.461488+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -283838,7 +283838,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-10T10:24:13+00:00",
       "first_seen_at": "2026-11-10T02:59:31.909637+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -289404,7 +289404,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-10T11:00:00+00:00",
       "first_seen_at": "2026-11-10T11:10:55.710720+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -289726,7 +289726,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-10T23:53:58+00:00",
       "first_seen_at": "2026-11-10T13:37:25.717037+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -290436,7 +290436,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-10T13:19:35+00:00",
       "first_seen_at": "2026-11-10T13:37:25.719909+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -292610,7 +292610,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-10T14:00:00+00:00",
       "first_seen_at": "2026-11-10T15:11:06.095539+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -293969,7 +293969,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-10T16:45:00+00:00",
       "first_seen_at": "2026-11-10T16:58:23.338407+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -294100,7 +294100,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-10T17:12:00+00:00",
       "first_seen_at": "2026-11-10T17:17:39.844260+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -299527,7 +299527,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-10T22:51:00+00:00",
       "first_seen_at": "2026-11-10T23:05:51.137364+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -299805,7 +299805,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-12T14:29:59+00:00",
       "first_seen_at": "2026-11-11T00:11:55.405087+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -299977,7 +299977,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-11T00:19:13+00:00",
       "first_seen_at": "2026-11-11T00:32:48.220852+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -301942,7 +301942,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-11T11:00:47+00:00",
       "first_seen_at": "2026-11-11T16:22:01.213674+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -301985,7 +301985,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-11T12:27:47+00:00",
       "first_seen_at": "2026-11-11T16:22:01.211652+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -304320,7 +304320,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-11T13:11:58+00:00",
       "first_seen_at": "2026-11-11T22:53:43.652214+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -304363,7 +304363,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-12T23:08:50+00:00",
       "first_seen_at": "2026-11-11T22:53:43.649255+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -305649,7 +305649,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-11T17:03:00+00:00",
       "first_seen_at": "2026-11-11T22:53:44.181490+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -306910,7 +306910,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-12T22:51:18+00:00",
       "first_seen_at": "2026-11-12T03:56:06.474939+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -306996,7 +306996,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-12T01:00:00+00:00",
       "first_seen_at": "2026-11-12T03:56:06.786778+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -308166,7 +308166,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-12T08:02:15+00:00",
       "first_seen_at": "2026-11-12T12:58:23.282470+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -308273,7 +308273,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-12T11:00:48+00:00",
       "first_seen_at": "2026-11-12T12:58:23.284999+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -308674,7 +308674,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-12T15:10:32+00:00",
       "first_seen_at": "2026-11-12T12:58:23.282732+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -308737,7 +308737,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-12T11:20:25+00:00",
       "first_seen_at": "2026-11-12T12:58:23.282732+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -309036,7 +309036,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-12T08:25:00+00:00",
       "first_seen_at": "2026-11-12T12:58:23.606241+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -310404,7 +310404,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-13T17:20:32+00:00",
       "first_seen_at": "2026-11-12T20:57:33.517087+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -310510,7 +310510,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-12T17:11:48+00:00",
       "first_seen_at": "2026-11-12T20:57:33.516535+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -310553,7 +310553,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-12T13:27:09+00:00",
       "first_seen_at": "2026-11-12T20:57:33.516535+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -312167,7 +312167,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T22:30:00+00:00",
       "first_seen_at": "2026-11-12T20:57:34.119003+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -312339,7 +312339,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T15:18:00+00:00",
       "first_seen_at": "2026-11-12T20:57:33.949393+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -312382,7 +312382,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-12T18:52:00+00:00",
       "first_seen_at": "2026-11-12T20:57:33.949393+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -312425,7 +312425,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-12T17:43:00+00:00",
       "first_seen_at": "2026-11-12T20:57:33.949393+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -312615,7 +312615,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-12T20:50:00+00:00",
       "first_seen_at": "2026-11-12T20:57:33.949393+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -313696,7 +313696,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T03:57:01+00:00",
       "first_seen_at": "2026-11-13T01:58:10.023783+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -313822,7 +313822,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T00:13:35+00:00",
       "first_seen_at": "2026-11-13T01:58:10.023783+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -314102,7 +314102,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T01:00:00+00:00",
       "first_seen_at": "2026-11-13T01:58:10.514284+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -315440,7 +315440,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T18:36:57+00:00",
       "first_seen_at": "2026-11-13T09:45:53.096152+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -315503,7 +315503,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T01:17:58+00:00",
       "first_seen_at": "2026-11-13T09:45:53.096152+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -315546,7 +315546,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T09:29:25+00:00",
       "first_seen_at": "2026-11-13T09:45:53.096152+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -315909,7 +315909,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T22:33:00+00:00",
       "first_seen_at": "2026-11-13T09:45:53.422766+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -315952,7 +315952,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-12T18:01:00+00:00",
       "first_seen_at": "2026-11-13T09:45:53.422766+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -316773,7 +316773,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-13T07:20:00+00:00",
       "first_seen_at": "2026-11-13T09:45:53.910758+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -316816,7 +316816,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-13T15:44:16+00:00",
       "first_seen_at": "2026-11-13T17:54:04.935861+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -316859,7 +316859,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-13T17:06:57+00:00",
       "first_seen_at": "2026-11-13T17:54:04.935861+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -316985,7 +316985,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-13T04:00:08+00:00",
       "first_seen_at": "2026-11-13T17:54:04.938702+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -317048,7 +317048,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-13T21:13:59+00:00",
       "first_seen_at": "2026-11-13T17:54:04.938702+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -317111,7 +317111,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T12:22:30+00:00",
       "first_seen_at": "2026-11-13T17:54:04.936775+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -317174,7 +317174,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T19:53:57+00:00",
       "first_seen_at": "2026-11-13T17:54:04.936775+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -317237,7 +317237,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T16:31:22+00:00",
       "first_seen_at": "2026-11-13T17:54:04.936775+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -318976,7 +318976,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T14:00:00+00:00",
       "first_seen_at": "2026-11-13T17:54:05.698588+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -319096,7 +319096,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T10:30:00+00:00",
       "first_seen_at": "2026-11-13T17:54:05.698588+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -319394,7 +319394,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T11:34:00+00:00",
       "first_seen_at": "2026-11-13T17:54:05.698588+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -319926,7 +319926,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-13T21:18:30+00:00",
       "first_seen_at": "2026-11-13T23:43:42.892024+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -320546,7 +320546,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-13T13:35:45+00:00",
       "first_seen_at": "2026-11-13T23:43:42.893258+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -320590,7 +320590,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-14T06:42:27+00:00",
       "first_seen_at": "2026-11-13T23:43:42.892855+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -320653,7 +320653,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T18:00:40+00:00",
       "first_seen_at": "2026-11-13T23:43:42.892855+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -321072,7 +321072,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T21:19:00+00:00",
       "first_seen_at": "2026-11-13T23:43:43.353658+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "bearish",
         "reason": "The headline reports a negative equity-market move.",
@@ -321144,7 +321144,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T18:46:00+00:00",
       "first_seen_at": "2026-11-13T23:43:43.353658+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -321265,7 +321265,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-13T19:18:00+00:00",
       "first_seen_at": "2026-11-13T23:43:43.353658+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -322741,7 +322741,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-14T02:49:59+00:00",
       "first_seen_at": "2026-11-14T14:20:35.839165+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -322827,7 +322827,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T17:14:13+00:00",
       "first_seen_at": "2026-11-14T14:20:35.836310+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -323169,7 +323169,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-14T08:13:40+00:00",
       "first_seen_at": "2026-11-14T14:20:35.838484+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -323255,7 +323255,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-14T07:45:50+00:00",
       "first_seen_at": "2026-11-14T14:20:35.838484+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -323471,7 +323471,7 @@
       "source_id": "ft",
       "published_at": "2026-11-14T13:00:09+00:00",
       "first_seen_at": "2026-11-14T14:20:36.219143+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -324622,7 +324622,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T22:08:00+00:00",
       "first_seen_at": "2026-11-14T23:11:17.984930+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -324752,7 +324752,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-15T00:01:07+00:00",
       "first_seen_at": "2026-11-15T02:52:00.835302+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -324795,7 +324795,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-13T23:00:31+00:00",
       "first_seen_at": "2026-11-15T02:52:00.835302+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -324838,7 +324838,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-15T01:00:00+00:00",
       "first_seen_at": "2026-11-15T02:52:01.253493+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -324967,7 +324967,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T02:00:02+00:00",
       "first_seen_at": "2026-11-15T02:52:01.171069+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325222,7 +325222,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T10:00:04+00:00",
       "first_seen_at": "2026-11-15T11:16:08.967743+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325265,7 +325265,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T22:07:45+00:00",
       "first_seen_at": "2026-11-15T11:16:08.967743+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325308,7 +325308,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T05:00:04+00:00",
       "first_seen_at": "2026-11-15T11:16:08.967743+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325351,7 +325351,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T05:00:04+00:00",
       "first_seen_at": "2026-11-15T11:16:08.967743+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325414,7 +325414,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-15T10:30:00+00:00",
       "first_seen_at": "2026-11-15T11:16:08.975951+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325457,7 +325457,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-15T10:30:00+00:00",
       "first_seen_at": "2026-11-15T11:16:08.975951+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -325970,7 +325970,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-15T12:00:01+00:00",
       "first_seen_at": "2026-11-15T17:52:06.055207+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326014,7 +326014,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T15:56:39+00:00",
       "first_seen_at": "2026-11-15T17:52:06.055207+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326335,7 +326335,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T01:47:57+00:00",
       "first_seen_at": "2026-11-15T17:52:06.056002+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326398,7 +326398,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-15T13:06:15+00:00",
       "first_seen_at": "2026-11-15T17:52:06.056002+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326504,7 +326504,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-15T15:00:16+00:00",
       "first_seen_at": "2026-11-15T17:52:06.057718+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326761,7 +326761,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T08:59:48+00:00",
       "first_seen_at": "2026-11-15T17:52:06.555384+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326804,7 +326804,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T15:13:38+00:00",
       "first_seen_at": "2026-11-15T17:52:06.555384+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -326847,7 +326847,7 @@
       "source_id": "ft",
       "published_at": "2026-11-15T11:40:44+00:00",
       "first_seen_at": "2026-11-15T17:52:06.555384+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327146,7 +327146,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T15:40:16+00:00",
       "first_seen_at": "2026-11-15T22:59:45.319329+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327189,7 +327189,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T13:19:33+00:00",
       "first_seen_at": "2026-11-15T22:59:45.319329+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327275,7 +327275,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-15T17:55:00+00:00",
       "first_seen_at": "2026-11-15T22:59:45.779786+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327318,7 +327318,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-15T17:54:00+00:00",
       "first_seen_at": "2026-11-15T22:59:45.779786+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327361,7 +327361,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T13:12:30+00:00",
       "first_seen_at": "2026-11-15T22:59:45.685923+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327786,7 +327786,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T09:58:52+00:00",
       "first_seen_at": "2026-11-16T02:52:58.538732+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -327935,7 +327935,7 @@
       "source_id": "cnbc_economy",
       "published_at": "2026-11-16T02:56:24+00:00",
       "first_seen_at": "2026-11-16T02:52:58.537912+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.858912+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.312938+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328041,7 +328041,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T02:00:00+00:00",
       "first_seen_at": "2026-11-16T02:52:58.980286+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328212,7 +328212,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T08:27:00+00:00",
       "first_seen_at": "2026-11-16T02:52:58.980286+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328275,7 +328275,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T21:50:00+00:00",
       "first_seen_at": "2026-11-16T02:52:58.980286+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328318,7 +328318,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T00:46:00+00:00",
       "first_seen_at": "2026-11-16T02:52:58.980286+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328749,7 +328749,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T03:04:01+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969978+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328812,7 +328812,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T06:24:08+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969978+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328855,7 +328855,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T06:03:39+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969978+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328898,7 +328898,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T05:57:19+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969978+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328941,7 +328941,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-14T11:00:00+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969978+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -328984,7 +328984,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T12:13:47+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969315+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329047,7 +329047,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T08:38:16+00:00",
       "first_seen_at": "2026-11-16T11:47:22.969315+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329230,7 +329230,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T10:00:37+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "bearish",
         "reason": "The headline reports a negative equity-market move.",
@@ -329294,7 +329294,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T11:20:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329357,7 +329357,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T10:30:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329400,7 +329400,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T10:30:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329443,7 +329443,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T20:30:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329583,7 +329583,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T20:16:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329626,7 +329626,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T20:25:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "bearish",
         "reason": "The headline reports a negative equity-market move.",
@@ -329754,7 +329754,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T19:30:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329797,7 +329797,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T22:54:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -329840,7 +329840,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T21:05:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.371872+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330227,7 +330227,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T21:58:59+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330292,7 +330292,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T06:30:01+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330335,7 +330335,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T06:00:02+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330378,7 +330378,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T06:00:02+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330421,7 +330421,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T05:00:22+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330473,7 +330473,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T11:47:31+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330516,7 +330516,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T05:00:11+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -330559,7 +330559,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T05:00:00+00:00",
       "first_seen_at": "2026-11-16T11:47:23.236513+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331074,7 +331074,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-16T08:30:00+00:00",
       "first_seen_at": "2026-11-16T11:47:24.082127+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331180,7 +331180,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T17:39:32+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331266,7 +331266,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T22:11:09+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331352,7 +331352,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T21:51:43+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331415,7 +331415,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T21:54:18+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331458,7 +331458,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T21:03:36+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331501,7 +331501,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T14:00:01+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331544,7 +331544,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T13:42:43+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331607,7 +331607,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T18:46:07+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331651,7 +331651,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T22:19:02+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331738,7 +331738,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T19:06:41+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331801,7 +331801,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T19:15:18+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331844,7 +331844,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T15:00:01+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -331887,7 +331887,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T21:26:42+00:00",
       "first_seen_at": "2026-11-16T19:03:58.574860+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332016,7 +332016,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T22:21:27+00:00",
       "first_seen_at": "2026-11-16T19:03:58.577439+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332079,7 +332079,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T18:05:17+00:00",
       "first_seen_at": "2026-11-16T19:03:58.577439+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332122,7 +332122,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T11:00:58+00:00",
       "first_seen_at": "2026-11-16T19:03:58.578489+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332291,7 +332291,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T04:39:20+00:00",
       "first_seen_at": "2026-11-16T19:03:58.578489+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332334,7 +332334,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T01:17:04+00:00",
       "first_seen_at": "2026-11-16T19:03:58.578489+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332397,7 +332397,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T17:49:49+00:00",
       "first_seen_at": "2026-11-16T19:04:00.779491+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332440,7 +332440,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T17:27:58+00:00",
       "first_seen_at": "2026-11-16T19:04:00.779491+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332483,7 +332483,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T16:53:42+00:00",
       "first_seen_at": "2026-11-16T19:04:00.779491+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332526,7 +332526,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T16:08:28+00:00",
       "first_seen_at": "2026-11-16T19:04:00.779491+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332569,7 +332569,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T15:58:59+00:00",
       "first_seen_at": "2026-11-16T19:04:00.779491+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332686,7 +332686,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T23:00:00+00:00",
       "first_seen_at": "2026-11-16T19:04:01.876096+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332729,7 +332729,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T21:53:00+00:00",
       "first_seen_at": "2026-11-16T19:04:01.876096+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -332986,7 +332986,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T20:47:00+00:00",
       "first_seen_at": "2026-11-16T19:04:01.277277+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333029,7 +333029,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T12:33:00+00:00",
       "first_seen_at": "2026-11-16T19:04:01.277277+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333092,7 +333092,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T21:51:00+00:00",
       "first_seen_at": "2026-11-16T19:04:01.277277+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333135,7 +333135,7 @@
       "source_id": "ecb",
       "published_at": "2026-11-16T13:00:00+00:00",
       "first_seen_at": "2026-11-16T19:04:04.581133+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.251141+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.810102+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333514,7 +333514,7 @@
     "60788db773e5c943a5676ce0": {
       "id": "60788db773e5c943a5676ce0",
       "url": "https://www.investing.com/news/stock-market-news/us-transport-chief-urges-congress-to-quickly-pass-air-traffic-telecom-funding-5030069",
-      "title": "US air travel largely returns to normal as funding fight brews",
+      "title": "US air travel recovery stumbles on United pause as funding fight brews",
       "excerpt": "",
       "summary": [
         "This source supplied a headline without a feed description.",
@@ -333525,7 +333525,7 @@
       "source_id": "investing",
       "published_at": null,
       "first_seen_at": "2026-11-16T19:04:04.874939+00:00",
-      "last_seen_at": "2026-11-16T20:16:53.606376+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333538,7 +333538,7 @@
         "signal_kind": "unclassified"
       },
       "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
-      "headline_group": "2657a9203e6d6e9a5ea3",
+      "headline_group": "7aece33c9ec9fb3c2f72",
       "scoped_impacts": {
         "stocks": [],
         "sectors": [],
@@ -333552,7 +333552,7 @@
         },
         "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
       },
-      "story_summary": "US air travel largely returns to normal as funding fight brews — No additional description was supplied by this source."
+      "story_summary": "US air travel recovery stumbles on United pause as funding fight brews — No additional description was supplied by this source."
     },
     "77b9fb9ff97ff2125c280e70": {
       "id": "77b9fb9ff97ff2125c280e70",
@@ -333674,7 +333674,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T18:56:49+00:00",
       "first_seen_at": "2026-11-16T19:28:23.783191+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333738,7 +333738,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T19:06:11+00:00",
       "first_seen_at": "2026-11-16T19:28:23.783191+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333781,7 +333781,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T17:52:13+00:00",
       "first_seen_at": "2026-11-16T19:28:23.786697+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333825,7 +333825,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T18:30:57+00:00",
       "first_seen_at": "2026-11-16T19:28:23.786697+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -333888,7 +333888,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T18:47:38+00:00",
       "first_seen_at": "2026-11-16T19:28:23.786697+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -334210,7 +334210,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T19:33:00+00:00",
       "first_seen_at": "2026-11-16T19:53:35.563442+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -334486,7 +334486,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T20:07:46+00:00",
       "first_seen_at": "2026-11-16T20:16:48.709377+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -334870,7 +334870,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T22:21:00+00:00",
       "first_seen_at": "2026-11-16T20:42:30.296970+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -334977,7 +334977,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T20:29:00+00:00",
       "first_seen_at": "2026-11-16T20:42:29.899285+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -335126,7 +335126,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T18:55:46+00:00",
       "first_seen_at": "2026-11-16T21:09:13.947861+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -335295,7 +335295,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T21:20:03+00:00",
       "first_seen_at": "2026-11-16T21:09:16.749079+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -335658,7 +335658,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T21:23:34+00:00",
       "first_seen_at": "2026-11-16T21:34:49.779173+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -335753,7 +335753,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T22:06:00+00:00",
       "first_seen_at": "2026-11-16T21:34:51.575305+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "bearish",
         "reason": "The headline reports a negative equity-market move.",
@@ -335961,7 +335961,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T22:14:47+00:00",
       "first_seen_at": "2026-11-16T21:55:13.547287+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336013,7 +336013,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T21:38:00+00:00",
       "first_seen_at": "2026-11-16T21:55:15.243596+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "bearish",
         "reason": "The headline reports a negative equity-market move.",
@@ -336057,7 +336057,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T22:51:00+00:00",
       "first_seen_at": "2026-11-16T21:55:15.243596+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336100,7 +336100,7 @@
       "source_id": "guardian",
       "published_at": "2026-11-16T22:01:40+00:00",
       "first_seen_at": "2026-11-16T21:55:13.550149+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.948272+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.316065+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336337,7 +336337,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T22:37:45+00:00",
       "first_seen_at": "2026-11-16T22:17:20.897123+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336400,7 +336400,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T21:54:00+00:00",
       "first_seen_at": "2026-11-16T22:17:22.689828+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336570,7 +336570,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T23:01:19+00:00",
       "first_seen_at": "2026-11-16T22:38:26.840682+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336653,7 +336653,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-17T00:00:49+00:00",
       "first_seen_at": "2026-11-16T22:38:26.840682+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336696,7 +336696,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T22:33:00+00:00",
       "first_seen_at": "2026-11-16T22:38:29.034501+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336769,7 +336769,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T22:35:00+00:00",
       "first_seen_at": "2026-11-16T22:38:28.441572+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336941,7 +336941,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T23:05:12+00:00",
       "first_seen_at": "2026-11-16T23:10:20.031024+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -336984,7 +336984,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T23:04:00+00:00",
       "first_seen_at": "2026-11-16T23:10:22.623035+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337047,7 +337047,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T22:46:00+00:00",
       "first_seen_at": "2026-11-16T23:10:22.623035+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337197,7 +337197,7 @@
       "source_id": "investing",
       "published_at": null,
       "first_seen_at": "2026-11-16T23:10:25.428675+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.352147+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337518,7 +337518,7 @@
       "source_id": "cnbc_markets",
       "published_at": "2026-11-16T23:00:01+00:00",
       "first_seen_at": "2026-11-16T23:36:14.143468+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.857430+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337561,7 +337561,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-16T23:12:24+00:00",
       "first_seen_at": "2026-11-16T23:36:14.230813+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337602,9 +337602,9 @@
       ],
       "publisher": "BBC",
       "source_id": "bbc",
-      "published_at": "2026-11-16T23:15:21+00:00",
+      "published_at": "2026-11-17T00:18:01+00:00",
       "first_seen_at": "2026-11-16T23:36:14.230813+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337656,7 +337656,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T23:28:00+00:00",
       "first_seen_at": "2026-11-16T23:36:17.635940+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337730,7 +337730,7 @@
       "source_id": "marketwatch",
       "published_at": "2026-11-16T23:42:00+00:00",
       "first_seen_at": "2026-11-16T23:36:17.635940+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.748390+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.710832+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337773,7 +337773,7 @@
       "source_id": "wsj",
       "published_at": "2026-11-16T17:37:00+00:00",
       "first_seen_at": "2026-11-16T23:36:17.333723+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.251575+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337816,7 +337816,7 @@
       "source_id": "investing",
       "published_at": null,
       "first_seen_at": "2026-11-16T23:36:21.133743+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.352147+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337880,7 +337880,7 @@
       "source_id": "investing",
       "published_at": null,
       "first_seen_at": "2026-11-16T23:36:21.133743+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.352147+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -337966,7 +337966,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-17T00:00:03+00:00",
       "first_seen_at": "2026-11-17T00:04:51.945930+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -338009,7 +338009,7 @@
       "source_id": "bbc",
       "published_at": "2026-11-17T00:00:02+00:00",
       "first_seen_at": "2026-11-17T00:04:51.945930+00:00",
-      "last_seen_at": "2026-11-17T00:04:51.945930+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -338052,7 +338052,7 @@
       "source_id": "ft",
       "published_at": "2026-11-16T23:08:52+00:00",
       "first_seen_at": "2026-11-17T00:04:54.153932+00:00",
-      "last_seen_at": "2026-11-17T00:04:54.153932+00:00",
+      "last_seen_at": "2026-11-17T00:33:12.809814+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -338095,7 +338095,7 @@
       "source_id": "investing",
       "published_at": null,
       "first_seen_at": "2026-11-17T00:04:57.352147+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.352147+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -338138,7 +338138,7 @@
       "source_id": "investing",
       "published_at": null,
       "first_seen_at": "2026-11-17T00:04:57.352147+00:00",
-      "last_seen_at": "2026-11-17T00:04:57.352147+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
       "analysis": {
         "direction": "unclear",
         "reason": "No unambiguous directional signal in the headline. Open the source for context.",
@@ -338166,6 +338166,371 @@
         "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
       },
       "story_summary": "CVC plans to pull out of near-€3 billion IRCA deal, FT says — No additional description was supplied by this source."
+    },
+    "94ec8bdf4be8c7d308d6e6bd": {
+      "id": "94ec8bdf4be8c7d308d6e6bd",
+      "url": "https://www.cnbc.com/2026/11/16/nvidia-cramer-ai-trade-leadership-change.html",
+      "title": "Jim Cramer says Nvidia’s leadership shake-up won’t derail the AI trade",
+      "excerpt": "CNBC's Jim Cramer pushed back against fears that Nvidia's leadership shake-up could unravel the AI boom.",
+      "summary": [
+        "CNBC's Jim Cramer pushed back against fears that Nvidia's leadership shake-up could unravel the AI boom.",
+        "Earnings and guidance affect equity valuations; one company may not represent the market.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "CNBC",
+      "source_id": "cnbc_markets",
+      "published_at": "2026-11-16T23:23:47+00:00",
+      "first_seen_at": "2026-11-17T00:33:10.410134+00:00",
+      "last_seen_at": "2026-11-17T00:33:10.410134+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Earnings & companies",
+          "Trade & geopolitics"
+        ],
+        "channel": "Earnings and guidance affect equity valuations; one company may not represent the market.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "c89459569ae6c97f2770",
+      "scoped_impacts": {
+        "stocks": [
+          {
+            "name": "NVDA",
+            "direction": "unclear",
+            "reason": "Company mentioned; its directional effect is not established by this feed item.",
+            "evidence": "Jim Cramer says Nvidia’s leadership shake-up won’t derail the AI trade; CNBC's Jim Cramer pushed back against fears that Nvidia's leadership shake-up could unravel the AI boom",
+            "confidence": "LOW",
+            "matches": [],
+            "company": "NVIDIA",
+            "sector": "Technology"
+          }
+        ],
+        "sectors": [
+          {
+            "name": "Technology",
+            "direction": "unclear",
+            "reason": "Company-specific news does not establish a sector-wide direction.",
+            "evidence": "",
+            "confidence": "LOW",
+            "matches": []
+          }
+        ],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "CNBC's Jim Cramer pushed back against fears that Nvidia's leadership shake-up could unravel the AI boom."
+    },
+    "ccfcda305e7c2ee0e379871e": {
+      "id": "ccfcda305e7c2ee0e379871e",
+      "url": "https://www.bbc.co.uk/news/articles/c38xzy980924o?at_medium=RSS&at_campaign=rss",
+      "title": "'Complete system reset' needed to get 440,000 young people into work, says major review",
+      "excerpt": "Alan Milburn's review will call for sweeping reforms to the education, work and welfare systems.",
+      "summary": [
+        "Alan Milburn's review will call for sweeping reforms to the education, work and welfare systems.",
+        "The broader market effect is not clear from this feed item.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "BBC",
+      "source_id": "bbc",
+      "published_at": "2026-11-16T22:32:47+00:00",
+      "first_seen_at": "2026-11-17T00:33:11.315377+00:00",
+      "last_seen_at": "2026-11-17T00:33:11.315377+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Other business news"
+        ],
+        "channel": "The broader market effect is not clear from this feed item.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "41f185390634d5399425",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "Alan Milburn's review will call for sweeping reforms to the education, work and welfare systems."
+    },
+    "f77e6a956ab8cbbb58b57c0b": {
+      "id": "f77e6a956ab8cbbb58b57c0b",
+      "url": "https://www.wsj.com/finance/currencies/asian-currencies-consolidate-but-may-be-weighed-by-risk-off-sentiment-61059d88?mod=rss_markets_main",
+      "title": "Asian Currencies Consolidate, But May be Weighed by Risk-Off Sentiment",
+      "excerpt": "Asian currencies consolidated against the U.S. dollar, but could be weighed by risk-off sentiment.",
+      "summary": [
+        "Asian currencies consolidated against the U.S. dollar, but could be weighed by risk-off sentiment.",
+        "The broader market effect is not clear from this feed item.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "The Wall Street Journal",
+      "source_id": "wsj",
+      "published_at": "2026-11-17T00:18:00+00:00",
+      "first_seen_at": "2026-11-17T00:33:13.209824+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Other business news"
+        ],
+        "channel": "The broader market effect is not clear from this feed item.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "e937d3c0885110095672",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "Asian currencies consolidated against the U.S. dollar, but could be weighed by risk-off sentiment."
+    },
+    "c34889f20f464e1be78c70f9": {
+      "id": "c34889f20f464e1be78c70f9",
+      "url": "https://www.wsj.com/finance/commodities-futures/oil-falls-as-improving-supply-prospects-offset-mideast-tensions-3499b2f6?mod=rss_markets_main",
+      "title": "Oil Falls as Improving Supply Prospects Offset Mideast Tensions",
+      "excerpt": "Oil weakened as improving supply prospects offset Middle East tensions.",
+      "summary": [
+        "Oil weakened as improving supply prospects offset Middle East tensions.",
+        "Commodity prices affect inflation and margins differently across sectors.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "The Wall Street Journal",
+      "source_id": "wsj",
+      "published_at": "2026-11-17T00:23:00+00:00",
+      "first_seen_at": "2026-11-17T00:33:13.209824+00:00",
+      "last_seen_at": "2026-11-17T00:33:13.209824+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Energy & commodities"
+        ],
+        "channel": "Commodity prices affect inflation and margins differently across sectors.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "55077e59ffc6fdd69efd",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "Oil weakened as improving supply prospects offset Middle East tensions."
+    },
+    "0d310b822870bd56be67835d": {
+      "id": "0d310b822870bd56be67835d",
+      "url": "https://www.investing.com/news/stock-market-news/cvc-plans-to-back-out-of-33-bln-irca-deal-with-advent-international-ft-93CH-5031334",
+      "title": "CVC plans to back out of $3.3 bln Irca deal with Advent International- FT",
+      "excerpt": "",
+      "summary": [
+        "This source supplied a headline without a feed description.",
+        "The broader market effect is not clear from this feed item.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "Investing.com",
+      "source_id": "investing",
+      "published_at": null,
+      "first_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Other business news"
+        ],
+        "channel": "The broader market effect is not clear from this feed item.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "4a8110551c9abb20d468",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "CVC plans to back out of $3.3 bln Irca deal with Advent International- FT — No additional description was supplied by this source."
+    },
+    "4c59065dd7a745691a39a394": {
+      "id": "4c59065dd7a745691a39a394",
+      "url": "https://www.investing.com/news/stock-market-news/iran-plans-attack-on-trump-officials-with-dirty-bomb-cnn-reports-93CH-5031320",
+      "title": "Iran plans attack on Trump officials with dirty bomb, CNN reports",
+      "excerpt": "",
+      "summary": [
+        "This source supplied a headline without a feed description.",
+        "The broader market effect is not clear from this feed item.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "Investing.com",
+      "source_id": "investing",
+      "published_at": null,
+      "first_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Other business news"
+        ],
+        "channel": "The broader market effect is not clear from this feed item.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "e7e1e23ebd058c97084e",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "Iran plans attack on Trump officials with dirty bomb, CNN reports — No additional description was supplied by this source."
+    },
+    "d65a0c21b7f71b2864ad9af4": {
+      "id": "d65a0c21b7f71b2864ad9af4",
+      "url": "https://www.investing.com/news/stock-market-news/doordashinstacart-deal-to-face-doj-review-reuters-5031304",
+      "title": "DoorDash-Instacart deal to face DOJ review- Reuters",
+      "excerpt": "",
+      "summary": [
+        "This source supplied a headline without a feed description.",
+        "The broader market effect is not clear from this feed item.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "Investing.com",
+      "source_id": "investing",
+      "published_at": null,
+      "first_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Other business news"
+        ],
+        "channel": "The broader market effect is not clear from this feed item.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "57df1d2da1ebb4efc69c",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "DoorDash-Instacart deal to face DOJ review- Reuters — No additional description was supplied by this source."
+    },
+    "31c413ac4dfd794597790781": {
+      "id": "31c413ac4dfd794597790781",
+      "url": "https://www.investing.com/news/stock-market-news/somali-american-uber-driver-hospitalized-after-assault-in-minnesota-family-alleges-hate-crime-5031303",
+      "title": "Somali American Uber driver hospitalized after assault in Minnesota; family alleges hate crime",
+      "excerpt": "",
+      "summary": [
+        "This source supplied a headline without a feed description.",
+        "The broader market effect is not clear from this feed item.",
+        "No unambiguous directional signal in the headline. Open the source for context."
+      ],
+      "publisher": "Investing.com",
+      "source_id": "investing",
+      "published_at": null,
+      "first_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "last_seen_at": "2026-11-17T00:33:15.914652+00:00",
+      "analysis": {
+        "direction": "unclear",
+        "reason": "No unambiguous directional signal in the headline. Open the source for context.",
+        "topics": [
+          "Other business news"
+        ],
+        "channel": "The broader market effect is not clear from this feed item.",
+        "basis": "headline rules v1",
+        "confidence": "LOW",
+        "signal_kind": "unclassified"
+      },
+      "content_scope": "Feed excerpt and MarketScope context; linked article not analyzed",
+      "headline_group": "fed483fbd7621561f4f7",
+      "scoped_impacts": {
+        "stocks": [],
+        "sectors": [],
+        "market": {
+          "name": "Overall U.S. market",
+          "direction": "unclear",
+          "reason": "No clear broad-market direction can be established from this feed item.",
+          "evidence": "",
+          "confidence": "LOW",
+          "matches": []
+        },
+        "basis": "Headline and short feed excerpt; keyword library 1.0; LOW confidence"
+      },
+      "story_summary": "Somali American Uber driver hospitalized after assault in Minnesota; family alleges hate crime — No additional description was supplied by this source."
     }
   }
 }
