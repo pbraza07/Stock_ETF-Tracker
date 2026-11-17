@@ -122,13 +122,24 @@ def render_recession_indicators():
     window=st.selectbox('Chart history',['10 years','5 years','20 years','All history'],index=3,key='recession_history_window')
     interactive=st.checkbox('Use interactive charts (requires browser chart scripts)',value=False,key='recession_interactive_charts')
     years={'10 years':10,'5 years':5,'20 years':20,'All history':None}[window]
-    with st.spinner('Loading FRED observations…'):
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            results=dict(zip(SERIES,pool.map(lambda key:load_series(key,refresh),SERIES)))
+    from workspace_loading import request, local_recession_snapshot
+    results = {}
+    pending = False
+    for key in SERIES:
+        result, running = request(('recession', key),
+            lambda key=key: load_series(key, refresh, background=True),
+            lambda key=key: local_recession_snapshot(key), force=refresh)
+        results[key] = result
+        pending = pending or running
+    if pending:
+        st.caption('Checking FRED in the background. Saved observations remain visible; you can change workspaces.')
+        st.button('Check completed recession downloads', key='check_recession_downloads')
     for series,spec in SERIES.items():
         result=results[series]
         st.markdown(f"### {spec['name']} ({series})")
-        if result['status']=='Unavailable':
+        if result['status']=='Loading':
+            st.info('Downloading observations in the background. Check completed downloads shortly.')
+        elif result['status']=='Unavailable':
             st.warning('No valid FRED download or saved snapshot is available. See Connection details below.')
         else:
             if result['status']=='Stale cache':

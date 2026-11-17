@@ -36,12 +36,14 @@ def cached(namespace,inputs,loader,ttl=1800,default=None,background=False,valid=
         return row[0] if row else default
     if not token:return row[0] if row else default
     def refresh():
+        global _revision
         start=time.monotonic()
         try:
             value=loader()
             acceptable=valid(value) if valid else value is not None
             if acceptable:
                 put(key,value,ttl);_failures.discard(namespace)
+                _revision += 1
             else:
                 _retry_marker(key);_failures.add(namespace)
             return value if acceptable else (row[0] if row else default)
@@ -50,8 +52,6 @@ def cached(namespace,inputs,loader,ttl=1800,default=None,background=False,valid=
             log.warning('source_refresh_failed namespace=%s error=%s',namespace,type(exc).__name__)
             return row[0] if row else default
         finally:
-            global _revision
-            _revision+=1
             _pending.discard(key)
             try:unlock(key,token)
             except sqlite3.OperationalError as exc:
@@ -77,7 +77,13 @@ def render_refresh_status():
     def status():
         previous=st.session_state.get('source_revision',_revision)
         st.session_state['source_revision']=_revision
-        if previous!=_revision:st.rerun()
+        if previous != _revision:
+            st.session_state['source_update_available'] = True
+        if st.session_state.get('source_update_available'):
+            st.caption('Updated source data is ready. Your current results have been kept.')
+            if st.button('Show updated source data', key='apply_source_updates'):
+                st.session_state['source_update_available'] = False
+                st.rerun()
         if _pending:st.caption('Refreshing requested data in the background. Available saved data remains visible.')
         if _failures:st.caption('Some sources could not refresh. Saved data is shown where available; check its observation date before use.')
     status()

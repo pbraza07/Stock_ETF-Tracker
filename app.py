@@ -2649,7 +2649,10 @@ if _active_workspace not in ("📰 Market News", "Recession Indicators"):
     snapshot_symbols = snapshot["Symbol"].dropna().astype(str).tolist() if "Symbol" in snapshot.columns else []
     extra_symbols = [s for s in st.session_state.extra_symbols if s not in set(base_symbols)]
     symbols = list(dict.fromkeys(base_symbols + snapshot_symbols + extra_symbols))
-    market_base = assemble_market(symbols, snapshot)
+    from workspace_loading import reuse_market
+    market_base = reuse_market(st.session_state,
+        (symbols, snapshot, st.session_state.session_rows, default_meta),
+        lambda: assemble_market(symbols, snapshot))
     market = apply_live_overlay(market_base, st.session_state.live_prices)
 
 else:
