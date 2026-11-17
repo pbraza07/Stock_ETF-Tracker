@@ -7,6 +7,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
+      - 'data/**'
       - 'data/macro_snapshots/**'
       - 'data/default_universe.csv'
       - 'data/market_snapshot.csv'
@@ -75,7 +76,7 @@ jobs:
       - name: Persist Nasdaq universe refresh immediately
         run: |
           bash scripts/persist_generated_files.sh \
-            "chore: persist Nasdaq universe refresh" \
+            "chore: persist Nasdaq universe refresh [skip render]" \
             data/default_universe.csv \
             data/universe_metadata.json \
             data/universe_change_history.json
@@ -113,7 +114,7 @@ jobs:
       - name: Persist verified dynamic market snapshot and monthly history
         run: |
           bash scripts/persist_generated_files.sh \
-            "chore: persist verified MarketScope dynamic annual history" \
+            "chore: persist verified MarketScope dynamic annual history [skip render]" \
             data/default_universe.csv \
             data/market_snapshot.csv \
             data/snapshot_metadata.json \
@@ -131,7 +132,7 @@ jobs:
         if: steps.favorite-picks-history.outcome == 'success'
         run: |
           bash scripts/persist_generated_files.sh \
-            "data: append Favorite Picks change history" \
+            "data: append Favorite Picks change history [skip render]" \
             data/favorite_picks_history.json
 
       - name: Refresh rolling 5Y and 10Y annual ranking products when stale
@@ -145,7 +146,7 @@ jobs:
       - name: Persist actual 10Y monthly withdrawal rankings immediately
         run: |
           bash scripts/persist_generated_files.sh \
-            "chore: refresh MarketScope actual-monthly ranking datasets" \
+            "chore: refresh MarketScope actual-monthly ranking datasets [skip render]" \
             data/top100_rebalanced_monthly_withdrawal_10y_no_hwm.csv \
             data/top100_not_rebalanced_monthly_withdrawal_10y_no_hwm.csv
 
