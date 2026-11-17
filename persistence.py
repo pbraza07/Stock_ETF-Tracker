@@ -227,7 +227,7 @@ def persist_favorite_picks_history(history: dict, local_path: Path) -> Tuple[boo
             candidate = merge_favorite_picks_ledgers(remote_payload, candidate)
             candidate_text = json.dumps(candidate, indent=2) + "\n"
             body = {
-                "message": f"data: append Favorite Picks change history {format_et(now_et())}",
+                "message": f"data: append Favorite Picks change history {format_et(now_et())} [skip render]",
                 "content": base64.b64encode(candidate_text.encode("utf-8")).decode("ascii"),
                 "branch": DEFAULT_BRANCH,
             }
