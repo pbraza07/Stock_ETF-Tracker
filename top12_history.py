@@ -89,6 +89,8 @@ def load_ledger(kind, remote=True):
 def _audit_columns(kind, table):
     strategy = RECESSION_AUDIT_COLUMNS if kind == "Recession" else MAX_PROFIT_AUDIT_COLUMNS
     requested = COMMON_AUDIT_COLUMNS + strategy
+    if kind == "Max Profit":
+        requested += RECESSION_AUDIT_COLUMNS
     # Preserve deterministic column order while only saving fields that the
     # ranking engine actually produced.
     return [column for column in dict.fromkeys(requested) if column in table.columns]

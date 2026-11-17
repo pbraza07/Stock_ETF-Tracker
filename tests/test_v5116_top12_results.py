@@ -65,7 +65,11 @@ def test_each_button_immediately_opens_its_own_12_stock_table(payload, button, k
     score = "Final Recession Score" if kind == "Recession" else "Final Max-Profit Score"
     other = "Final Max-Profit Score" if kind == "Recession" else "Final Recession Score"
     assert score in app.dataframe[0].value.columns
-    assert other not in app.dataframe[0].value.columns
+    if kind == "Recession":
+        assert other not in app.dataframe[0].value.columns
+    else:
+        assert other in app.dataframe[0].value.columns
+        assert "Defense Score (30%)" in app.dataframe[0].value.columns
     assert all(widget.key != "t12_input_view" for widget in app.radio)
 
 
@@ -127,3 +131,17 @@ def test_first_click_rebuilds_when_only_legacy_history_exists(payload,button,kin
     assert not app.exception
     tables=[d.value for d in app.dataframe if 'Ticker' in d.value.columns]
     assert any(len(t)==30 and t.groupby('Sector').size().eq(5).all() for t in tables)
+
+
+def test_max_profit_retains_recession_evidence_after_save(payload):
+    from top12_history import record_run, current_table
+    from top12_ui import _persisted_display_table, _primary_factor_columns
+    original = payload['result']['Max Profit']
+    saved = current_table(record_run({}, 'Max Profit', original, {}))
+    display = _persisted_display_table(saved, 'Max Profit', fixture(), {})
+    assert saved.Symbol.tolist() == original.Symbol.tolist()
+    assert saved['Max Profit Score'].tolist() == pytest.approx(original['Max Profit Score'].tolist())
+    assert saved['Defense Score'].tolist() == pytest.approx(original['Defense Score'].tolist())
+    assert 'Bear P90 %' in display
+    assert set(_primary_factor_columns('Recession')) <= set(_primary_factor_columns('Max Profit'))
+    assert not display.columns.duplicated().any()

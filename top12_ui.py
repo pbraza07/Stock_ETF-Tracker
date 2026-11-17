@@ -129,6 +129,9 @@ PERSISTED_TABLE_RENAMES = {
 }
 
 
+MAX_PROFIT_SAVED_COLUMNS = list(dict.fromkeys(MAX_PROFIT_SAVED_COLUMNS + RECESSION_SAVED_COLUMNS))
+
+
 def _saved_columns(kind):
     return RECESSION_SAVED_COLUMNS if kind == "Recession" else MAX_PROFIT_SAVED_COLUMNS
 
@@ -147,7 +150,7 @@ def _primary_factor_columns(kind):
             "Positive Years %", "Historical CAGR %",
             "Data Confidence", "Why Selected",
         ]
-    return [
+    return list(dict.fromkeys([
         "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
         "Max Profit Score",
         "Historical Performance Score", "Recent Performance Score",
@@ -159,7 +162,7 @@ def _primary_factor_columns(kind):
         "P50 Future Return %", "P75 Future Return %",
         "Positive Years %", "Maximum Drawdown %",
         "Data Confidence", "Why Selected",
-    ]
+    ] + RECESSION_SAVED_COLUMNS))
 
 
 def _legacy_factor_run(table, kind):
@@ -206,8 +209,8 @@ def _persisted_display_table(table, kind, market, targets=None):
                 display[column] = display[column].where(display[column].notna(), mapped)
 
     display = enrich_targets(display, market, targets)
-    ordered = [column for column in _primary_factor_columns(kind) if column in display.columns]
-    display = display[ordered].rename(columns=PERSISTED_TABLE_RENAMES)
+    ordered = [column for column in _primary_factor_columns(kind) if column in display.columns or (kind == "Max Profit" and column in RECESSION_SAVED_COLUMNS)]
+    display = display.reindex(columns=ordered).rename(columns=PERSISTED_TABLE_RENAMES)
     if "Consistency Score" in display.columns:
         display = display.rename(
             columns={
@@ -297,9 +300,13 @@ def render_persisted_ranked_table(kind, market):
 
     targets = load_targets(tuple(table.Symbol.astype(str)))
     display = _persisted_display_table(table, kind, market, targets)
+    if kind == "Max Profit":
+        st.caption("Added recession scores are comparison evidence; Max-Profit ranking and its formula remain unchanged. Recession factor weights belong to the recession formula.")
+        if "Defense Score" not in table.columns:
+            st.info("This saved run did not retain recession evidence. Recalculate Top 5 to populate the added columns.")
     with st.expander("How to read analyst targets and dates"):
         st.caption(TARGET_HELP)
-    show_details = st.toggle("Show all ranking evidence and source dates", value=False,
+    show_details = st.toggle("Show all ranking evidence and source dates", value=(kind == "Max Profit"),
                              key="ranking_full_evidence_" + kind)
     compact = [c for c in display.columns if c in {
         "Rank", "Ticker", "Company", "Sector", "Current Price", "Target Price Median",
@@ -573,32 +580,7 @@ def render_ranked_table(
         for q in PERCENTILES
     ]
     # Put the actual ranking factors first, then the supporting evidence.
-    factor_columns = (
-        [
-            "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS, "Recession Score",
-            "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
-            "Consistency Score", "Current Strength Score", "Profitability Score",
-            "Risk Penalty", "Recession Additional Penalty",
-            "Worst Stress Return %", "Maximum Drawdown %",
-            "Recovery Periods", "Recovery Basis",
-            "Bear P10 Future Return %", "Bear P25 Future Return %",
-            "Positive Years %", "Historical CAGR %",
-            "Data Confidence", "Why Selected",
-        ]
-        if kind == "Recession"
-        else [
-            "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS, "Max Profit Score",
-            "Historical Performance Score", "Recent Performance Score",
-            "Future P50 Score", "Future P75 Score", "Fundamentals Score",
-            "Consistency Score", "Relative Strength Score", "Downside Quality Score",
-            "Risk Penalty",
-            "3Y CAGR %", "5Y CAGR %", "10Y CAGR %",
-            "P10 Future Return %", "P25 Future Return %",
-            "P50 Future Return %", "P75 Future Return %",
-            "Positive Years %", "Maximum Drawdown %",
-            "Data Confidence", "Why Selected",
-        ]
-    )
+    factor_columns = _primary_factor_columns(kind)
     available = [column for column in factor_columns if column in table.columns]
     display = table[available].rename(columns=PERSISTED_TABLE_RENAMES)
     if "Consistency Score" in display.columns:
