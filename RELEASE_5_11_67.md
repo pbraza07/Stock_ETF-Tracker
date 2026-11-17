@@ -1,5 +1,6 @@
 # MarketScope 5.11.67 — workspace loading
 
+- Removed the perpetual three-second source-status polling that repeatedly activated the running indicator.
 - No automatic full-script rerun when shared background requests complete. Offer an explicit Show updated source data button, preserving the active view and calculated results.
 - Recession navigation reads validated saved snapshots immediately. FRED checks use two background threads, single-flight requests, last-good preservation and failure backoff. Check completed recession downloads retrieves ready results without launching duplicate downloads.
 - Reuse exact-input market assembly within each session. Full snapshot, symbols, universe metadata and per-session overrides form the fingerprint. Copy-on-read prevents accidental mutation. Live quote overlays continue separately.

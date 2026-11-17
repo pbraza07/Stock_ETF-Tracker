@@ -61,6 +61,7 @@ def test_background_completion_does_not_force_full_page_rerun():
     source = Path('shared_cache.py').read_text()
     assert 'if previous!=_revision:st.rerun()' not in source
     assert "key='apply_source_updates'" in source
+    assert 'run_every=' not in source
 
 
 def test_recession_page_renders_saved_observations_without_waiting(monkeypatch):

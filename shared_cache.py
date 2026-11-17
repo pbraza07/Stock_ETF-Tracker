@@ -73,7 +73,7 @@ def remote(loader,*args,default=None,**kwargs):
 
 def render_refresh_status():
     import streamlit as st
-    @st.fragment(run_every=3)
+    @st.fragment
     def status():
         previous=st.session_state.get('source_revision',_revision)
         st.session_state['source_revision']=_revision
@@ -84,6 +84,9 @@ def render_refresh_status():
             if st.button('Show updated source data', key='apply_source_updates'):
                 st.session_state['source_update_available'] = False
                 st.rerun()
-        if _pending:st.caption('Refreshing requested data in the background. Available saved data remains visible.')
+        if _pending:
+            st.caption('Refreshing requested data in the background. Available saved data remains visible.')
+            if st.button('Check background refresh', key='check_source_updates'):
+                st.rerun()
         if _failures:st.caption('Some sources could not refresh. Saved data is shown where available; check its observation date before use.')
     status()
