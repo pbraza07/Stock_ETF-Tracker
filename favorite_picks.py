@@ -9,6 +9,7 @@ historical simulator or presents a pick as a guaranteed outcome.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 import math
 from typing import Iterable
 
@@ -344,7 +345,18 @@ def build_favorite_picks(
         raise ValueError("No stocks have a valid sector and enough completed annual history to rank.")
     symbols = finalists["Symbol"].astype(str).tolist()
     model = prepare_projection_model(market, symbols, years)
-    market_state = build_current_market_state(symbols, live_context)
+    try:
+        market_state = build_current_market_state(symbols, live_context)
+    except Exception as exc:
+        # Supplemental live data improves conditioning but must never erase an
+        # otherwise valid ranking. Continue with the governed historical model.
+        logging.getLogger(__name__).exception(
+            "Favorite Picks ignored malformed optional live conditioning"
+        )
+        market_state = build_current_market_state(
+            symbols,
+            {"failures": [f"Live conditioning unavailable: {type(exc).__name__}"]},
+        )
     target = np.repeat(1.0 / len(symbols), len(symbols))
     validation = walk_forward_validate(model, target, seed=int(random_seed))
     conditioned = condition_model_assumptions(

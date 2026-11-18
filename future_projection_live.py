@@ -455,8 +455,23 @@ def build_current_market_state(symbols: Iterable[str], live_data: dict | None) -
 
     spy = snapshots.get("SPY", {})
     breadth_snapshots = [snapshots[s] for s in breadth_symbols if snapshots.get(s)]
-    above50 = 100.0 * np.mean([item["above_50_day_ma"] for item in breadth_snapshots]) if breadth_snapshots else (65.0 if spy.get("above_50_day_ma") else 35.0)
-    above200 = 100.0 * np.mean([item["above_200_day_ma"] for item in breadth_snapshots]) if breadth_snapshots else (65.0 if spy.get("above_200_day_ma") else 35.0)
+
+    def breadth_percentage(field: str) -> tuple[float, int]:
+        """Use only observed moving-average flags; partial quote records are valid inputs."""
+        observations = [
+            bool(item[field])
+            for item in breadth_snapshots
+            if isinstance(item.get(field), (bool, np.bool_))
+        ]
+        if observations:
+            return 100.0 * float(np.mean(observations)), len(observations)
+        if isinstance(spy.get(field), (bool, np.bool_)):
+            return (65.0 if spy[field] else 35.0), 1
+        # Missing breadth is unknown, not negative market evidence.
+        return 50.0, 0
+
+    above50, breadth_50_sample_size = breadth_percentage("above_50_day_ma")
+    above200, breadth_200_sample_size = breadth_percentage("above_200_day_ma")
     last_moves = []
     for symbol in breadth_symbols:
         close = _close_series(histories.get(symbol))
@@ -615,7 +630,9 @@ def build_current_market_state(symbols: Iterable[str], live_data: dict | None) -
         "rolling_252_day_correlation": corr252.reindex(index=symbols, columns=symbols).fillna(0.0).to_dict() if not corr252.empty else {},
         "breadth_above_50_day": round(float(above50), 2),
         "breadth_above_200_day": round(float(above200), 2),
-        "breadth_sample_size": int(len(breadth_snapshots)),
+        "breadth_sample_size": int(max(breadth_50_sample_size, breadth_200_sample_size)),
+        "breadth_50_sample_size": int(breadth_50_sample_size),
+        "breadth_200_sample_size": int(breadth_200_sample_size),
         "advance_decline_ratio": advance_decline_ratio,
         "vix": vix_current,
         "vix_percentile": round(float(vix_percentile), 2),
