@@ -32,7 +32,21 @@ def headlines(name, html):
         heading = node.select_one("h2,h3,h4,.Yfwt5") or node
         title = " ".join(heading.stripped_strings)
         if 18 <= len(title) <= 300:
-            rows.setdefault(url, {"title": title, "url": url})
+            row = {"title": title, "url": url}
+            # Use only metadata belonging to this story, never a sibling story.
+            card = link.find_parent(["article", "li", "tr"])
+            if card and len(card.select("h2,h3,h4")) <= 1 and len(set(
+                a.get("href") for a in card.select("a[href]") if len(a.get_text(strip=True)) >= 18
+            )) <= 1:
+                paragraph = card.find("p")
+                if paragraph:
+                    excerpt = " ".join(paragraph.stripped_strings)
+                    if excerpt and excerpt != title:
+                        row["excerpt"] = " ".join(excerpt.split()[:25])
+                moment = card.select_one("time[datetime]")
+                if moment:
+                    row["published_at"] = moment["datetime"]
+            rows.setdefault(url, row)
         if len(rows) >= 25:
             break
     return list(rows.values())

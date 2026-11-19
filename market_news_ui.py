@@ -1,8 +1,11 @@
 """Display only headlines found on the configured financial websites."""
 from pathlib import Path
 from urllib.parse import urlsplit
+from hashlib import sha256
+from html import escape
 import json
 import streamlit as st
+from news_context import story_context, impact_html
 from scraped_news import SITES, collect_pages
 
 SNAPSHOT = Path(__file__).parent / "data/web_headlines.json"
@@ -12,6 +15,35 @@ SNAPSHOT = Path(__file__).parent / "data/web_headlines.json"
 def current_pages():
     seed = json.loads(SNAPSHOT.read_text()) if SNAPSHOT.exists() else {}
     return collect_pages(seed)
+
+
+@st.dialog("Story details")
+def read_story(row, source, context):
+    st.text(row["title"])
+    st.caption(f"Listed by {source} · {urlsplit(row['url']).hostname}")
+    if row.get("excerpt"):
+        st.text(row["excerpt"])
+    for label, impacts in (("Stock", context["stocks"]), ("Sector", context["sectors"]),
+                           ("Market", [context["market"]])):
+        for item in impacts:
+            st.write(f"{label} · {item['name']}")
+            st.caption(item["reason"].replace("feed item", "headline or excerpt"))
+    st.link_button("Read original article", row["url"])
+
+
+def story_card(row, source, collected):
+    context = story_context(row)
+    with st.container(border=True):
+        date = ("Published " + row["published_at"] if row.get("published_at")
+                else "Collected " + (collected or "at an unknown time"))
+        st.caption(f"{source} · {urlsplit(row['url']).hostname} · {date}")
+        st.markdown(impact_html(context), unsafe_allow_html=True)
+        st.markdown("<strong>" + escape(row["title"]) + "</strong>", unsafe_allow_html=True)
+        if row.get("excerpt"):
+            st.text(row["excerpt"])
+        key = sha256((source + row["url"]).encode()).hexdigest()
+        if st.button("View story details", key="news_card_" + key, width="stretch"):
+            read_story(row, source, context)
 
 
 @st.fragment(run_every="15m")
@@ -36,6 +68,6 @@ def render_market_news():
             st.caption(entry["status"] + (f" · Showing headlines collected {entry['collected']}" if rows else ""))
         for row in rows:
             matched = True
-            st.link_button(row["title"], row["url"], help=urlsplit(row["url"]).hostname)
+            story_card(row, name, entry.get("collected"))
     if not matched:
         st.info("No headlines match this selection.")
