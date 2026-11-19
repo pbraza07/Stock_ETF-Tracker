@@ -4,7 +4,7 @@ import streamlit as st
 
 # Keep the route values stable for links from other workspaces.
 DESTINATIONS = {
-    "📰 Market News": ("Markets", "Market news", "Read today’s stories or look up upcoming earnings and economic announcements."),
+    "📰 Market News": ("Markets", "Market news", "Browse headlines by source or search for a company or topic."),
     "Recession Indicators": ("Markets", "Economy signals", "Explore indicators that track changes in the economy over time."),
     "◈ Market Navigator": ("Research", "Find a stock", "Enter a company’s ticker (its trading symbol) to see past returns and analyst estimates."),
     "⚖ Stock & ETF Comparison": ("Research", "Compare investments", "Choose stocks or exchange-traded funds (ETFs) to compare over the same dates."),

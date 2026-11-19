@@ -12,7 +12,4 @@ def main():
             valid=value is not None and (not value.empty if hasattr(value,'empty') else bool(value))
             if valid:put(key_for('remote:'+name,((),kwargs)),value,900)
         except Exception:pass  # Retain prior observations and their original timestamps.
-    from news_background import collect_now
-    token=lease('news:refresh',300)
-    if token:collect_now(token)
 if __name__=='__main__':main()

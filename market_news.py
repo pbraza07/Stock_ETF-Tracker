@@ -165,14 +165,14 @@ def parse_feed(data, source, retrieved=None):
     return list({row['id']:row for row in rows}.values())
 
 
-def bounded_get(url, allowed_domains):
+def bounded_get(url, allowed_domains, accept="application/rss+xml, application/atom+xml, text/xml, text/html"):
     """Only curated public sources, bounded responses, no redirects to arbitrary hosts."""
     started = time.monotonic()
     for _ in range(4):
         if not canonical_url(url, allowed_domains):
             raise ValueError('Source redirected outside its allowed domains')
         with requests.get(url, timeout=(3,6), stream=True, allow_redirects=False,
-                          headers={'User-Agent':'MarketScope/5.11.48 RSS reader', 'Accept':'application/rss+xml, application/atom+xml, text/xml, text/html'}) as response:
+                          headers={'User-Agent':'MarketScope/1.0', 'Accept':accept}) as response:
             if response.status_code in (301,302,303,307,308):
                 from urllib.parse import urljoin
                 url = urljoin(url, response.headers.get('Location',''))
