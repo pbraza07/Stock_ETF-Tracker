@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from top12_rankings import build_top12_rankings, walk_forward_rankings, PERCENTILES
-from top12_history import load_ledger, current_table, record_run, persist_ledger
+from top12_history import MAX_PROFIT_AUDIT_COLUMNS, load_ledger, current_table, record_run, persist_ledger
 from top12_exports import DISCLOSURES, LIMITATION
 from runtime_performance import ranking_exports
 from future_projection import run_future_projection
@@ -106,7 +106,7 @@ PERSISTED_TABLE_RENAMES = {
     "Drawdown Score": "Drawdown Score (20%)",
     "Recovery Score": "Recovery Score (15%)",
     "Bear Model Score": "Bear Model Score (15%)",
-    "Consistency Score": "Consistency Score",
+    "Consistency Score": "Consistency Score (10% recession / 5% max-profit)",
     "Current Strength Score": "Current Strength Score (5%)",
     "Profitability Score": "Profitability Score (5%)",
     "Recession Additional Penalty": "Recession Penalty",
@@ -132,37 +132,12 @@ PERSISTED_TABLE_RENAMES = {
 MAX_PROFIT_SAVED_COLUMNS = list(dict.fromkeys(MAX_PROFIT_SAVED_COLUMNS + RECESSION_SAVED_COLUMNS))
 
 
-def _saved_columns(kind):
-    return RECESSION_SAVED_COLUMNS if kind == "Recession" else MAX_PROFIT_SAVED_COLUMNS
-
-
 def _primary_factor_columns(kind):
-    if kind == "Recession":
-        return [
-            "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
-            "Recession Score",
-            "Defense Score", "Drawdown Score", "Recovery Score", "Bear Model Score",
-            "Consistency Score", "Current Strength Score", "Profitability Score",
-            "Risk Penalty", "Recession Additional Penalty",
-            "Worst Stress Return %", "Maximum Drawdown %",
-            "Recovery Periods", "Recovery Basis",
-            "Bear P10 Future Return %", "Bear P25 Future Return %",
-            "Positive Years %", "Historical CAGR %",
-            "Data Confidence", "Why Selected",
-        ]
-    return list(dict.fromkeys([
-        "Rank", "Symbol", "Name", "Sector", "Price", "Forecast status", "Expected Investment Return %", *TARGET_COLUMNS,
-        "Max Profit Score",
-        "Historical Performance Score", "Recent Performance Score",
-        "Future P50 Score", "Future P75 Score", "Fundamentals Score",
-        "Consistency Score", "Relative Strength Score", "Downside Quality Score",
-        "Risk Penalty",
-        "3Y CAGR %", "5Y CAGR %", "10Y CAGR %",
-        "P10 Future Return %", "P25 Future Return %",
-        "P50 Future Return %", "P75 Future Return %",
-        "Positive Years %", "Maximum Drawdown %",
-        "Data Confidence", "Why Selected",
-    ] + RECESSION_SAVED_COLUMNS))
+    return MAX_PROFIT_SAVED_COLUMNS
+
+
+def _display_evidence(table):
+    return table.reindex(columns=MAX_PROFIT_SAVED_COLUMNS).rename(columns=PERSISTED_TABLE_RENAMES)
 
 
 def _legacy_factor_run(table, kind):
@@ -209,19 +184,7 @@ def _persisted_display_table(table, kind, market, targets=None):
                 display[column] = display[column].where(display[column].notna(), mapped)
 
     display = enrich_targets(display, market, targets)
-    ordered = [column for column in _primary_factor_columns(kind) if column in display.columns or (kind == "Max Profit" and column in RECESSION_SAVED_COLUMNS)]
-    display = display.reindex(columns=ordered).rename(columns=PERSISTED_TABLE_RENAMES)
-    if "Consistency Score" in display.columns:
-        display = display.rename(
-            columns={
-                "Consistency Score": (
-                    "Consistency Score (10%)"
-                    if kind == "Recession"
-                    else "Consistency Score (5%)"
-                )
-            }
-        )
-    return display
+    return _display_evidence(display)
 
 
 def _ranking_factor_config(display):
@@ -298,6 +261,18 @@ def render_persisted_ranked_table(kind, market):
             "future table displays. The existing ranking is not altered merely by opening this table."
         )
 
+    if kind == "Recession" and "Max Profit Score" not in table:
+        # Older ledgers saved only selected holdings. Recover comparison evidence
+        # exclusively from the same calculation and ticker.
+        stamp = metadata.get("Ranking Generated")
+        for peer in reversed((cached_ledger("Max Profit") or {}).get("runs", [])):
+            if stamp and (peer.get("Metadata") or {}).get("Ranking Generated") == stamp:
+                evidence = pd.DataFrame(peer["Holdings"]).set_index("Symbol")
+                for column in MAX_PROFIT_AUDIT_COLUMNS:
+                    if column not in table and column in evidence:
+                        table[column] = table.Symbol.map(evidence[column])
+                break
+        st.caption("Older saved runs may lack comparison values. Recalculate Top 5 to generate both sets of scores for every eligible stock.")
     targets = load_targets(tuple(table.Symbol.astype(str)))
     display = _persisted_display_table(table, kind, market, targets)
     if kind == "Max Profit":
@@ -306,13 +281,14 @@ def render_persisted_ranked_table(kind, market):
             st.info("This saved run did not retain recession evidence. Recalculate Top 5 to populate the added columns.")
     with st.expander("How to read analyst targets and dates"):
         st.caption(TARGET_HELP)
-    show_details = st.toggle("Show all ranking evidence and source dates", value=(kind == "Max Profit"),
+    show_details = st.toggle("Show all ranking evidence and source dates", value=True,
                              key="ranking_full_evidence_" + kind)
     compact = [c for c in display.columns if c in {
         "Rank", "Ticker", "Company", "Sector", "Current Price", "Target Price Median",
         "Median Target Upside %"} or c.startswith("Final ")]
     shown = display if show_details else display[compact]
-    st.caption("Summary view. Enable all evidence to inspect every factor, target, and source date.")
+    if not show_details:
+        st.caption("Summary view. Enable all evidence to inspect every factor, target, and source date.")
     st.dataframe(
         shown,
         hide_index=True,
@@ -536,63 +512,7 @@ def render_ranked_table(
     st.caption(str(result["metadata"]))
     for warning in result.get("warnings", []):
         st.caption(warning)
-    preferred = [
-        "Rank",
-        "Symbol",
-        "Name",
-        "Sector",
-        "Price",
-        kind + " Score",
-        "Data Confidence",
-        "Why Selected",
-    ]
-    metrics = (
-        [
-            "Defense Score",
-            "Drawdown Score",
-            "Recovery Score",
-            "Bear Model Score",
-            "Worst Stress Return %",
-            "Maximum Drawdown %",
-            "Recovery Periods",
-            "Recovery Basis",
-            "Stress Events",
-            "Positive Years %",
-        ]
-        if kind == "Recession"
-        else [
-            "Historical Performance Score",
-            "Future Projection Score",
-            "Future P50 Score",
-            "Future P75 Score",
-            "5Y CAGR %",
-            "10Y CAGR %",
-            "Best Historical Year %",
-            "Worst Historical Year %",
-            "P50 Projected Profit",
-            "P75 Projected Profit",
-            "Positive Years %",
-            "Maximum Drawdown %",
-        ]
-    )
-    quantiles = [
-        ("Bear " if kind == "Recession" else "") + f"P{q} Future Return %"
-        for q in PERCENTILES
-    ]
-    # Put the actual ranking factors first, then the supporting evidence.
-    factor_columns = _primary_factor_columns(kind)
-    available = [column for column in factor_columns if column in table.columns]
-    display = table[available].rename(columns=PERSISTED_TABLE_RENAMES)
-    if "Consistency Score" in display.columns:
-        display = display.rename(
-            columns={
-                "Consistency Score": (
-                    "Consistency Score (10%)"
-                    if kind == "Recession"
-                    else "Consistency Score (5%)"
-                )
-            }
-        )
+    display = _display_evidence(table)
     st.dataframe(
         display,
         hide_index=True,
