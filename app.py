@@ -2605,8 +2605,8 @@ st.markdown(
       <div class="marketscope-version">v{MARKETSCOPE_VERSION}</div>
     </div>
   </div>
-  <p>Nasdaq stocks > $100B + ETFs • actual calendar-year returns • analyst consensus • persistent cloud snapshot</p>
-  <span class="source-pill">● Nasdaq Stock Screener > $100B + Yahoo Finance • all displayed times: U.S. Eastern</span>
+  <p>Explore stocks and funds, compare past returns, and plan a portfolio.</p>
+  <details class="market-data-note"><summary>What does MarketScope cover?</summary><p>Nasdaq-screened stocks with a market value above $100 billion, plus exchange-traded funds (ETFs). MarketScope uses Nasdaq and Yahoo Finance data for calendar-year returns and analyst estimates. Times are U.S. Eastern.</p></details>
 </div>
 """,
     unsafe_allow_html=True,

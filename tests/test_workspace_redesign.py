@@ -4,7 +4,8 @@ def test_navigation_preserves_results_and_opens_only_selected_workspace():
     app=AppTest.from_string('''
 import streamlit as st
 from workspace_navigation import render_navigation
-labels=['news','lookup','rankings','portfolio','future','compare','sectors','recession','quality','help']
+from workspace_navigation import DESTINATIONS
+labels=list(DESTINATIONS)
 st.session_state.setdefault('saved_result', 12345)
 for label, page in zip(labels,render_navigation(labels)):
     if page.open:
@@ -12,11 +13,12 @@ for label, page in zip(labels,render_navigation(labels)):
 st.text(str(st.session_state.saved_result))
 ''').run()
     assert not app.exception
-    assert [t.value for t in app.text]==['Active: news','12345']
-    app.selectbox[0].select('future').run()
-    assert [t.value for t in app.text]==['Active: future','12345']
-    app.selectbox[0].select('news').run()
-    assert [t.value for t in app.text]==['Active: news','12345']
+    assert [t.value for t in app.text]==['Active: 📰 Market News','12345']
+    app.segmented_control[0].set_value('Plan').run()
+    app.selectbox[0].select('Future Projection').run()
+    assert [t.value for t in app.text]==['Active: Future Projection','12345']
+    app.segmented_control[0].set_value('Markets').run()
+    assert [t.value for t in app.text]==['Active: 📰 Market News','12345']
 
 def test_news_bootstrap_deduplicates(monkeypatch):
     import news_background as n

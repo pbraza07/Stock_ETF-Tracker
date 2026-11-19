@@ -2,8 +2,20 @@
 from contextlib import nullcontext
 import streamlit as st
 
-NAMES = ["Market News", "Research · Find a stock", "Research · Sector rankings", "Plan · Portfolio simulator", "Plan · Future projections", "Research · Compare stocks & ETFs", "Research · Sector performance", "Economy · Recession indicators", "Research · Quality & growth", "Alerts & Help"]
-GUIDANCE = ["Read market stories, or open the economic and earnings calendars.", "Search a ticker, then open its performance and analyst estimates.", "Open a saved sector ranking instantly; recalculate only when you need a new analysis.", "Choose your holdings and period, run the simulation, then review or export results.", "Set your planning inputs and run a projection. Review the outcome range and depletion risk together.", "Select instruments to compare their performance on the same basis.", "Compare sectors using the selected period.", "Explore economic evidence across the full available history.", "Review quality and return opportunities alongside missing criteria and risk.", "Review alerts and find explanations of data, models, and exports."]
+# Keep the route values stable for links from other workspaces.
+DESTINATIONS = {
+    "📰 Market News": ("Markets", "Market news", "Read today’s stories or look up upcoming earnings and economic announcements."),
+    "Recession Indicators": ("Markets", "Economy signals", "Explore indicators that track changes in the economy over time."),
+    "◈ Market Navigator": ("Research", "Find a stock", "Enter a company’s ticker (its trading symbol) to see past returns and analyst estimates."),
+    "⚖ Stock & ETF Comparison": ("Research", "Compare investments", "Choose stocks or exchange-traded funds (ETFs) to compare over the same dates."),
+    "Favorite Picks": ("Research", "Sector rankings", "See how stocks rank within each industry group, or run a fresh ranking."),
+    "◈ Sector Performance": ("Research", "Compare sectors", "Choose a time period to compare returns across industry groups."),
+    "Quality Growth & Return Opportunities": ("Research", "Find quality and growth stocks", "Explore companies by growth, financial quality and risk."),
+    "◫ Portfolio Simulator": ("Plan", "Test a portfolio", "Choose investments and past dates to see how a mix of holdings would have performed."),
+    "Future Projection": ("Plan", "Explore future outcomes", "Enter your holdings and withdrawals to explore a range of possible future balances."),
+    "🔔 Alerts & Help": ("Help", "Alerts and help", "Review alerts and learn how MarketScope calculates results and exports reports."),
+}
+
 
 class Workspace:
     def __init__(self, opened):
@@ -15,23 +27,33 @@ class Workspace:
         return self.context.__exit__(*args)
 
 def render_navigation(labels):
-    if st.session_state.get('workspace_navigation') not in labels:
-        st.session_state['workspace_navigation'] = labels[0]
-    selected = st.selectbox('Go to workspace', labels, key='workspace_navigation',
-        format_func=lambda label: NAMES[labels.index(label)],
-        help='Search or choose a workspace. Completed results and inputs remain available during this session.')
-    index = labels.index(selected)
-    st.markdown('### ' + NAMES[index])
-    st.caption(GUIDANCE[index])
-    st.markdown('''<style>
-    .stButton button,.stDownloadButton button {min-height:44px;border-radius:10px;white-space:normal;}
-    [data-testid="stMetricValue"] {font-variant-numeric:tabular-nums;font-size:clamp(1.3rem,2.5vw,2rem);}
-    [data-testid="stCaptionContainer"] {color:#afc1d1;}
-    [data-testid="stExpander"] {border-color:#294355;border-radius:12px;}
-    @media(max-width:700px){.block-container{padding:1rem .85rem 3rem!important;}
-    h1{font-size:1.8rem!important;}h2{font-size:1.45rem!important;}
-    [data-testid="stHorizontalBlock"]{flex-wrap:wrap;gap:.7rem;}
-    [data-testid="stColumn"]{min-width:min(100%,240px)!important;}
-    button p{overflow-wrap:anywhere;}}
-    </style>''', unsafe_allow_html=True)
-    return [Workspace(label == selected) for label in labels]
+    state = st.session_state
+    current = state.get("workspace_navigation")
+    if current not in labels:
+        current = labels[0]
+    groups = {}
+    for route, (group, _, _) in DESTINATIONS.items():
+        if route in labels:
+            groups.setdefault(group, []).append(route)
+
+    def change_section():
+        group = state["investor_section"] or DESTINATIONS[state["workspace_navigation"]][0]
+        remembered = state.get("investor_recent", {}).get(group)
+        state["workspace_navigation"] = remembered if remembered in groups[group] else groups[group][0]
+
+    def change_tool():
+        state["workspace_navigation"] = state["investor_tool"]
+
+    group, title, guidance = DESTINATIONS[current]
+    state.setdefault("investor_recent", {})[group] = current
+    state["workspace_navigation"] = current
+    state["investor_section"] = group
+    st.segmented_control("Explore MarketScope", list(groups), key="investor_section",
+                         on_change=change_section, width="stretch")
+    if len(groups[group]) > 1:
+        state["investor_tool"] = current
+        st.selectbox(f"{group} tools", groups[group], key="investor_tool",
+                     format_func=lambda route: DESTINATIONS[route][1], on_change=change_tool)
+    st.header(title)
+    st.caption(guidance)
+    return [Workspace(label == current) for label in labels]

@@ -1890,3 +1890,29 @@ button[data-baseweb="tab"] {
   .favorite-regime-grid { grid-template-columns: 1fr; }
   .favorite-picks-title { letter-spacing: .035em; }
 }
+
+/* Investor navigation and touch layouts */
+.st-key-investor_section button, .stButton button, .stDownloadButton button {
+  min-height: 44px;
+  white-space: normal;
+}
+[data-testid="stMetricValue"] {font-variant-numeric: tabular-nums;}
+@media screen and (max-width: 700px) {
+  .block-container {padding: 3.5rem .9rem 3rem !important;}
+  .st-key-investor_section button {min-width: 0; padding-inline: .35rem;}
+  [data-testid="stHorizontalBlock"] {flex-wrap: wrap; gap: .75rem;}
+  [data-testid="stColumn"] {min-width: min(100%, 240px) !important;}
+  [data-testid="stMetricValue"] {font-size: clamp(1.35rem, 6vw, 2rem);}
+  .block-container h1 {font-size: 1.8rem;}
+  .block-container h2 {font-size: 1.45rem;}
+  .block-container input, .block-container textarea {font-size: 16px;}
+  .block-container button p {overflow-wrap: anywhere;}
+  .block-container [data-baseweb="tab-list"] {overflow-x: auto;}
+  .block-container [role="tab"] {min-height: 44px; flex-shrink: 0;}
+}
+.market-data-note summary {cursor: pointer; padding-block: .7rem; color: #a7d4ff;}
+.market-data-note p {max-width: 66ch;}
+@media screen and (max-width: 700px) {
+  .hero {padding: 1rem; margin-bottom: .25rem; border-radius: 16px;}
+  .hero .market-data-note summary {min-height: 44px; box-sizing: border-box;}
+}
