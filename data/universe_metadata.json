@@ -1,18 +1,20 @@
 {
-  "refreshed_at_et": "2026-11-18T23:03:22.204756-05:00",
-  "refreshed_at_display_et": "Nov 18, 2026 11:03:22 PM EST",
+  "refreshed_at_et": "2026-11-19T14:00:02.008508-05:00",
+  "refreshed_at_display_et": "Nov 19, 2026 02:00:02 PM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 162,
+  "stock_count": 157,
   "etf_count": 213,
   "added_count": 0,
-  "removed_count": 3,
+  "removed_count": 5,
   "added_symbols": [],
   "removed_symbols": [
-    "GSK",
-    "NOW",
-    "RIO"
+    "BNY",
+    "CM",
+    "HCA",
+    "PSX",
+    "VLO"
   ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
