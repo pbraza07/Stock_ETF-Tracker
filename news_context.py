@@ -35,7 +35,7 @@ def _universe(path,mtime):
         if row.get('Type') not in ('Stock',None,''):continue
         name=row.get('Name','')
         name=re.split(r'\b(?:Inc\.?|Corporation|Corp\.?|PLC|plc|Ltd\.?|Limited|Class|Common|Ordinary|American Depositary)\b',name)[0].strip(' ,.-')
-        if len(name)<4:continue
+        if not name:continue
         if name=='Amazon.com':name='Amazon'
         sector=row.get('Sector') or 'Sector unavailable'
         sector={'Health Care':'Healthcare','Finance':'Financials','Basic Materials':'Materials','Consumer Cyclical':'Consumer Discretionary','Consumer Defensive':'Consumer Staples'}.get(sector,sector)
@@ -51,10 +51,19 @@ def securities():
 
 def matches(text,symbol,name):
     # Ambiguous ordinary words are not identified as tickers unless explicitly marked.
-    ticker=bool(re.search(r'(?:\$|\b(?:NASDAQ|NYSE):\s*)'+re.escape(symbol)+r'\b',text))
+    token = re.escape(symbol).replace(r'\.', '[.-]').replace(r'\-', '[.-]')
+    explicit = re.search(r'(?:\$|\b(?:NASDAQ|NYSE|AMEX)\s*:\s*)' + token + r'(?!\w)', text, re.I)
+    if explicit or re.search(r'\(\s*' + token + r'\s*\)', text):
+        return True
     if len(symbol)>=3 and symbol not in {'ALL','ARE','NOW','ONE','FOR','USA','CEO','GDP','CPI','CAT'}:
-        ticker=ticker or bool(re.search(r'(?<!\w)'+re.escape(symbol)+r'(?!\w)',text))
-    return ticker or bool(re.search(r'(?<!\w)'+re.escape(name)+r'(?!\w)',text,re.I))
+        if re.search(r'(?<!\w)' + token + r'(?!\w)', text):
+            return True
+    aliases = {'AMD': ('Advanced Micro Devices',), 'TSM': ('TSMC',),
+               'SPCX': ('SpaceX',), 'BRK.B': ('Berkshire Hathaway',)}
+    names = [name, *aliases.get(symbol, ())]
+    return any(re.search(r'(?<!\w)' + re.escape(n) + r'(?!\w)', text,
+                         re.I if len(n)>3 else 0) for n in names if n)
+
 
 
 def result(name,text,reason_if_unknown):

@@ -43,6 +43,9 @@ def headlines(name, html):
                     excerpt = " ".join(paragraph.stripped_strings)
                     if excerpt and excerpt != title:
                         row["excerpt"] = " ".join(excerpt.split()[:25])
+                        from news_context import matches, securities
+                        row["listing_symbols"] = [symbol for symbol, company, _ in securities()
+                                                  if matches(excerpt, symbol, company)]
                 moment = card.select_one("time[datetime]")
                 if moment:
                     row["published_at"] = moment["datetime"]

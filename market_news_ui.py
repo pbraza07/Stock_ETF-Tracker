@@ -5,7 +5,8 @@ from hashlib import sha256
 from html import escape
 import json
 import streamlit as st
-from news_context import story_context, impact_html
+from news_context import story_context, impact_html, securities
+from news_identity import article_symbols
 from scraped_news import SITES, collect_pages
 
 SNAPSHOT = Path(__file__).parent / "data/web_headlines.json"
@@ -26,13 +27,29 @@ def read_story(row, source, context):
     for label, impacts in (("Stock", context["stocks"]), ("Sector", context["sectors"]),
                            ("Market", [context["market"]])):
         for item in impacts:
-            st.write(f"{label} · {item['name']}")
+            if label == "Stock":
+                st.text(f"{item['company']} ({item['name']}) · {item['sector']}")
+            else:
+                st.write(f"{label} · {item['name']}")
             st.caption(item["reason"].replace("feed item", "headline or excerpt"))
     st.link_button("Read original article", row["url"])
 
 
 def story_card(row, source, collected):
-    context = story_context(row)
+    base = story_context(row)
+    context = {**base, "stocks": list(base["stocks"]), "sectors": list(base["sectors"])}
+    mentioned = set(article_symbols(row["url"])) | set(row.get("listing_symbols", []))
+    known = {item["name"] for item in context["stocks"]}
+    sectors = {item["name"] for item in context["sectors"]}
+    for symbol, company, sector in securities():
+        if symbol not in mentioned or symbol in known:
+            continue
+        neutral = dict(direction="unclear", reason="Mentioned in the heading or opening text. Direction is unclear.")
+        context["stocks"].append(dict(neutral, name=symbol, company=company, sector=sector))
+        known.add(symbol)
+        if sector not in sectors:
+            context["sectors"].append(dict(neutral, name=sector))
+            sectors.add(sector)
     with st.container(border=True):
         date = ("Published " + row["published_at"] if row.get("published_at")
                 else "Collected " + (collected or "at an unknown time"))
@@ -46,7 +63,7 @@ def story_card(row, source, collected):
             read_story(row, source, context)
 
 
-@st.fragment(run_every="15m")
+@st.fragment(run_every="45s")
 def render_market_news():
     with st.spinner("Checking news websites…"):
         pages = current_pages()
