@@ -8710,5 +8710,29 @@
     "from": "Included >$100B universe",
     "to": "Outside >$100B universe",
     "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-20T22:53:37.478877-05:00",
+    "occurred_at_display_et": "Nov 20, 2026 10:53:37 PM EST",
+    "first_detected_at_et": "2026-11-20T22:53:37.478877-05:00",
+    "first_detected_display_et": "Nov 20, 2026 10:53:37 PM EST",
+    "change_type": "Stock Added",
+    "symbol": "ANT",
+    "name": "Anthropic PBC Class A Common Stock",
+    "from": "Outside >$100B universe",
+    "to": "Included >$100B universe",
+    "source": "Nasdaq Stock Screener"
+  },
+  {
+    "occurred_at_et": "2026-11-20T22:53:37.478877-05:00",
+    "occurred_at_display_et": "Nov 20, 2026 10:53:37 PM EST",
+    "first_detected_at_et": "2026-11-20T22:53:37.478877-05:00",
+    "first_detected_display_et": "Nov 20, 2026 10:53:37 PM EST",
+    "change_type": "Stock Removed",
+    "symbol": "EQNR",
+    "name": "Equinor ASA",
+    "from": "Included >$100B universe",
+    "to": "Outside >$100B universe",
+    "source": "Nasdaq Stock Screener"
   }
 ]
