@@ -1,6 +1,6 @@
 {
   "Yahoo Finance": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "No readable headlines",
     "rows": [
       {
@@ -19,21 +19,33 @@
     "collected": "2026-11-20T13:15:42+00:00"
   },
   "MarketWatch": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "HTTP 401",
     "rows": [],
     "collected": null
   },
   "Google Finance": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "No readable headlines",
     "rows": [],
     "collected": null
   },
   "StockAnalysis.com": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "Available",
     "rows": [
+      {
+        "title": "No, Anthropic's market cap was never $2T. It peaked at $1.52T and is now $1.19T",
+        "url": "https://stockanalysis.com/news/anthropic-market-cap-never-2-trillion/"
+      },
+      {
+        "title": "The VIX touches 40 and closes at 35.9, its highest level since the April 2025 \"Liberation Day\" tariff turmoil",
+        "url": "https://stockanalysis.com/news/vix-touches-40-highest-since-tariff-turmoil/"
+      },
+      {
+        "title": "Congress nears a deal to ban Chinese automakers from the US",
+        "url": "https://stockanalysis.com/news/congress-nears-ban-on-chinese-cars/"
+      },
       {
         "title": "Nasdaq 100 plunges 5.6% and closes just short of a bear market as the S&P 500 ends in a correction",
         "url": "https://stockanalysis.com/news/nasdaq-100-ends-just-short-of-bear-market/"
@@ -121,24 +133,12 @@
       {
         "title": "U.S. initial jobless claims grow by 1,000 to 203,000, above forecasts as continuing claims jump",
         "url": "https://stockanalysis.com/news/jobless-claims-rise-third-week-november-2026/"
-      },
-      {
-        "title": "Anthropic shares indicate 26% premium in gray markets ahead of scheduled $83 IPO",
-        "url": "https://stockanalysis.com/news/anthropic-gray-market-indicates-27-percent-pop/"
-      },
-      {
-        "title": "Walmart's Q3 revenue grows 5.2% to $188.8B, beating estimates, as it raises its outlook for the third time this year",
-        "url": "https://stockanalysis.com/news/wmt-q3-fy2027-earnings-raises-outlook/"
-      },
-      {
-        "title": "Alibaba's September-quarter revenue grows 10% to $40.5B, beating estimates. Its AI cloud unit grows 53%",
-        "url": "https://stockanalysis.com/news/baba-q2-fy2027-earnings-revenue-beat/"
       }
     ],
-    "collected": "2026-11-21T11:27:39+00:00"
+    "collected": "2026-11-21T19:31:54+00:00"
   },
   "MarketBeat": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "HTTP 403",
     "rows": [
       {
@@ -245,12 +245,16 @@
     "collected": "2026-11-19T21:06:46+00:00"
   },
   "The Motley Fool": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "Available",
     "rows": [
       {
         "title": "Crowd Pleaser….Crowdstrike  Wants to Buy Zscaler",
         "url": "https://www.fool.com/investing/2026/11/20/crowd-pleaser-crowdstrike-wants-to-buy-zscaler/"
+      },
+      {
+        "title": "Why Isn't Walmart's Stock Bouncing Back After Weak Earnings Results? The company barely beat analyst estimates for revenue and profitability in its third quarter of fiscal 2027.",
+        "url": "https://www.fool.com/investing/2026/11/21/why-isn-t-walmart-s-stock-bouncing-back-after-weak-earnings-results/"
       },
       {
         "title": "After Its Worst Week in 18 Years, Nvidia Now Faces an SEC Investigation. What It Means for Investors On top of its other woes, Nvidia now faces an SEC investigation.",
@@ -261,84 +265,148 @@
         "url": "https://www.fool.com/investing/2026/11/20/the-sp-500-just-entered-correction-territory-heres-what-it-means-for-investors-right-now/"
       },
       {
-        "title": "If AI Chips Become Commoditized, Nvidia Has the Most to Lose, While These 3 Stocks Are Set to Gain Nvidia has a lot to lose as AI chips become fungible, while these stocks could gain.",
-        "url": "https://www.fool.com/investing/2026/11/21/if-ai-chips-become-commoditized-nvidia-has-the-most-to-lose-while-these-3-stocks-are-set-to-gain/"
+        "title": "Meet the Warren Buffett Rule That Makes This Consumer Stock a Buy With $1,000 Right Now This business combines chicken feed, dog food, and a Buffett lesson that's finally lining up with a fair price.",
+        "url": "https://www.fool.com/investing/2026/11/21/meet-the-warren-buffett-rule-that-makes-this-consumer-stock-a-buy-with-1000-right-now/"
       },
       {
-        "title": "Zcash Just Dropped Below $1,000 for the First Time Since September. Is This a Buy-the-Dip Opportunity? Most of its recent decline has been caused by a turbulent market, which probably won't be improving much in the very near term.",
-        "url": "https://www.fool.com/investing/2026/11/21/zcash-just-dropped-below-1000-for-the-first-time-since-september-is-this-a-buy-the-dip-opportunity/"
+        "title": "Airbnb vs. DoorDash: Which Stock Is a Better Buy? Airbnb posts strong net income from an asset-light model, while DoorDash's revenue is climbing fast.",
+        "url": "https://www.fool.com/coverage/better-buy/2026/11/21/airbnb-vs-doordash-which-stock-is-a-better-buy/"
       },
       {
-        "title": "What Is Net Interest Margin? 2 Bank Stocks Where It's Rising This tiny, often-overlooked number often tells you a great deal about how a bank is managing its business.",
-        "url": "https://www.fool.com/investing/2026/11/21/what-is-net-interest-margin-2-bank-stocks-where-it-s-rising/"
+        "title": "MSCI Is Cutting Strategy and Metaplanet From Its Indexes. Here's What It Means for Bitcoin Treasury Company Stocks. MSCI is booting Strategy from its indexes at the end of November. What does that mean for Bitcoin treasury stocks?",
+        "url": "https://www.fool.com/investing/2026/11/21/msci-is-cutting-strategy-and-metaplanet-from-its-indexes-here-s-what-it-means-for-bitcoin-treasury-company-stocks/"
       },
       {
-        "title": "IonQ vs. Alphabet: Which is the Better Quantum Computing Stock to Own for Next 5 Years? IonQ is getting closer to producing a viable product.",
-        "url": "https://www.fool.com/investing/2026/11/21/ionq-vs-alphabet-which-is-the-better-quantum-computing-stock-to-own-for-next-5-years/"
+        "title": "Prosper Junior Bakiny",
+        "url": "https://www.fool.com/author/20111/"
       },
       {
-        "title": "Lawrence Rothman, CFA",
-        "url": "https://www.fool.com/author/20204/"
+        "title": "Better Recent IPO: SpaceX or Anthropic? SpaceX and Anthropic pulled off the two largest IPOs ever this year.",
+        "url": "https://www.fool.com/investing/2026/11/21/better-recent-ipo-spacex-or-anthropic/"
       },
       {
-        "title": "Walmart Has Paid Investors a Growing Dividend for 53 Straight Years. Here's What $10,000 Starts You With. The retail giant is maintaining its title of Dividend King.",
-        "url": "https://www.fool.com/investing/2026/11/21/walmart-has-paid-investors-a-growing-dividend-for/"
+        "title": "Parkev Tatevosian, CFA",
+        "url": "https://www.fool.com/author/20206/"
       },
       {
-        "title": "Micron Stock Fell More Than 40% From Its June Record. History Says What It Did After Its 5 Other Drops This Deep. Will the memory maker's newest drop follow its quick recoveries or its long slumps?",
-        "url": "https://www.fool.com/investing/2026/11/21/micron-stock-fell-more-than-40-from-its-june-record-history-says-what-it-did-after-its-5-other-drops-this-deep/"
+        "title": "Is Ford Stock A Buy? Ford Motor Company has had to deal with dramatic changes in government policy.",
+        "url": "https://www.fool.com/investing/2026/11/21/is-ford-stock-a-buy/"
       },
       {
-        "title": "Kailey Hagen, CFP®",
-        "url": "https://www.fool.com/author/20025/"
+        "title": "Medtronic Is About to Report Its First Earnings Since Spinning Off MiniMed. Should You Buy the Stock Before Nov. 24? The medical device giant is expected to post another quarter of stabilizing sales.",
+        "url": "https://www.fool.com/investing/2026/11/21/medtronic-is-about-to-report-its-first-earnings-since-spinning-off-minimed-should-you-buy-the-stock-before-nov-24/"
       },
       {
-        "title": "Social Security Is Getting Its Largest COLA Since 2023 Next Year. Why It Likely Won't Be Enough for Many Seniors. A benefit boost is on the way, but it might not go as far as you'd expect.",
-        "url": "https://www.fool.com/retirement/2026/11/21/social-security-is-getting-its-largest-cola-since-2023-next-year-why-it-likely-won-t-be-enough-for-many-seniors/"
+        "title": "2 Growth Stocks That Could Double by 2031 These top stocks have the growth opportunities to double investors' money in five years.",
+        "url": "https://www.fool.com/investing/2026/11/21/2-growth-stocks-that-could-double-by-2031/"
       },
       {
-        "title": "Here’s How Many Shares of Walmart You Need for $250 in Yearly Dividends Walmart's Dividend King status almost ensures dividend income will continue to rise over time.",
-        "url": "https://www.fool.com/investing/2026/11/21/heres-how-many-shares-of-walmart-youd-need-for-250-in-yearly-dividends/"
+        "title": "Better Buy: Bitcoin vs. Ethereum Which one of the world’s top cryptocurrencies is a better investment today?",
+        "url": "https://www.fool.com/investing/2026/11/21/better-buy-bitcoin-vs-ethereum/"
       },
       {
-        "title": "Nvidia Stock Is Down 35% From Its High. History Suggests a $5,000 Investment Now Will Be Worth This Much by 2028. Nvidia has had a rough few days, but the future is still bright.",
-        "url": "https://www.fool.com/investing/2026/11/21/nvidia-stock-is-down-35-from-its-high-history-suggests-a-usd5-000-investment-now-will-be-worth-this-much-by-2028/"
+        "title": "The S&P 500 Heads Into Thanksgiving Below Its Peak. Here's How the Holiday Week Has Usually Gone Since 1950. It has usually been a good week for stocks. Has it been when the index started below a record?",
+        "url": "https://www.fool.com/investing/2026/11/21/the-s-and-p-500-heads-into-thanksgiving-below-its-peak-here-s-how-the-holiday-week-has-usually-gone-since-1950/"
       },
       {
-        "title": "Social Security Retirees Get a Big COLA in 2027, but Benefits Will Increase Most in These 10 States Social Security benefits and COLAs are indirectly influenced by the state of residence.",
-        "url": "https://www.fool.com/retirement/social-security/2026/11/21/social-security-big-cola-2027-benefits-increase-most-10-states/"
+        "title": "Could Investing $500 a Month in Nebius Help You Retire a Millionaire? The neocloud stock looks like a steal at current levels.",
+        "url": "https://www.fool.com/investing/2026/11/21/could-investing-500-a-month-in-nebius-help-you-retire-a-millionaire/"
       },
       {
-        "title": "This Dividend ETF Could Supercharge Your Passive Income. Here's How. Most income investors trade growth for yield. This ETF lets you have both.",
-        "url": "https://www.fool.com/investing/2026/11/21/this-dividend-etf-could-supercharge-your-passive-income-heres-how/"
+        "title": "The Motley Fool Team",
+        "url": "https://www.fool.com/author/20646/"
       },
       {
-        "title": "NuScale Stock Has Lost 93% of Its Value. I'm Still Not Buying It. The reactor developer now sells for less than its cash. Why isn't this a bargain?",
-        "url": "https://www.fool.com/investing/2026/11/21/nuscale-stock-has-lost-93-of-its-value-i-m-still-not-buying-it/"
+        "title": "FitLife Brands: 3 Key Takeaways for Long-Term Investors Margin protection from forward buying and the Amazon packaging shift both depend on execution, and the article leaves that open.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/21/fitlife-brands-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Should You Really Buy Anthropic Stock After Its Historic IPO? History Offers a Clear Answer. Anthropic just completed the largest initial public offering (IPO) in history in terms of capital raised.",
-        "url": "https://www.fool.com/investing/2026/11/21/buy-anthropic-stock-after-ipo-history-offers-clear-answer/"
+        "title": "Weibo: 3 Key Takeaways for Long-Term Investors Creator onboarding is management's bet on feeding video supply, but the article leaves open whether that can outpace weakening ad demand.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/21/weibo-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "President Donald Trump's Economy and the AI-Driven Stock Market Are in Trouble, Thanks to a Newly Identified Source of Inflation Elevated inflation is no longer just a Trumpflation story.",
-        "url": "https://www.fool.com/investing/2026/11/21/donald-trump-economy-ai-driven-stock-market-in-trouble-newly-identified-source-of-inflation/"
+        "title": "Worried About a Market Crash? This AI Stock Should Bounce Back Fastest. AI stocks with strong fundamentals should rebound quickly from a market crash.",
+        "url": "https://www.fool.com/investing/2026/11/21/worried-about-a-market-crash-this-ai-stock-should-bounce-back-fastest/"
       },
       {
-        "title": "What Will Anthropic’s Price Be in 3 Months? History Offers an Answer That’s Strikingly Clear. The stock climbed 17% on its first day of trading.",
-        "url": "https://www.fool.com/investing/2026/11/21/what-will-anthropic-s-price-be-in-3-months-history-offers-an-answer-that-s-strikingly-clear/"
+        "title": "Should You Buy Nvidia Stock Right Now? The company is going through a very difficult time.",
+        "url": "https://www.fool.com/investing/2026/11/21/should-you-buy-nvidia-stock-right-now/"
       },
       {
-        "title": "Could SpaceX Be the Ultimate Winner of the Nvidia-Jensen Huang Split? Terafab could be Jensen Huang's new home.",
-        "url": "https://www.fool.com/investing/2026/11/21/could-spacex-be-the-ultimate-winner-of-the-nvidia-and-jensen-huang-split/"
+        "title": "If the Fed Hikes Rates This Year, I'm Loading Up on This 1 ETF The Vanguard Energy ETF could be an even bigger sector exchange-traded fund star if the Fed raises interest rates again.",
+        "url": "https://www.fool.com/investing/2026/11/21/if-the-fed-hikes-rates-this-year-im-loading-up-on-this-1-etf/"
+      },
+      {
+        "title": "Airbnb’s New $12 Billion Buyback Is Backed by a 35% Free Cash Flow Margin. Here’s What It Means for Shareholders. This growth stock is crushing the market in 2026, up 33%.",
+        "url": "https://www.fool.com/investing/2026/11/21/airbnb-new-usd12-billion-buyback-is-backed-by-a-35-free-cash-flow-margin-what-it-means-for-shareholders/"
+      },
+      {
+        "title": "Warren Buffett Said Stocks Are Better Than Bonds for Long-Term Investors. History Shows He Was Right. A bad experience with Treasury bonds made Warren Buffett even more of a believer in stocks for the long run. See why.",
+        "url": "https://www.fool.com/investing/2026/11/21/warren-buffett-said-stocks-are-better-than-bonds-for-long-term-investors-history-shows-he-was-right/"
+      },
+      {
+        "title": "Here's How Many Shares of Coca-Cola You'd Need for $1,000 in Monthly Income Just like Berkshire Hathaway, you can build a steady income stream with Coca-Cola stock.",
+        "url": "https://www.fool.com/investing/2026/11/21/heres-how-many-shares-of-coca-cola-youd-need-for-1000-in-monthly-income/"
       }
     ],
-    "collected": "2026-11-21T11:27:39+00:00"
+    "collected": "2026-11-21T19:31:54+00:00"
   },
   "Finviz": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "Available",
     "rows": [
+      {
+        "title": "Goldman’s SpaceX Pitch Helps Solve AI Debt Puzzle",
+        "url": "https://www.bloomberg.com/news/articles/2026-11-21/goldman-s-spacex-pitch-helps-solve-ai-debt-puzzle-credit-weekly"
+      },
+      {
+        "title": "Anthropic IPO signals ‘beginning of a gold rush’ for small businesses, says biz tech CEO",
+        "url": "https://foxbusiness.com/economy/anthropic-ipo-signals-beginning-gold-rush-small-businesses-says-biz-tech-ceo"
+      },
+      {
+        "title": "What just happened to tech stocks?",
+        "url": "https://finance.yahoo.com/markets/article/what-just-happened-to-tech-stocks-162354774.html"
+      },
+      {
+        "title": "What's driving tech outages? Anthropic engineer proposes one theory.",
+        "url": "https://finance.yahoo.com/technology/article/anthropic-engineers-warning-about-claude-code-explains-why-tech-outages-could-get-much-worse-110000573.html"
+      },
+      {
+        "title": "Grocery stores have ‘staggering deals’ for Thanksgiving—but don’t get used to it",
+        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=865dc883-dffb-42c2-b118-5705742a222f&mod=mw_rss_bulletins"
+      },
+      {
+        "title": "How a brutal week for stocks almost wiped out their gains for the entire year",
+        "url": "https://www.marketwatch.com/story/how-a-brutal-week-for-stocks-almost-wiped-out-their-gains-for-the-entire-year-ae6773c3"
+      },
+      {
+        "title": "Finding your edge in a market and economy dominated by AI: Barron’s Roundtable",
+        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=a62375af-d903-4733-9192-735e87bcccb5&mod=mw_rss_bulletins"
+      },
+      {
+        "title": "Anthropic's post-debut stumble delivers reality check for AI trade",
+        "url": "https://www.reuters.com/business/anthropics-post-debut-stumble-delivers-reality-check-ai-trade-2026-11-20/"
+      },
+      {
+        "title": "Wall Street Asks What Can Save AI Trade After Anthropic Wipeout",
+        "url": "https://www.bloomberg.com/news/articles/2026-11-21/wall-street-asks-what-can-save-ai-trade-after-anthropic-wipeout"
+      },
+      {
+        "title": "Elon Musk on His Politics, a Potential Merger and Ukraine",
+        "url": "https://www.nytimes.com/2026/11/21/business/dealbook/elon-musk-dealbook-summit.html"
+      },
+      {
+        "title": "Jensen Huang's next move: Bettors bank on a surprise second act",
+        "url": "https://finance.yahoo.com/markets/article/jensen-huangs-next-move-wall-street-floats-intel-and-spacex-but-bettors-are-banking-on-a-surprise-second-act-123015670.html"
+      },
+      {
+        "title": "Russia Says Cargo Ship Attacked By Drones in Gulf of Finland",
+        "url": "https://www.bloomberg.com/news/articles/2026-11-21/russia-says-cargo-ship-attacked-by-drones-in-gulf-of-finland"
+      },
+      {
+        "title": "S&P 500 and Dow close in correction; Nasdaq erases 2026 gain",
+        "url": "https://www.cnbc.com/2026/11/19/stock-market-today-live-updates.html"
+      },
       {
         "title": "Walmart shoppers stocked up on emergency supplies after series of tech outages: report",
         "url": "https://foxbusiness.com/economy/walmart-shoppers-stocked-up-emergency-supplies-after-series-tech-outages-report"
@@ -386,66 +454,22 @@
       {
         "title": "Paschi Deems Intesa’s Offer Fair Yet Value Not Fully Reflected",
         "url": "https://www.bloomberg.com/news/articles/2026-11-21/paschi-deems-intesa-s-offer-fair-yet-value-not-fully-reflected"
-      },
-      {
-        "title": "California entrepreneur says state avoided economic disaster with billionaire tax rejection",
-        "url": "https://foxbusiness.com/economy/california-entrepreneur-says-state-avoided-economic-disaster-billionaire-tax-rejection"
-      },
-      {
-        "title": "How China is using summits to expand its global influence",
-        "url": "https://www.cnbc.com/2026/11/21/china-xi-trump-putin-global-diplomacy-shenzhen.html"
-      },
-      {
-        "title": "Vietnam Amends Law to Speed Land Clearance, Developer Projects",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-21/vietnam-amends-laws-to-speed-land-clearance-development-of-new-projects"
-      },
-      {
-        "title": "Peru Rattled by 6.7-Magnitude Quake, With No Casualties Reported",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-21/peru-rattled-by-6-7-magnitude-quake-with-no-casualties-reported"
-      },
-      {
-        "title": "Judge Approves $7 Billion Settlement Over Claims That Roundup Caused Cancer",
-        "url": "https://www.nytimes.com/2026/11/20/business/judge-approves-7-billion-settlement-over-claims-that-roundup-caused-cancer.html"
-      },
-      {
-        "title": "Market strategist says key inflation data next week could impact Fed rate hikes",
-        "url": "https://www.foxbusiness.com/video/6408680239112"
-      },
-      {
-        "title": "51,000+ kids and adult toothpaste, mouthwash recalled nationwide for hormone contamination",
-        "url": "https://www.foxbusiness.com/video/6408680144112"
-      },
-      {
-        "title": "Eli Lilly, United Healthcare amid popular non-AI investment opportunities",
-        "url": "https://www.foxbusiness.com/video/6408680373112"
-      },
-      {
-        "title": "The Blame Game Has Begun Over Anthropic’s Turbulent Trading Debut",
-        "url": "https://www.wsj.com/finance/stocks/the-blame-game-has-begun-over-anthropics-turbulent-trading-debut-280a34b1?mod=rss_markets_main"
-      },
-      {
-        "title": "Wall Street suffers historic losses as Dow, S&P 500 plunge into correction territory",
-        "url": "https://foxbusiness.com/markets/wall-street-suffers-historic-losses-dow-sp-500-plunge-correction-territory"
-      },
-      {
-        "title": "Nvidia Said to Face S.E.C. Probe Into Its Accounting Practices",
-        "url": "https://www.nytimes.com/2026/11/20/business/nvidia-sec-accounting.html"
-      },
-      {
-        "title": "One thing Thanksgiving travelers can be thankful for: lower gas prices",
-        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=6bb78ea4-00af-4916-8720-0d396222d337&mod=mw_rss_bulletins"
-      },
-      {
-        "title": "Stock Market News, Nov. 20, 2026: Tech Rout Deepens as Nvidia, Anthropic Slide",
-        "url": "https://www.wsj.com/livecoverage/stock-market-today-dow-sp-500-nasdaq-11-20-2026"
       }
     ],
-    "collected": "2026-11-21T11:27:39+00:00"
+    "collected": "2026-11-21T19:31:54+00:00"
   },
   "Stocktwits": {
-    "checked": "2026-11-21T11:27:39+00:00",
+    "checked": "2026-11-21T19:31:54+00:00",
     "status": "Available",
     "rows": [
+      {
+        "title": "LMT Gets $740M Awards, GD, RTX Pick Up Missile Contracts – A Look At This Week’s Defense Deals",
+        "url": "https://stocktwits.com/news-articles/markets/equity/lmt-gets-740m-awards-gd-rtx-pick-up-missile-contracts-a-look-at-this-week-s-defense-deals/cNbmNqAR91F"
+      },
+      {
+        "title": "Elon Musk Calls Anthropic’s Models ‘Great Products,’ Jassy Says ‘We’re Big Believers’: Mag 7 Voices This Week",
+        "url": "https://stocktwits.com/news-articles/markets/equity/elon-musk-calls-anthropic-s-models-great-products-jassy-says-we-re-big-believers-mag-7-voices-this-week/cNbmmxHR91n"
+      },
       {
         "title": "Peter Schiff Doubles Down On His ‘Black Monday’ Call Again: Ethereum Could Hit $1,000 In Two Days",
         "url": "https://stocktwits.com/news-articles/markets/cryptocurrency/peter-schiff-doubles-down-on-his-black-monday-call-again-ethereum-could-hit-1-000-in-two-days/cNbmkZ2R91V"
@@ -537,16 +561,8 @@
       {
         "title": "Trump Continues To Insist On Huang’s Return At Nvidia’s Helm, Threatens US Firms Building Overseas Data Centers",
         "url": "https://stocktwits.com/news-articles/markets/equity/trump-continues-to-insist-on-huang-s-return-at-nvidia-s-helm-threatens-us-firms-building-overseas-data-centers/cNbSrePR91B"
-      },
-      {
-        "title": "CAPR Stock Gains Ahead Of Weekend FDA Deramiocel Decision After Rough Week",
-        "url": "https://stocktwits.com/news-articles/markets/equity/capr-stock-gains-ahead-of-weekend-fda-deramiocel-decision-after-rough-week/cNbSAkNR91J"
-      },
-      {
-        "title": "Bitcoin Drops Below $59K, Wiping Out $1.5B In Crypto Bets: MSTR, BMNR, ASST Stocks Extend Losses",
-        "url": "https://stocktwits.com/news-articles/markets/cryptocurrency/bitcoin-drops-below-59-k-wiping-out-1-5-b-in-crypto-bets-mstr-bmnr-asst-stocks-extend-losses/cNbSo2WR917"
       }
     ],
-    "collected": "2026-11-21T11:27:39+00:00"
+    "collected": "2026-11-21T19:31:54+00:00"
   }
 }
