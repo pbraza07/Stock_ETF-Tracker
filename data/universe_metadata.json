@@ -1,15 +1,20 @@
 {
-  "refreshed_at_et": "2026-11-22T22:38:21.013014-05:00",
-  "refreshed_at_display_et": "Nov 22, 2026 10:38:21 PM EST",
+  "refreshed_at_et": "2026-11-24T01:52:44.972356-05:00",
+  "refreshed_at_display_et": "Nov 24, 2026 01:52:44 AM EST",
   "timezone": "America/New_York",
   "source": "Nasdaq Stock Screener",
   "stock_market_cap_rule": "> $100B",
-  "stock_count": 157,
+  "stock_count": 153,
   "etf_count": 213,
   "added_count": 0,
-  "removed_count": 0,
+  "removed_count": 4,
   "added_symbols": [],
-  "removed_symbols": [],
+  "removed_symbols": [
+    "EQIX",
+    "NEM",
+    "NET",
+    "WDC"
+  ],
   "analyst_rating_change_count": 0,
   "analyst_rating_changes": []
 }
