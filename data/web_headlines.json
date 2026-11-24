@@ -1,7 +1,7 @@
 {
   "Yahoo Finance": {
-    "checked": "2026-11-24T13:59:06+00:00",
-    "status": "Available",
+    "checked": "2026-11-24T23:32:32+00:00",
+    "status": "No readable headlines",
     "rows": [
       {
         "title": "Trump Says FBI Hack Could Uncover Voter Fraud, Calls It a ‘Positive’",
@@ -11,21 +11,37 @@
     "collected": "2026-11-24T13:59:06+00:00"
   },
   "MarketWatch": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "HTTP 401",
     "rows": [],
     "collected": null
   },
   "Google Finance": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "No readable headlines",
     "rows": [],
     "collected": null
   },
   "StockAnalysis.com": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "Available",
     "rows": [
+      {
+        "title": "HPE falls 16% as a lower AI server margin outlook overshadows its raised forecast",
+        "url": "https://stockanalysis.com/news/hpe-stock-falls-margin-outlook/"
+      },
+      {
+        "title": "US consumer confidence jumps from 91.9 to 103.3 in November, its highest since January 2025",
+        "url": "https://stockanalysis.com/news/consumer-confidence-jumps-november-2026/"
+      },
+      {
+        "title": "Dick's Sporting Goods raises 2026 EPS outlook to $11.45-$12.30 as Foot Locker returns to growth",
+        "url": "https://stockanalysis.com/news/dks-q3-fy2026-earnings-guidance-raise/"
+      },
+      {
+        "title": "US private hiring slows from 23,000 to 21,000 jobs a week in early November, ADP's weekly data show",
+        "url": "https://stockanalysis.com/news/adp-weekly-hiring-slows-early-november-2026/"
+      },
       {
         "title": "Anthropic falls 5% premarket, dipping below its $83 IPO price, as the AI rally tapers off",
         "url": "https://stockanalysis.com/news/anthropic-falls-below-ipo-price-premarket/"
@@ -109,28 +125,12 @@
       {
         "title": "Loudoun County, the world's biggest data center hub, pauses approvals until mid-2027 with 33 applications pending",
         "url": "https://stockanalysis.com/news/loudoun-county-pauses-data-center-applications/"
-      },
-      {
-        "title": "Trump says he would work with Democrats to cap credit card interest rates, which he wanted at 10% in January",
-        "url": "https://stockanalysis.com/news/trump-joins-democrats-credit-card-rate-cap/"
-      },
-      {
-        "title": "No, Anthropic's market cap was never $2T. It peaked at $1.52T and is now $1.19T",
-        "url": "https://stockanalysis.com/news/anthropic-market-cap-never-2-trillion/"
-      },
-      {
-        "title": "The VIX touches 40 and closes at 35.9, its highest level since the April 2025 \"Liberation Day\" tariff turmoil",
-        "url": "https://stockanalysis.com/news/vix-touches-40-highest-since-tariff-turmoil/"
-      },
-      {
-        "title": "Congress nears a deal to ban Chinese automakers from the US",
-        "url": "https://stockanalysis.com/news/congress-nears-ban-on-chinese-cars/"
       }
     ],
-    "collected": "2026-11-24T13:59:06+00:00"
+    "collected": "2026-11-24T23:32:32+00:00"
   },
   "MarketBeat": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "HTTP 403",
     "rows": [
       {
@@ -237,211 +237,303 @@
     "collected": "2026-11-19T21:06:46+00:00"
   },
   "The Motley Fool": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "Available",
     "rows": [
       {
-        "title": "The Nasdaq Just Had Its Best Day Since April 2025. Anthropic Stock Fell Anyway.",
+        "title": "Dick’s Sporting Goods Raised Its Full-Year Earnings Forecast as Foot Locker Returned to Positive Comparable Sales. Here's What Investors Need to Know.",
+        "url": "https://www.fool.com/investing/2026/11/24/dicks-sporting-goods-raised-its-full-year-earnings-forecast-as-foot-locker-returned-to-positive-comparable-sales-heres-what-investors-need-to-know/"
+      },
+      {
+        "title": "Tesla and SpaceX Just Assembled Deal Teams for a $3.2 Trillion Merger. Here's What Investors Need to Know. Two of the market's most high-profile companies have taken the next step toward joining forces.",
+        "url": "https://www.fool.com/investing/2026/11/24/tesla-and-spacex-just-assembled-deal-teams-for-a-usd3-2-trillion-merger-here-s-what-investors-need-to-know/"
+      },
+      {
+        "title": "Anthropic Stock Just Broke Below Its $83 IPO Price. Is It a Bargain Buy? Anthropic fell below its $83 IPO price on its fourth trading day.",
+        "url": "https://www.fool.com/investing/2026/11/24/anthropic-stock-just-broke-below-its-usd83-ipo-price-is-it-a-bargain-buy/"
+      },
+      {
+        "title": "The Nasdaq Just Had Its Best Day Since April 2025. Anthropic Stock Fell Anyway. Anthropic stock slipped on the Nasdaq Composite's best day since April 2025.",
         "url": "https://www.fool.com/investing/2026/11/23/the-nasdaq-just-had-its-best-day-since-april-2025-anthropic-stock-fell-anyway/"
       },
       {
-        "title": "Micron Stock Soared on Monday. I'd Still Buy It, a Little at a Time. Is the memory maker still priced for a profit plunge after Monday's bounce?",
-        "url": "https://www.fool.com/investing/2026/11/24/micron-stock-soared-on-monday-i-d-still-buy-it-a-little-at-a-time/"
+        "title": "The Motley Fool Team",
+        "url": "https://www.fool.com/author/20646/"
       },
       {
-        "title": "The S&P 500 Stock Market Index Entered Correction Territory Last Friday. Here's What Could Happen Next. Stock market corrections are a normal part of the investing journey, and they happen more often than you might think.",
-        "url": "https://www.fool.com/investing/2026/11/24/the-s-and-p-500-stock-market-index-entered-correction-territory-friday-happen-next/"
+        "title": "American Water: 3 Key Takeaways for Long-Term Investors A pending merger and $48 billion capital plan through 2035 set the stage for sustained earnings growth in a regulated utility.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/american-water-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "I Own SCHD. Here’s Why I Also Own This 7%-Yielding Income ETF. These income-focused ETFs play complementary roles in my portfolio.",
-        "url": "https://www.fool.com/investing/2026/11/24/i-own-schd-here-s-why-i-also-own-this-7-yielding-income-etf/"
+        "title": "West Pharmaceutical: 3 Key Takeaways for Long-Term Investors Pharmaceutical consolidation favors suppliers with deep regulatory expertise, positioning West to gain early visibility into customer expansion plans.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/west-pharmaceutical-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "If I Had to Start Investing Again With $10,000, These 3 Dividend Stocks Would Come First Dollar General, Ralph Lauren, and Tyson Foods all sell things that people keep buying in good times and bad, and they pay their shareholders to be patient through the bad times.",
-        "url": "https://www.fool.com/investing/2026/11/24/if-i-had-to-start-investing-again-with-10000-these-3-dividend-stocks-would-come-first/"
+        "title": "This AI Chip Stock Just Crashed 38% on a Memory Shortage Warning. Its Filings Flagged the Risk Months Ago The edge AI chipmaker says soaring memory prices are causing customers to cut back. Its guidance shows how much.",
+        "url": "https://www.fool.com/investing/2026/11/24/this-ai-chip-stock-just-crashed-38-on-a-memory-shortage-warning-its-filings-flagged-the-risk-months-ago/"
       },
       {
-        "title": "CME vs. Visa: Which Financial Stock Is a Better Buy for 2027? Visa's network growth and CME's near-63% net margin make this 2027 matchup closer than their valuations suggest.",
-        "url": "https://www.fool.com/coverage/better-buy/2026/11/24/cme-vs-visa-which-financial-stock-is-a-better-buy-for-2027/"
+        "title": "Proto Labs: 3 Key Takeaways for Long-Term Investors Margin pressure from factory upgrades and labor costs could potentially threaten near-term profitability, even as demand from aerospace and robotics accelerates.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/proto-labs-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Lawrence Rothman, CFA",
-        "url": "https://www.fool.com/author/20204/"
+        "title": "Everest Group: 3 Key Takeaways for Long-Term Investors Disciplined underwriting and aggressive buybacks signal management confidence in long-term value creation amid rising competitive pressure.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/everest-group-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Colgate-Palmolive vs. Starbucks: Which Consumer Goods Stock Is a Better Buy for 2027? Colgate's steady oral care and pet business meets Starbucks' sprawling coffeehouse empire, and their risks and valuations diverge sharply.",
-        "url": "https://www.fool.com/coverage/better-buy/2026/11/24/colgate-palmolive-vs-starbucks-which-consumer-goods-stock-is-a-better-buy-for-2027/"
+        "title": "Alnylam: 3 Key Takeaways for Long-Term Investors Slower prescription conversion and Medicare policy uncertainty are, in part, forcing management to delay 2027 guidance, testing whether field expansion can sustain growth.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/alnylam-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Manali Pradhan, CFA",
-        "url": "https://www.fool.com/author/20323/"
+        "title": "LKQ: 3 Key Takeaways for Long-Term Investors North American strength masks European turnaround risks that new leadership must resolve.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/lkq-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "If History Is Any Guide, This Cryptocurrency Could Go Parabolic in 2027 Hyperliquid's expanding trading business could create new opportunities for HYPE investors.",
-        "url": "https://www.fool.com/investing/2026/11/24/history-says-this-cryptocurrency-could-soar-2017/"
+        "title": "DT Midstream: 3 Key Takeaways for Long-Term Investors Capital discipline is shrinking leverage while a $2.4 billion backlog may lock in decades of contracted growth.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/dt-midstream-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "David Jagielski, CPA",
-        "url": "https://www.fool.com/author/20105/"
+        "title": "T. Rowe Price: 3 Key Takeaways for Long-Term Investors Two decades of proprietary research data are now fueling T. Rowe Price's AI advantage, an opportunity that could reshape how the firm competes.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/t-rowe-price-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Prediction: This Is When the U.S. Will Legalize Marijuana In the next federal election, I fully expect marijuana legalization to be a major issue for political candidates.",
-        "url": "https://www.fool.com/investing/2026/11/24/prediction-this-is-when-the-u-s-will-legalize-marijuana/"
+        "title": "Everspin: 3 Key Takeaways for Long-Term Investors The real test is whether pricing discipline can hold as MRAM expands into medical devices and AI data centers.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/everspin-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Chipotle’s Earnings Fell 7% Last Quarter, but 1 Trend Has Now Lasted 3 Straight Quarters. This metric might be a leading indicator of ongoing momentum for the Tex-Mex chain.",
-        "url": "https://www.fool.com/investing/2026/11/24/chipotle-earnings-fell-7-last-quarter-1-trend-has-now-lasted-3-straight-quarters/"
+        "title": "How Much Is Nvidia Stock Worth Now That Jensen Huang Is Back? Nvidia stock soared more than 30% in one trading session.",
+        "url": "https://www.fool.com/investing/2026/11/24/how-much-is-nvidia-stock-worth-now-that-jensen-huang-is-back/"
       },
       {
-        "title": "Can Bitcoin Regain the $90,000 Price Level by Year End? Galaxy Digital CEO Mike Novogratz Says It's Unlikely. New macroeconomic headwinds could delay a much-anticipated Bitcoin rally.",
-        "url": "https://www.fool.com/investing/2026/11/24/can-bitcoin-regain-the-90000-price-level-by-year-end-galaxy-digital-ceo-mike-novogratz-says-its-unlikely/"
+        "title": "Banco Santander (Brasil): 3 Key Takeaways for Long-Term Investors Loyalty programs and deeper client relationships are becoming the bank's competitive moat as it navigates Brazil's challenging lending environment.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/banco-santander-brasil-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "TMF Breakfast News",
-        "url": "https://www.fool.com/author/20642/"
+        "title": "Why AMD Stock Fell Today Investors are deciding what Huang's return means.",
+        "url": "https://www.fool.com/investing/2026/11/24/why-amd-stock-fell-today/"
       },
       {
-        "title": "Breakfast News: Huang Returns. Your Next NVDA Move Our take on what Jensen Huang’s return means for Nvidia, and a Zscaler-CrowdStrike special coming up",
-        "url": "https://www.fool.com/investing/breakfast-news/2026/11/24/breakfast-news/"
+        "title": "Equinix: 3 Key Takeaways for Long-Term Investors Low leverage and expanding pricing power on renewals may help position Equinix to compound returns without balance sheet risk.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/equinix-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Jensen Huang Is Back at Nvidia, but He Still Can't Compute Megawatts and Concrete Into Existence Wall Street bet 33% on Jensen Huang's return keeping AI chip orders red-hot, but power grid queues, construction timelines, and midterm voters don't answer to Nvidia's CEO.",
-        "url": "https://www.fool.com/investing/2026/11/24/jensen-huang-is-back-at-nvidia-but-he-still-cant-compute-megawatts-and-concrete-into-existence/"
+        "title": "ASE Tech: 3 Key Takeaways for Long-Term Investors What once looked like a structural margin ceiling has now become the baseline, with further improvement expected.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/ase-tech-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Nvidia Faces an SEC Probe, According to Press Reports. Should You Still Buy the Stock? Nvidia stock has tumbled in recent weeks.",
-        "url": "https://www.fool.com/investing/2026/11/24/nvidia-faces-an-sec-probe-according-to-press-reports-should-you-still-buy-the-stock/"
+        "title": "DigitalOcean's 2027 Outlook: Revenue Projected to Grow 60% or More Next Year This under-the-radar cloud computing stock boasts a Superscore of 82 from our Hidden Gems Primary database, part of The Motley Fool's Moneyball Database system. Here's why.",
+        "url": "https://www.fool.com/coverage/moneyball/2026/11/24/digitalocean-s-2027-outlook-revenue-projected-to-grow-60-or-more-next-year/"
       },
       {
-        "title": "Accenture vs. Palo Alto Networks: Which Tech Stock Is a Better Buy for 2027? Palo Alto trades at 84.8 times forward earnings while Accenture sits at 14.9 times, a gap that makes this choice harder than it looks.",
-        "url": "https://www.fool.com/coverage/better-buy/2026/11/24/accenture-vs-palo-alto-networks-which-tech-stock-is-a-better-buy-for-2027/"
+        "title": "Why Intel Stock Fell Today Intel says it has landed its first outside customer for 18A-P, but it's unclear how much that will matter financially.",
+        "url": "https://www.fool.com/investing/2026/11/24/why-intel-stock-fell-today/"
       },
       {
-        "title": "Billionaire Philippe Laffont of Coatue Management Sent AMD Shares Packing and Loaded Up on This Hot AI IPO Instead Coatue Management’s billionaire boss took a $1.75 billion stake in a company central to the artificial intelligence (AI) infrastructure build-out.",
-        "url": "https://www.fool.com/investing/2026/11/24/billionaire-philippe-laffont-coatue-sent-amd-shares-packing-loaded-up-hot-ai-ipo-instead/"
+        "title": "Abercrombie: 3 Key Takeaways for Long-Term Investors Tight inventory is what lets Abercrombie charge more per item, and that margin discipline is the piece to weigh before judging its growth.",
+        "url": "https://www.fool.com/earnings/takeaways/2026/11/24/abercrombie-3-key-takeaways-for-long-term-investors/"
       },
       {
-        "title": "Bitcoin or Gold? Cathie Wood of Ark Invest Makes a Compelling Case for Buying Bitcoin. Cathie Wood has a low opinion of gold compared to Bitcoin.",
-        "url": "https://www.fool.com/investing/2026/11/24/bitcoin-or-gold-cathie-wood-of-ark-invest-makes-a-compelling-case-for-buying-bitcoin/"
+        "title": "Why Compass Minerals International Stock Rocketed Higher Today The latest earnings report shows Compass Minerals is headed in the right direction.",
+        "url": "https://www.fool.com/investing/2026/11/24/why-compass-minerals-international-stock-rocketed-higher-today/"
       },
       {
-        "title": "Zoom Shows Why Rule Breakers Aim for 60% Accuracy No investor gets every call right, and trying for perfection can make people too cautious to own the stocks that win big.",
-        "url": "https://www.fool.com/investing/2026/11/24/zoom-shows-why-rule-breakers-aim-for-60-accuracy/"
+        "title": "In Response to the Turmoil at Nvidia, Bitcoin Drops Below $70,000. Is This a Buy-the-Dip Opportunity? Bitcoin's mediocre response to Jensen Huang returning to Nvidia is a bit concerning for the coin's potential buyers.",
+        "url": "https://www.fool.com/investing/2026/11/24/in-response-to-the-turmoil-at-nvidia-bitcoin-drops-below-usd70-000-is-this-a-buy-the-dip-opportunity/"
       }
     ],
-    "collected": "2026-11-24T13:59:06+00:00"
+    "collected": "2026-11-24T23:32:32+00:00"
   },
   "Finviz": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "Available",
     "rows": [
       {
-        "title": "US stocks set to slide as Nvidia rally fizzles out",
-        "url": "https://www.reuters.com/world/china/global-markets-global-markets-2026-11-24/"
+        "title": "Stock futures are flat as traders await key inflation report, assess tech sell-off",
+        "url": "https://www.cnbc.com/2026/11/24/stock-market-today-live-updates-.html"
       },
       {
-        "title": "How Huang’s Return Rewrote Corporate America’s Rules",
-        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/huang-nvidia-trump.html"
+        "title": "DealBook Summit 2026: The Cost of Being Pragmatic in a Chaotic World",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/world-chaos-pragmatism.html"
       },
       {
-        "title": "Nvidia falls after huge rally on Huang's return",
-        "url": "https://finance.yahoo.com/markets/stocks/live/nvidia-live-updates-jensen-huang-reinstated-as-ceo-trump-says-he-convinced-board-165423793.html"
+        "title": "DealBook Summit 2026: Help Wanted to Succeed in an A.I. World",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/work-jobs-task-force.html"
       },
       {
-        "title": "Dow, S&P 500 and Nasdaq set to fall after Nvidia’s 31% surge",
-        "url": "https://www.marketwatch.com/livecoverage/stock-market-today-dow-s-p-500-nasdaq-extend-gains-jensen-huang-ceo-return-nvidia-dell-results"
+        "title": "DealBook Summit 2026: After the Upheaval From the Midterm Elections, Who Has the Edge in 2028?",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/midterm-elections-task-force.html"
       },
       {
-        "title": "Stocks Fall as Nvidia Fades and Trade Fears Return: Markets Wrap",
+        "title": "DealBook Summit 2026: Rein in A.I., but Don’t Pause It",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/ai-task-force.html"
+      },
+      {
+        "title": "DealBook Summit 2026: It’s Time to Fix Health Care",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/health-care-task-force.html"
+      },
+      {
+        "title": "DealBook Summit 2026: Groundbreakers Tell What Is On Their Minds",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/dealbook-summit-groundbreakers.html"
+      },
+      {
+        "title": "Asian Stocks to Slide as AI Trade Doubts Resurface: Markets Wrap",
+        "url": "https://www.bloomberg.com/news/articles/2026-11-24/asian-stocks-to-slide-as-ai-trade-doubts-resurface-markets-wrap"
+      },
+      {
+        "title": "25 Years of DealBook Moments",
+        "url": "https://www.nytimes.com/2026/11/24/business/dealbook/25-years-photographs-moments.html"
+      },
+      {
+        "title": "What to do if your Thanksgiving flight gets delayed",
+        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=62547414-4798-46ea-914b-bfe2ca7d8664&mod=mw_rss_bulletins"
+      },
+      {
+        "title": "Nvidia’s stock drops as these major questions loom over Jensen Huang’s return",
+        "url": "https://www.marketwatch.com/story/nvidias-stock-drops-as-these-major-questions-loom-over-jensen-huangs-return-9096636f"
+      },
+      {
+        "title": "Trump says Nvidia's decision to reinstate Jensen Huang as CEO was the ‘proper decision’",
+        "url": "https://www.foxbusiness.com/video/6408783382112"
+      },
+      {
+        "title": "Anthropic Had the Biggest IPO Ever. The Trade Is Already Unraveling.",
+        "url": "https://www.wsj.com/finance/stocks/anthropic-had-the-biggest-ipo-ever-the-trade-is-already-unraveling-f971d7c5?mod=rss_markets_main"
+      },
+      {
+        "title": "Blanche Downplays Questions Over Nvidia as Company’s Customers Come Under Scrutiny",
+        "url": "https://www.nytimes.com/2026/11/24/us/politics/nvidia-justice-department-todd-blanche.html"
+      },
+      {
+        "title": "‘Carthage Resident Al Gore’ Buys His Hometown Tennessee Newspaper",
+        "url": "https://www.nytimes.com/2026/11/24/business/media/al-gore-newspaper-carthage-courier.html"
+      },
+      {
+        "title": "Venezuela Reveals an Eye-Popping Debt Load of $237 Billion",
+        "url": "https://www.wsj.com/world/americas/venezuela-reveals-an-eye-popping-debt-load-of-237-billion-16bddcde?mod=rss_markets_main"
+      },
+      {
+        "title": "Nasdaq 100 Tumbles as Nvidia Euphoria Fades, New Tariffs Loom",
+        "url": "https://www.bloomberg.com/news/articles/2026-11-24/us-tech-stocks-poised-to-slide-as-ai-caution-returns-after-rally"
+      },
+      {
+        "title": "Charles Payne: The market loves the Huang news",
+        "url": "https://www.foxbusiness.com/video/6408782477112"
+      },
+      {
+        "title": "US eyes new tariffs on China and other nations, report says",
+        "url": "https://www.foxbusiness.com/video/6408837880112"
+      },
+      {
+        "title": "Nvidia’s Relief Rally Stalls",
+        "url": "https://www.wsj.com/finance/stocks/nvidias-relief-rally-stalls-a9455613?mod=rss_markets_main"
+      },
+      {
+        "title": "Dell shares rise on earnings report, as the AI boom helps sales more than double",
+        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=6fe21887-6f4a-4ae4-91ba-9f1f8fe6a227&mod=mw_rss_bulletins"
+      },
+      {
+        "title": "Nasdaq 100 Falls 2% on AI Rout, Tariff Hike Talk: Markets Wrap",
         "url": "https://www.bloomberg.com/news/articles/2026-11-23/stock-market-today-dow-s-p-live-updates"
       },
       {
-        "title": "The billionaire who bet on Jensen Huang's return has a warning about the S&P 500",
-        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=b31bd7b8-1129-49b3-a476-d1eee757a53d&mod=mw_rss_bulletins"
+        "title": "Nvidia Option Trader Scores 1,984% Gain After CEO Huang’s Return",
+        "url": "https://www.bloomberg.com/news/articles/2026-11-24/nvidia-option-trader-scores-1-984-gain-after-ceo-huang-s-return"
       },
       {
-        "title": "World Cup drove profits surge, says Marston's",
-        "url": "https://www.bbc.co.uk/news/articles/cm7523pyk75lo?at_medium=RSS&at_campaign=rss"
+        "title": "Dow closes back above 50K, but Nasdaq and S&P 500 retreat as Nvidia shares fall",
+        "url": "https://www.marketwatch.com/livecoverage/stock-market-today-dow-s-p-500-nasdaq-extend-gains-jensen-huang-ceo-return-nvidia-dell-results"
       },
       {
-        "title": "HPE shares fall as margin worries overshadow raised outlook",
-        "url": "https://www.reuters.com/business/hpe-shares-fall-margin-worries-overshadow-raised-outlook-2026-11-24/"
-      },
-      {
-        "title": "Stock Market Today: Tech Stocks Set to Give Up Some Gains Again After Epic Rally",
-        "url": "https://www.wsj.com/livecoverage/stock-market-today-dow-sp-500-nasdaq-11-24-2026"
-      },
-      {
-        "title": "AI Returns Matter More Than Nvidia Drama, Says Goldman’s Bell",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-24/ai-returns-matter-more-than-nvidia-drama-says-goldman-s-bell"
-      },
-      {
-        "title": "Ousted BP Chairman Manifold to Join Aggreko Board Amid US IPO",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-24/ousted-bp-chairman-manifold-to-join-aggreko-board-amid-us-ipo"
-      },
-      {
-        "title": "Stocks Slide as Tech Stocks Partly Reverse Nvidia-Sparked Rally",
-        "url": "https://www.nytimes.com/2026/11/24/business/stocks-sp500-huang-nvidia.html"
-      },
-      {
-        "title": "UK shares slip as weaker metal prices hit miners",
-        "url": "https://www.reuters.com/world/uk/uk-shares-slip-weaker-metal-prices-hit-miners-2026-11-24/"
-      },
-      {
-        "title": "Nvidia slips as investors assess risks surrounding Huang's return as CEO",
-        "url": "https://www.reuters.com/business/retail-consumer/nvidia-slips-investors-assess-risks-surrounding-huangs-return-ceo-2026-11-24/"
-      },
-      {
-        "title": "Anthropic stock falls below IPO price: live updates",
-        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=cb62e45a-2595-49e8-9966-dd12c0eeea7b&mod=mw_rss_bulletins"
-      },
-      {
-        "title": "Stock futures decline as Nvidia pulls back, giving back part of Monday’s rally",
-        "url": "https://www.cnbc.com/2026/11/23/stock-market-today-live-updates.html"
-      },
-      {
-        "title": "Anthropic Breaks Below $83 IPO Price in Premarket Trading",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-24/anthropic-breaks-below-83-ipo-price-in-premarket-trading"
-      },
-      {
-        "title": "The history of next-day moves after a big S&P 500 gain isn't good: live updates",
-        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=ecb6fdbb-1e0c-42aa-83fd-775d976deabd&mod=mw_rss_bulletins"
-      },
-      {
-        "title": "Anthropic breaks below $83 IPO price as debut rally unravels",
-        "url": "https://www.reuters.com/business/anthropic-breaks-below-83-ipo-price-debut-rally-unravels-2026-11-24/"
-      },
-      {
-        "title": "These Technical Measures Warned of Stock Market Whiplash",
-        "url": "https://www.wsj.com/finance/stocks/these-technical-measures-warned-of-stock-market-whiplash-33fdca3d?mod=rss_markets_main"
-      },
-      {
-        "title": "Forced Buying Aided Biggest Rally Since April 2025, Nomura Says",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-24/forced-buying-aided-biggest-rally-since-april-2025-nomura-says"
-      },
-      {
-        "title": "Lemssouguer’s Big Unwind Offers Glimpse Into Complex Credit Bets",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-24/lemssouguer-s-big-unwind-offers-glimpse-into-complex-credit-bets"
-      },
-      {
-        "title": "Nasdaq futures slump and Nvidia shares fall 6% premarket: live updates",
-        "url": "https://www.marketwatch.com/bulletins/redirect/go?g=4aecfe42-8a50-4d9c-9781-448be322ee5c&mod=mw_rss_bulletins"
-      },
-      {
-        "title": "Wall St futures dip as chip stocks cool after Nvidia-fueled rally",
+        "title": "Nasdaq, S&P 500 end lower following Monday's Nvidia-fueled rally",
         "url": "https://www.reuters.com/business/wall-st-futures-dip-chip-stocks-cool-after-nvidia-fueled-rally-2026-11-24/"
-      },
-      {
-        "title": "Pimco’s Ivascyn Says AI Disruption Risk Boosts Appeal of Bonds",
-        "url": "https://www.bloomberg.com/news/articles/2026-11-24/pimco-s-ivascyn-says-ai-disruption-risk-boosts-appeal-of-bonds"
       }
     ],
-    "collected": "2026-11-24T13:59:06+00:00"
+    "collected": "2026-11-24T23:32:32+00:00"
   },
   "Stocktwits": {
-    "checked": "2026-11-24T13:59:06+00:00",
+    "checked": "2026-11-24T23:32:32+00:00",
     "status": "Available",
     "rows": [
+      {
+        "title": "DELL Stock Gains After-Hours As AI Server Boom Leads Record Q3, Prompts Third Annual Forecast Hike",
+        "url": "https://stocktwits.com/news-articles/markets/equity/dell-stock-gains-after-hours-as-ai-server-boom-leads-record-q3-prompts-third-annual-forecast-hike/cNbsV6sR9lG"
+      },
+      {
+        "title": "RBC Expects SpaceX-Tesla Deal Announcement By Early 2027 — Notes TSLA Shareholders May Accept Combination Without Large Premium",
+        "url": "https://stocktwits.com/news-articles/markets/equity/rbc-expects-space-x-tesla-deal-announcement-by-early-2027-notes-tsla-shareholders-may-accept-combination-without-large-premium/cNbsNbYR9k6"
+      },
+      {
+        "title": "Majority Of Fed Regional Boards Were In Favor To Raise Rates In October, Minutes Show",
+        "url": "https://stocktwits.com/news-articles/markets/equity/majority-of-fed-regional-boards-were-in-favor-to-raise-rates-in-october-minutes-show/cNbsZcRR9kC"
+      },
+      {
+        "title": "TGTX Stock Hits Fresh All-Time High As FDA Reviews Easier Briumvi Launch Dose",
+        "url": "https://stocktwits.com/news-articles/markets/equity/tgtx-stock-hits-fresh-all-time-high-as-fda-reviews-easier-briumvi-launch-dose/cNbskt9R9kz"
+      },
+      {
+        "title": "US Attorney General Praises Nvidia As Questions Swirl Over Huang’s Reinstatement",
+        "url": "https://stocktwits.com/news-articles/markets/equity/us-attorney-general-praises-nvidia-as-questions-swirl-over-huang-s-reinstatement/cNbsSALR9ky"
+      },
+      {
+        "title": "Michael Burry Says Nvidia's ‘Precarious Normal’ Returns With Jensen Huang Back At The Helm: Loads Up On JD, Tencent, BYD Stocks",
+        "url": "https://stocktwits.com/news-articles/markets/equity/michael-burry-says-nvidia-s-precarious-normal-returns-with-jensen-huang-back-at-the-helm-loads-up-on-jd-tencent-byd-stocks/cNbs1igR9kU"
+      },
+      {
+        "title": "GILD, KYMR Stocks Hit Record Highs – Wall Street Backs Gilead's Resilience, Kymera's Eczema Data",
+        "url": "https://stocktwits.com/news-articles/markets/equity/gild-kymr-stocks-hit-record-highs-wall-street-backs-gilead-s-resilience-kymera-s-eczema-data/cNbs0gtR9kx"
+      },
+      {
+        "title": "Tesla’s Robotaxi Business Could Generate $3-4B In Annual Recurring Revenue By 2027-End, Says Seaport Global",
+        "url": "https://stocktwits.com/news-articles/markets/equity/tesla-s-robotaxi-business-could-generate-3-4-b-in-annual-recurring-revenue-by-2027-end-says-seaport-global/cNbs0INR9kD"
+      },
+      {
+        "title": "Planet Labs Expands Contract With European Defense And Intelligence Customer, Builds On 7-Figure Deal",
+        "url": "https://stocktwits.com/news-articles/markets/equity/planet-labs-expands-contract-with-european-defense-and-intelligence-customer-builds-on-7-figure-deal/cNbsLh8R9kw"
+      },
+      {
+        "title": "Washington Reportedly Eyes Fresh Import Duties On Multiple Countries, But It Won’t Be A Blanket Rate",
+        "url": "https://stocktwits.com/news-articles/markets/equity/washington-reportedly-eyes-fresh-import-duties-on-multiple-countries-but-it-won-t-be-a-blanket-rate/cNbsL37R9kv"
+      },
+      {
+        "title": "BBIO Stock Gains On FDA’s Welgemda Approval: BofA Calls It A Win On Several Levels, While Citi Stays More Muted",
+        "url": "https://stocktwits.com/news-articles/markets/equity/bbio-stock-gains-on-fda-s-welgemda-approval-bof-a-calls-it-a-win-on-several-levels-while-citi-stays-more-muted/cNbsL5FR9kH"
+      },
+      {
+        "title": "COGT Stock Heads For Best Session In Over A Year After FDA Approves Gastrointestinal Cancer Drug",
+        "url": "https://stocktwits.com/news-articles/markets/equity/cogt-stock-heads-for-best-session-in-over-a-year-after-fda-approves-gastrointestinal-cancer-drug/cNbsgimR9ku"
+      },
+      {
+        "title": "KSS Stock Rally: Kohl’s Comparable Sales Return To Growth In Q3 As Retailer Raises FY26 Outlook",
+        "url": "https://stocktwits.com/news-articles/markets/equity/kss-stock-rally-kohl-s-comparable-sales-return-to-growth-in-q3-as-retailer-raises-fy-26-outlook/cNbsXtKR9kM"
+      },
+      {
+        "title": "HPE Stock On Track For Biggest Single-Day Loss In Over 18 Months — CEO Warns Of Supply Shortages Through 2028",
+        "url": "https://stocktwits.com/news-articles/markets/equity/hpe-stock-on-track-for-biggest-single-day-loss-in-over-18-months-ceo-warns-of-supply-shortages-through-2028/cNbsQ2WR9kt"
+      },
+      {
+        "title": "'Big Short' Investor Steve Eisman Says AI Industry 'Dodged A Big Bullet' With Jensen Huang's Return, But Only 'For Now'",
+        "url": "https://stocktwits.com/news-articles/markets/equity/steve-eisman-says-ai-industry-dodged-a-big-bullet-with-jensen-huang-s-return-but-only-for-now/cNbsQGGR9ks"
+      },
+      {
+        "title": "Lucid, Uber Edge Closer To Taking On Tesla’s Robotaxis – Public Launch Targeted For Q1 2027",
+        "url": "https://stocktwits.com/news-articles/markets/equity/lucid-uber-edge-closer-to-taking-on-tesla-s-robotaxis-public-launch-targeted-for-q1-2027/cNbsfJiR9kp"
+      },
+      {
+        "title": "AI Stock Rebound Is A Chance To Reduce Big Tech Exposure, Says UBS — But AI Investment Story Remains Intact",
+        "url": "https://stocktwits.com/news-articles/markets/equity/ai-stock-rebound-is-a-chance-to-reduce-big-tech-exposure-says-ubs-but-ai-investment-story-remains-intact/cNbsa83R9kY"
+      },
+      {
+        "title": "MU Stock Downgraded, Price Target Cut By Almost $1,000: BNP Paribas Flags 2028 Hyperscaler Capacity Risks",
+        "url": "https://stocktwits.com/news-articles/markets/equity/mu-stock-downgraded-price-target-cut-by-almost-1-000-bnp-paribas-flags-2028-hyperscaler-capacity-risks/cNbsaFoR9ko"
+      },
+      {
+        "title": "DKS Stock Rallies On Q3 Earnings Beat - Dick’s Sporting Goods Raises FY2026 Forecast",
+        "url": "https://stocktwits.com/news-articles/markets/equity/dks-stock-rallies-on-q3-earnings-beat-dick-s-sporting-goods-raises-fy-2026-forecast/cNbsaNaR9k8"
+      },
+      {
+        "title": "Abercrombie & Fitch CEO Eyes ‘Another Year Of Record Net Sales’ After ‘Best-Ever’ Q3 Topline Across Brands",
+        "url": "https://stocktwits.com/news-articles/markets/equity/abercrombie-and-fitch-ceo-eyes-another-year-of-record-net-sales-after-best-ever-q3-topline-across-brands/cNbsBOwR9kV"
+      },
       {
         "title": "ADI Stock On Track To Hit 7-Month Low After Record FY26 – CEO Eyes ‘Durable Growth’ In Coming Year",
         "url": "https://stocktwits.com/news-articles/markets/equity/adi-stock-on-track-to-hit-7-month-low-after-record-fy-26-ceo-eyes-durable-growth-in-coming-year/cNbsJoyR9kN"
@@ -461,88 +553,8 @@
       {
         "title": "Pentagon Reportedly Taps GM, Ford To Strengthen Drone Production – Why Washington Is Looking Beyond Traditional UAV Makers",
         "url": "https://stocktwits.com/news-articles/markets/equity/pentagon-reportedly-taps-gm-ford-to-strengthen-drone-production-why-washington-is-looking-beyond-traditional-uav-makers/cNbseE9R9k1"
-      },
-      {
-        "title": "Needham Initiates GameStop At ‘Buy’ — Says Collectibles Push And Improved Profitability Could Unlock Upside For GME",
-        "url": "https://stocktwits.com/news-articles/markets/equity/needham-initiates-game-stop-at-buy-says-collectibles-push-and-improved-profitability-could-unlock-upside-for-gme/cNbsIUDR9k0"
-      },
-      {
-        "title": "META Stock Is Down 24% From Peak: JPMorgan Sees ‘Attractive Buying Opportunity’ — But 2027 Spending, Capex Remain An Overhang",
-        "url": "https://stocktwits.com/news-articles/markets/equity/meta-stock-is-down-24-from-peak-jp-morgan-sees-attractive-buying-opportunity-but-2027-spending-capex-remain-an-overhang/cNbsIWZR9ki"
-      },
-      {
-        "title": "Dan Ives Calls Jensen Huang's Return To Nvidia The Start of  ‘AI Godfather Part 2,’ But Warns Of More ‘Noise’ Ahead",
-        "url": "https://stocktwits.com/news-articles/markets/equity/dan-ives-calls-jensen-huang-return-to-nvidia-the-start-of-ai-godfather-part-2-but-warns-of-more-noise-ahead/cNbsIBLR9kL"
-      },
-      {
-        "title": "Humana Will Exceed Its FY2028 Earnings Target, Says Keybanc – Sees Nearly 30% Upside In HUM Stock",
-        "url": "https://stocktwits.com/news-articles/markets/equity/humana-will-exceed-its-fy-2028-earnings-target-says-keybanc-upside-in-hum-stock/cNbsEOfR9kW"
-      },
-      {
-        "title": "CrowdStrike Poised For ‘Hyper Growth And Profit,’ Says Guggenheim — Sees 34% Upside In CRWD Stock",
-        "url": "https://stocktwits.com/news-articles/markets/equity/crowdstrike-poised-for-hyper-growth-and-profit-says-guggenheim-sees-34-upside-in-crwd-stock/cNbsEP5R9kg"
-      },
-      {
-        "title": "‘Big Short’ Investor Steve Eisman Says Bitcoin Is ‘Nothing’ — Claims Crypto Just Tracks Nvidia: ‘Never’ Would He Buy It",
-        "url": "https://stocktwits.com/news-articles/markets/cryptocurrency/big-short-investor-steve-eisman-says-bitcoin-is-nothing-claims-crypto-just-tracks-nvidia-never-would-he-buy-it/cNbs2mBR9kQ"
-      },
-      {
-        "title": "US Futures Mixed After Monday’s Nvidia-Led Chip Rally — ZM, HPE, AMD, BABA In Focus",
-        "url": "https://stocktwits.com/news-articles/markets/equity/us-futures-mixed-after-monday-s-nvidia-led-chip-rally-zm-hpe-amd-baba-in-focus/cNbs23VR9kf"
-      },
-      {
-        "title": "SKYD Stock Rises Premarket: Warner Bros. Deal Architect Buys Skydance Shares Amid $30B Content Spending",
-        "url": "https://stocktwits.com/news-articles/markets/equity/skyd-stock-rises-premarket-warner-bros-deal-architect-buys-skydance-shares/cNbs2TTR9kO"
-      },
-      {
-        "title": "ANT Stock Drops Further Despite Tech Rally — Why This Analyst Thinks Jensen Huang’s Return As Nvidia CEO Is A ‘Threat To Anthropic’",
-        "url": "https://stocktwits.com/news-articles/markets/equity/ant-stock-drops-further-despite-tech-rally-why-this-analyst-thinks-jensen-huang-s-return-as-nvidia-ceo-is-a-threat-to-anthropic/cNbsciDR9ka"
-      },
-      {
-        "title": "Why Hyperliquid CEO Rejected The Michael Saylor-Style Bitcoin Treasury Model — And Bet On HYPE Instead",
-        "url": "https://stocktwits.com/news-articles/markets/equity/purr-stock-hyperliquid-strategies-ceo-treasury-michael-saylor/cNbsTT3R9k9"
-      },
-      {
-        "title": "CRWV, NBIS And IREN Rally In A ‘Good Day’ For Neoclouds — Databricks Co-Founder Flags Security Gaps At ‘Top’ Neoclouds",
-        "url": "https://stocktwits.com/news-articles/markets/equity/crwv-nbis-iren-rally-good-day-neoclouds-databricks-co-founder-security-gaps-top-neoclouds/cNbsRgYR9kB"
-      },
-      {
-        "title": "Why Is INSM Stock Surging 13% Overnight Today?",
-        "url": "https://stocktwits.com/news-articles/markets/equity/why-is-insm-stock-surging-overnight-today/cNbsR9GR9kJ"
-      },
-      {
-        "title": "Dell Q3 Preview: Margins, Outlook In Focus As Strong AI Server Demand Seen Supporting Performance",
-        "url": "https://stocktwits.com/news-articles/markets/equity/dell-q3-preview-margins-outlook-in-focus-as-strong-ai-server-demand-seen-supporting-performance/cNbsRdxR9k7"
-      },
-      {
-        "title": "Tesla And SpaceX Reportedly Name 5 Directors To Lead Merger Discussions — Investor Says Talks Are Moving At ‘Warp Speed’",
-        "url": "https://stocktwits.com/news-articles/markets/equity/tesla-spacex-5-directors-lead-merger-discussions-investor-talks-warp-speed/cNbsbrxR9ke"
-      },
-      {
-        "title": "Grayscale Says Bitcoin Looks Oversold, Warns Of Near-Term AI Risks As Nvidia And Anthropic Developments Put Markets In Focus",
-        "url": "https://stocktwits.com/news-articles/markets/cryptocurrency/grayscale-bitcoin-oversold-ai-risks-nvidia-anthropic/cNbsGFxR9kI"
-      },
-      {
-        "title": "BA, NOC, LMT, KTOS Stocks Draw Bullish Call From Mizuho: Analyst Calls The Group ‘Underappreciated’ Defense Plays",
-        "url": "https://stocktwits.com/news-articles/markets/equity/ba-noc-lmt-ktos-stocks-bullish-call-mizuho-group-underappreciated-defense-plays/cNbr6tER9k4"
-      },
-      {
-        "title": "TSMC, Samsung, SK Hynix Rally As Jensen Huang Returns As Nvidia CEO — Top Analyst Flags Risks To AI Recovery",
-        "url": "https://stocktwits.com/news-articles/markets/equity/tsmc-samsung-sk-hynix-rally-as-jensen-huang-returns-as-nvidia-ceo-top-analyst-flags-risks-to-ai-recovery/cNbr6E1R9kE"
-      },
-      {
-        "title": "Bitcoin And Stocks Are Moving In Different Directions: Arthur Hayes Says Nvidia's Rally Is The 'Worst Thing' For Crypto",
-        "url": "https://stocktwits.com/news-articles/markets/cryptocurrency/arthur-hayes-nvidia-rally-bitcoin-november-selloff/cNbrzA2R9k3"
-      },
-      {
-        "title": "Biotech Loses Ground In November’s Market Slide — These 5 Stocks Bucked The Selloff As Lilly, AbbVie And Amgen Fell",
-        "url": "https://stocktwits.com/news-articles/markets/equity/biotech-loses-ground-november-5-stocks-bucked-selloff-lilly-abb-vie-amgen-fell/cNbrzF5R9kd"
-      },
-      {
-        "title": "Brent Crude Prices Slip Below $90 A Barrel: Patrick De Haan Says Oil, Refined Products Are ‘Oversold,’ While Hanke Sees Prices Staying Elevated",
-        "url": "https://stocktwits.com/news-articles/markets/equity/brent-crude-prices-slip-below-90-a-barrel-patrick-de-haan-says-oil-refined-products-are-oversold/cNbryVHR9k2"
       }
     ],
-    "collected": "2026-11-24T13:59:06+00:00"
+    "collected": "2026-11-24T23:32:32+00:00"
   }
 }
